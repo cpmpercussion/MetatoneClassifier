@@ -1,0 +1,20 @@
+* kPCA
+** feature df
+** liwc
+** novelty detection
+** clustering
+* random forests
+* anovas
+** likert data
+** feature df
+
+* graphs
+
+** confusion matrix plots
+** MDS plots on group and name
+** violin plots for accel features
+** feature importance plots
+** audio feature visualisations (maybe loess smoothed & violin ones side-by-side?)
+** prototype classes (for accel and all)
+** signif plots
+** specific subset recur.rate and laminarity plots
