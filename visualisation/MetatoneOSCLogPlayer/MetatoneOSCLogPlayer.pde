@@ -8,7 +8,7 @@ PFont f;
 
  
 void setup() {
-  frameRate(30);
+  //frameRate(30);
   size(1024, 768,P2D);
   
   // text
@@ -22,7 +22,7 @@ void setup() {
   background(0);
   fill(255);
   // Open the file from the createWriter() example
-  reader = createReader("../20130427/MetatoneOSCLog-20130427-17h29.txt");
+  reader = createReader("/Users/charles/Dropbox/Metatone/20130427/MetatoneOSCLog-20130427-17h29.txt");
   currentLineTime = 0.0;  
   currentFrameTime = 0.0;
  
@@ -55,7 +55,7 @@ void draw() {
   // while current millis()
   
   //currentFrameTime = millis() // real time version.
-  currentFrameTime = frameCount * 1000.0 / 30.0; // accurate saveFrames version.
+  currentFrameTime = frameCount * 1000.0 / 25.0; // accurate saveFrames version.
   
   while (currentLineTime < currentFrameTime) {
     
@@ -71,7 +71,7 @@ void draw() {
       noLoop();
     } else {
       String[] parts = processLine(currentLine);
-      currentLineTime = 1000 * (Float.parseFloat(parts[0]) - 149.38);
+      currentLineTime = 1000 * (Float.parseFloat(parts[0]));
       if (parts[1].equals("/metatone/touch")) {
         // Choose colours for each iPad
         if (parts[2].equals("1D7BCDC1-5AAB-441B-9C92-C3F00B6FF930")) {
@@ -99,7 +99,7 @@ void draw() {
   //rect(0,0,1024,768);
   
   // Save frame to make movie later.
-  saveFrame("../../../Movies/frames/metatone-######.png");
+  saveFrame("/Users/charles/Movies/frames/metatone-######.tga");
   
   // fade towards white
   blend(fader,0,0,width,height,0,0,width,height,ADD);

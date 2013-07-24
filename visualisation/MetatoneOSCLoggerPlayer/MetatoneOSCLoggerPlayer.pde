@@ -102,7 +102,7 @@ void draw() {
   
   // Save frame to make movie later.
   
-  saveFrame("/Users/charles/Movies/framestga/metatone-######.png");
+  saveFrame("/Users/charles/Movies/framestga/metatone-######.tga");
   
   // fade towards white
   blend(fader,0,0,width,height,0,0,width,height,ADD);
