@@ -100,6 +100,7 @@ gesture_targets.name = 'gesture'
 names = messages['device_id'].unique()
 
 
+
 ##
 ## Setup Classifier with Synthetic Data 
 ##
@@ -147,7 +148,7 @@ messages = pd.read_csv(touchlog_file, index_col="time", parse_dates=True)
 gesture_file = '/Users/charles/Dropbox/Metatone/20130427/MetatoneGesturesMicaiah-20130427-17h46m19s.csv-dateproc.csv'
 gesture_targets = pd.read_csv(gesture_file, index_col="time",parse_dates=True)
 gesture_targets = gesture_targets.resample('5s',how='first')
-
+gesture_pred = gesture_targets.copy()
 # Setup columns and names.
 names = messages['device_id'].unique()
 
@@ -155,6 +156,7 @@ names = messages['device_id'].unique()
 print ""
 
 #f, axarr = plt.subplots(size(names), sharex=True)
+
 
 
 for n in names:
@@ -166,6 +168,7 @@ for n in names:
     
     performer_pred = classifier.predict(performer_features[feature_vector_columns])
     performer_features['pred'] = classifier.predict(performer_features[feature_vector_columns])
+    gesture_pred[n] = performer_features['pred']
     
     mean_accuracy = classifier.score(performer_features[feature_vector_columns],performer_features['gesture'])
     
@@ -180,5 +183,16 @@ for n in names:
     print "Score: %d" % sum(scores)
     print "Total points: %d" % len(performer_features['gesture'])
     print ""
+
+
+
+gesture_targets_coded = gesture_targets.copy()
+gesture_pred = gesture_pred.fillna(0)
+for n in names:                      
+    gesture_targets_coded[n] = gesture_targets_coded[n].apply(lambda x: gesture_codes[x])
+
+
+gesture_pred.plot(title = "Predicted Gesture Score")
+gesture_targets_coded.plot(title = "Coded Gesture Score")
 
 
