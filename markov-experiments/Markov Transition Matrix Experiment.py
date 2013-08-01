@@ -17,12 +17,18 @@ gesture_codes = {
     'C': 8,
     '?': 9}
     
-processed_file = '/Users/charles/Dropbox/Metatone/touch-point-performance-analysis/markov-experiments/20130427-MetatoneGesturePredictions.csv'
+#processed_file = '/Users/charles/Dropbox/Metatone/touch-point-performance-analysis/markov-experiments/20130427-MetatoneGesturePredictions.csv'
+processed_file = '/Users/charles/Dropbox/Metatone/touch-point-performance-analysis/markov-experiments/20130427-MetatoneGestureTargets.csv'
+
 chains = pd.read_csv(processed_file, index_col="time", parse_dates=True)
 
     
 states_n = len(gesture_codes)
 transitions = np.zeros([states_n,states_n])
+
+
+## Currently only looking at CHARLES chain - need to look at all chains!
+
 curr_chain = chains['charles'].tolist()
 curr_chain = map(int,curr_chain)
 

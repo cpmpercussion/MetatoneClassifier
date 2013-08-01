@@ -9,9 +9,11 @@ from datetime import datetime
 import pandas as pd
 import numpy as np
 from sklearn.ensemble import RandomForestClassifier
+import time,sched
+import pickle
 
-#ip = ([ip for ip in socket.gethostbyname_ex(socket.gethostname())[2] if not ip.startswith("127.")][:1])
-ip = ([ip for ip in socket.gethostbyname_ex(socket.gethostname())[2] if not ip.startswith("127.")][1:])
+ip = ([ip for ip in socket.gethostbyname_ex(socket.gethostname())[2] if not ip.startswith("127.")][:1])
+#ip = ([ip for ip in socket.gethostbyname_ex(socket.gethostname())[2] if not ip.startswith("127.")][1:])
 
 
 name    = "Metatone LiveProc"
@@ -39,8 +41,12 @@ sdRef = pybonjour.DNSServiceRegister(name = name,
                                      port = port,
                                      callBack = register_callback)
 
+
+
+
+
 ##
-## Setup Functions for Logging Messages
+## Setup Functions for Classifying Data
 ##
 device_names = {
     '2678456D-9AE7-4DCC-A561-688A4766C325':'charles',
@@ -48,16 +54,90 @@ device_names = {
     '6769FE40-5F64-455B-82D4-814E26986A99':'yvonne',
     '1D7BCDC1-5AAB-441B-9C92-C3F00B6FF930':'jonathan'}
 columns = ['time','device_id','x_pos','y_pos','velocity']
-live_messages = []
+feature_vector_columns = ['centroid_x','centroid_y','std_x','std_y','freq','movement_freq','touchdown_freq','velocity']
 
-touch_frame = pd.DataFrame
-# columns should be time, device_id, x_pos, y_pos, velocity
+## Int values for Gesture codes.
+gesture_codes = {
+    'N': 0,
+    'FT': 1,
+    'ST': 2,
+    'FS': 3,
+    'FSA': 4,
+    'VSS': 5,
+    'BS': 6,
+    'SS': 7,
+    'C': 8,
+    '?': 9}
+    
+##### Function to calculate feature vectors 
+## (for a dataframe containing one 'device_id'
+##
+def feature_frame(frame):
+    window_size = '5s'
+    
+    frame_freq = frame['device_id'].resample(window_size,how='count') 
+    frame_touchdowns = frame.ix[frame['velocity'] == 0]
+    frame_touchdowns = frame_touchdowns['velocity'].resample(window_size,how='count')
+    frame_vel = frame['velocity'].resample(window_size,how='mean')
+    frame_centroid = frame[['x_pos','y_pos']].resample(window_size,how='mean')
+    frame_std = frame[['x_pos','y_pos']].resample(window_size,how='std')
+    
+    fframe = pd.DataFrame({'freq':frame_freq,
+        'device_id':frame['device_id'].resample(window_size,how='first')
+            .fillna(method='ffill'),
+        'touchdown_freq':frame_touchdowns.fillna(0),
+        'movement_freq':frame_freq.fillna(0),
+        'centroid_x':frame_centroid['x_pos'].fillna(-1),
+        'centroid_y':frame_centroid['y_pos'].fillna(-1),
+        'std_x':frame_std['x_pos'].fillna(0),
+        'std_y':frame_std['y_pos'].fillna(0),
+        'velocity':frame_vel.fillna(0)})
+    return fframe.fillna(0)
+
+    
+
+## Load the classifier
+pickle_file = open( "20130701data-classifier.p", "rb" )
+classifier = pickle.load(pickle_file)
+pickle_file.close()
+
+def classify_touch_messages(messages):
+    if not messages:
+        return {}
+
+    touch_frame = pd.DataFrame(messages,columns = ['time','device_id','x_pos','y_pos','velocity'])
+    touch_frame = touch_frame.set_index('time')
+    
+    names = touch_frame['device_id'].unique()
+    classes = {}
+    for n in names:
+        features = feature_frame(touch_frame.ix[touch_frame['device_id'] == n])
+        classes[n] = classifier.predict(features[feature_vector_columns][-1:])
+    return classes
+
+#import sched, time
+#scheduler = sched.scheduler(time.time, time.sleep)
+#def do_something(sc): 
+#    print "Classifying"
+#    print classify_touch_messages(touch_messages)
+#    sc.enter(60, 1, do_something, (sc,))
+#
+#scheduler.enter(60, 1, do_something, (scheduler,))
+#scheduler.run()
+
+
+##
+## Logging data functions
+##
+live_messages = []
+touch_messages = []
+
 
 logging_filename = datetime.now().isoformat().replace(":","-")[:19] + "-MetatoneOSCLog.txt"
 logging_file = open(logging_filename,'w')
 
 def log_messages(message,log):
-    print(message)
+    #print(message)
     log.append(message)
     if (len(log) > 1000):
         print("logging all the messages!")
@@ -80,14 +160,20 @@ def write_log(log):
     # create a new live_messages
 
 
+
+
+
+
 ##
 ## OSC Message Handling Functions
 ##
 
 def touch_handler(addr, tags, stuff, source):
     if (tags == "sfff"):
-        message = [datetime.now().isoformat(),"touch",device_names[stuff[0]],stuff[1],stuff[2],stuff[3]]
+        time = datetime.now()
+        message = [time.isoformat(),"touch",device_names[stuff[0]],stuff[1],stuff[2],stuff[3]]
         log_messages(message,live_messages)
+        touch_messages.append([time,device_names[stuff[0]],stuff[1],stuff[2],stuff[3]])
         
         
 def touch_ended_handler(addr,tags,stuff,source):
@@ -126,116 +212,9 @@ for addr in s.getOSCAddressSpace():
     print addr
 
 # Start OSCServer
-#print "\nStarting OSCServer. Use ctrl-C to quit."
+print "\nStarting OSCServer. Use ctrl-C to quit."
 st = threading.Thread(target = s.serve_forever)
 st.start()
-
-##
-## Setup Classifier
-##
-##
-
-## Int values for Gesture codes.
-gesture_codes = {
-    'N': 0,
-    'FT': 1,
-    'ST': 2,
-    'FS': 3,
-    'FSA': 4,
-    'VSS': 5,
-    'BS': 6,
-    'SS': 7,
-    'C': 8,
-    '?': 9}
-
-
-## Column names in the feature vectors:
-feature_vector_columns = ['centroid_x','centroid_y','std_x','std_y','freq','movement_freq','touchdown_freq','velocity']
-
-##### Function to calculate feature vectors 
-## (for a dataframe containing one 'device_id'
-##
-def feature_frame(frame):
-    window_size = '5s'
-    
-    
-    frame_freq = frame['device_id'].resample(window_size,how='count') 
-    frame_touchdowns = frame.ix[frame['velocity'] == 0]
-    frame_touchdowns = frame_touchdowns['velocity'].resample(window_size,how='count')
-    frame_vel = frame['velocity'].resample(window_size,how='mean')
-    frame_centroid = frame[['x_pos','y_pos']].resample(window_size,how='mean')
-    frame_std = frame[['x_pos','y_pos']].resample(window_size,how='std')
-    
-    
-    fframe = pd.DataFrame({'freq':frame_freq,
-        'device_id':frame['device_id'].resample(window_size,how='first')
-            .fillna(method='ffill'),
-        'touchdown_freq':frame_touchdowns.fillna(0),
-        'movement_freq':frame_freq.fillna(0),
-        'centroid_x':frame_centroid['x_pos'].fillna(-1),
-        'centroid_y':frame_centroid['y_pos'].fillna(-1),
-        'std_x':frame_std['x_pos'].fillna(0),
-        'std_y':frame_std['y_pos'].fillna(0),
-        'velocity':frame_vel.fillna(0)})
-    return fframe.fillna(0)
-    
-##### Function to calculate feature vectors 
-## (for a dataframe containing one 'device_id'
-##
-def make_one_feature_frame(frame):
-    window_size = '5s'
- 
-    frame_freq = frame['device_id'].resample(window_size,how='count') 
-    frame_touchdowns = frame.ix[frame['velocity'] == 0]
-    frame_touchdowns = frame_touchdowns['velocity'].resample(window_size,how='count')
-    frame_vel = frame['velocity'].resample(window_size,how='mean')
-    frame_centroid = frame[['x_pos','y_pos']].resample(window_size,how='mean')
-    frame_std = frame[['x_pos','y_pos']].resample(window_size,how='std')
-    
-    
-    fframe = pd.DataFrame({'freq':frame_freq,
-        'device_id':frame['device_id'].resample(window_size,how='first')
-            .fillna(method='ffill'),
-        'touchdown_freq':frame_touchdowns.fillna(0),
-        'movement_freq':frame_freq.fillna(0),
-        'centroid_x':frame_centroid['x_pos'].fillna(-1),
-        'centroid_y':frame_centroid['y_pos'].fillna(-1),
-        'std_x':frame_std['x_pos'].fillna(0),
-        'std_y':frame_std['y_pos'].fillna(0),
-        'velocity':frame_vel.fillna(0)})
-    return fframe.fillna(0)
-
-
-##### Load some Data
-##
-##
-processed_file = '/Users/charles/Dropbox/Metatone/20130701/OSCLog20130701-17h20m46s.txt-touches.csv'
-messages = pd.read_csv(processed_file, index_col="time", parse_dates=True)
-
-##
-## Setup Classifier with Synthetic Data 
-##
-# Setup the Data
-feature_vectors = pd.DataFrame()
-for n in names:
-    feature_vectors = pd.concat([feature_vectors, 
-        feature_frame(messages.ix[messages['device_id'] == n])])
-        
-feature_vectors = feature_vectors[feature_vector_columns].join(gesture_targets)
-feature_vectors['gesture'] = feature_vectors['gesture'].fillna('N')
-feature_vectors['gesture'] = feature_vectors['gesture'].apply(lambda x: gesture_codes[x])
-
-# take a sample of the data for training.
-sampler = np.random.randint(0, len(feature_vectors), size=len(feature_vectors))
-training_vectors = feature_vectors.take(sampler)
-input_vectors = training_vectors[feature_vector_columns]
-targets = training_vectors['gesture']
-
-
-# Train the classifier
-classifier = RandomForestClassifier(n_estimators=100, max_features=3,compute_importances=True)
-classifier = classifier.fit(input_vectors, targets)
-
 
 ## For a given chunk of messages
 
@@ -246,9 +225,6 @@ classifier = classifier.fit(input_vectors, targets)
 
 ## otherwise output classifier(frame[0])
 
-
-
-
 def close_server():
     # finish up.    
     sdRef.close()
@@ -257,31 +233,30 @@ def close_server():
     write_log(live_messages)
     logging_file.close()
 
-##
-## Classification Section
-##
-# Working
-def process_messages(messages):
-   return 0
-   
-def calculate_features(messages):
-    return 0
-    
-def classify_sample(sample):
-    print 0 
 
-## Int values for Gesture codes.
-gesture_codes = {
-    'N': 0,
-    'FT': 1,
-    'ST': 2,
-    'FS': 3,
-    'FSA': 4,
-    'VSS': 5,
-    'BS': 6,
-    'SS': 7,
-    'C': 8,
-    '?': 9}
+
+
+##
+## Run Loop
+##
+## Classifies all touch data every 1 second
+##
+## Ctrl-C closes server, thread and exits.
+##
+try :
+    while 1 :
+        time.sleep(1)
+        print classify_touch_messages(touch_messages)
+        # calculate latest classifications.
+
+except KeyboardInterrupt :
+    print "\nClosing OSCServer."
+    print "Waiting for Server-thread to finish"
+    close_server()
+    print "Done"
+
+
+
 
 # Metatone Message Structure
 #
@@ -309,3 +284,12 @@ gesture_codes = {
 ## /metatone/acceleration sfff
 ## deviceID X Y Z
 #
+
+
+# {'charles': array([8])}
+# {'charles': array([8])}
+# OSCServer: KeyError on request from 10.0.0.52:57120: 'F'
+# {'charles': array([8])}
+# {'charles': array([8])}
+# {'charles': array([8])}
+
