@@ -30,3 +30,7 @@ class_groups = [[0],[1,2],[3,4,5],[6,7],[8],[9]]
 
 - 20130427 - https://docs.google.com/a/charlesmartin.com.au/spreadsheet/ccc?key=0AoDFXboVTh6ldDR0NkRVdnEyZ3VtZWx2bnNzMElwWmc&usp=sharing
 - 20130504 - 
+
+## Touch Log File Format (CSV)
+
+> time, ipaddress, osc_address, device_id, x_pos, y_pos, velocity, switch_name, switch_state
