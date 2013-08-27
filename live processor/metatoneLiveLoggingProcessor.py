@@ -18,6 +18,7 @@ ip = ([ip for ip in socket.gethostbyname_ex(socket.gethostname())[2] if not ip.s
 
 name    = "Metatone LiveProc"
 port    = 9000
+#receive_address = "10.0.1.2"
 receive_address = (ip[0], port)
 
 # OSC Server. there are three different types of server. 
@@ -205,7 +206,7 @@ s.addMsgHandler("/metatone/touch/ended", touch_ended_handler) # adding our funct
 s.addMsgHandler("/metatone/switch", switch_handler) # adding our function
 s.addMsgHandler("/metatone/online", onlineoffline_handler) # adding our function
 s.addMsgHandler("/metatone/offline", onlineoffline_handler) # adding our function
-s.addMsgHandler("/metatone/accel", accel_handler) # adding our function
+s.addMsgHandler("/metatone/acceleration", accel_handler) # adding our function
 
 print "Registered Callback-functions are :"
 for addr in s.getOSCAddressSpace():
