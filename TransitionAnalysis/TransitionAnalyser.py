@@ -74,6 +74,35 @@ def create_transition_dataframe(states):
                 output[col][s] = one_step_transition(states[col][prev],states[col][curr])
             prev = s
     return output
+    
+
+def print_transition_plots(transitions):
+    for n in range(len(transitions)):
+        title = transitions.index[n].isoformat()
+        print title
+        plt.title(title)
+        plt.imshow(transitions.ix[n], cmap=plt.cm.binary, interpolation='nearest')
+        plt.savefig(title.replace(":","_") + '.png', dpi=150, format="png")
+        plt.close()
+
+def diag_measure(mat):
+    mat = np.array(mat)
+    d = np.linalg.norm(mat.diagonal()) 
+    m = np.linalg.norm(mat)
+    if d == 0:
+        d = 1
+    return m/d
+
+def transition_sum(tran_arr):
+    out = np.sum(tran_arr,axis=0).tolist()
+    return out
+
+##
+##
+##
+## Load the data
+##
+##
 
 #processed_file = '/Users/charles/Dropbox/Metatone/touch-point-performance-analysis/markov-experiments/20130427-MetatoneGesturePredictions.csv'
 #processed_file = '/Users/charles/Dropbox/Metatone/touch-point-performance-analysis/markov-experiments/20130427-MetatoneGestureTargets.csv'
@@ -81,7 +110,68 @@ processed_file = '/Users/charles/Dropbox/Metatone/touch-point-performance-analys
 
 state_data = pd.read_csv(processed_file, index_col="time", parse_dates=True)
 
-def plot_windowed_transitions():
+##
+## Plot the windowed Transition Matrices
+##
+
+for winlen in ['15s','20s','25s','30s','35s','40s']:
+    #winlen = '15s'
+    alt_windowed = create_transition_dataframe(state_data)
+    group_transitions = alt_windowed['jonathan'] + alt_windowed['christina'] + alt_windowed['yvonne'] + alt_windowed['charles']
+    group_transitions = group_transitions.dropna()
+    group_transitions = group_transitions.resample(winlen,how=transition_sum)
+    
+    plt.figure(figsize=(16,12),frameon=False,tight_layout=True)
+    #plt.suptitle("Group Transitions for Performance: " + group_transitions.index[0].strftime('%Y-%m-%d %H:%M:%S'))
+    for n in range(len(group_transitions)):
+        title = group_transitions.index[n].strftime('%H:%M:%S')
+        print title
+        plt.subplot(8,6,n+1)
+        plt.title(title)
+        plt.imshow(np.array(group_transitions[n]), cmap=plt.cm.gray_r, interpolation='nearest')
+    #plt.tight_layout()
+    #plt.show()
+    title = "Group Transitions for Performance: " + group_transitions.index[0].strftime('%Y-%m-%d %H:%M:%S')
+    plt.savefig(title.replace(":","_") + " " + winlen + '.png', dpi=150, format="png")
+    plt.close()
+
+
+##
+## Plot the "Changeyness Metric"
+##
+
+for winlen in ['5s','10s','15s','20s','25s','30s','35s','40s']:
+    #winlen = '15s'
+    print "Trying window length of:" + winlen
+    alt_windowed = create_transition_dataframe(state_data)
+    group_transitions = alt_windowed['jonathan'] + alt_windowed['christina'] + alt_windowed['yvonne'] + alt_windowed['charles']
+    group_transitions = group_transitions.dropna()
+    group_transitions = group_transitions.resample(winlen,how=transition_sum)
+    
+    transition_activity = group_transitions.dropna().apply(diag_measure)
+    transition_activity.name = 'transition_activity'
+    transition_activity = transition_activity.resample('1s', fill_method='ffill')
+    
+    #Plot and save as png
+    idx = transition_activity.index
+    ax = plt.figure(figsize=(28,3),frameon=False,tight_layout=True).add_subplot(111)
+    ax.xaxis.set_major_locator(dates.SecondLocator(bysecond=[0,30]))
+    ax.xaxis.set_major_formatter(dates.DateFormatter("%H:%M:%S"))
+    ax.xaxis.set_minor_locator(dates.SecondLocator(bysecond=[0,10,20,30,40,50]))
+    ax.xaxis.grid(True,which="minor")
+    ax.yaxis.grid()
+    title = "Transition Activity " + transition_activity.index[0].isoformat() 
+    
+    plt.title(transition_activity.name)
+    plt.ylabel("changingness")
+    plt.xlabel("time")
+    
+    plt.plot_date(idx.to_pydatetime(),transition_activity,'-',label=transition_activity.name)
+    plt.savefig(title.replace(":","_") + " " + winlen + '.png', dpi=150, format="png")
+    plt.close()
+
+
+def plot_old_windowed_transitions():
     # Original (kind of wrong) windowing method...
     windowed_transitions = state_data.resample('15s',how=transition_matrix)
     windowed_transitions['group'] = windowed_transitions['jonathan'] + windowed_transitions['christina'] + windowed_transitions['yvonne'] + windowed_transitions['charles']
@@ -95,59 +185,3 @@ def plot_windowed_transitions():
         plt.close()
 
 
-
-
-alt_windowed = create_transition_dataframe(state_data).resample('15s',how=np.sum)
-group_transitions = alt_windowed['jonathan'] + alt_windowed['christina'] + alt_windowed['yvonne'] + alt_windowed['charles']
-
-
-def print_transition_plots(transitions):
-    for n in range(len(transitions)):
-        title = transitions.index[n].isoformat()
-        print title
-        plt.title(title)
-        plt.imshow(transitions.ix[n], cmap=plt.cm.binary, interpolation='nearest')
-        plt.savefig(title.replace(":","_") + '.png', dpi=150, format="png")
-        plt.close()
-
-def diag_measure(mat):
-    d = np.linalg.norm(mat.diagonal()) 
-    m = np.linalg.norm(mat)
-    if d == 0:
-        d = 1
-    return m/d
-
-
-### Plot a "transition activity metric"
-
-transition_activity = group_transitions.dropna().apply(diag_measure)
-transition_activity.name = 'transition_activity'
-transition_activity = transition_activity.resample('1s', fill_method='ffill')
-
-#Plot and save the Gesture Score as a png:
-idx = transition_activity.index
-ax = plt.figure(figsize=(28,3),frameon=False,tight_layout=True).add_subplot(111)
-ax.xaxis.set_major_locator(dates.SecondLocator(bysecond=[0,30]))
-ax.xaxis.set_major_formatter(dates.DateFormatter("%H:%M:%S"))
-ax.xaxis.set_minor_locator(dates.SecondLocator(bysecond=[0,10,20,30,40,50]))
-ax.xaxis.grid(True,which="minor")
-ax.yaxis.grid()
-title = "Transition Activity " + transition_activity.index[0].isoformat() 
-
-plt.title(transition_activity.name)
-plt.ylabel("changingness")
-plt.xlabel("time")
-
-plt.plot_date(idx.to_pydatetime(),transition_activity,'-',label=transition_activity.name)
-plt.savefig(title.replace(":","_") + '.png', dpi=150, format="png")
-plt.close()
-
-#fig = plt.figure()
-#ax = fig.add_subplot(111, projection='3d')
-#z = states_n * 10
-#for row in transitions:
-#    xs = np.arange(states_n)
-#    ys = row
-#    ax.bar(xs, ys, zs=z, zdir='y', color='r', alpha=0.8)
-#    z = z - 10
-#plt.show()
