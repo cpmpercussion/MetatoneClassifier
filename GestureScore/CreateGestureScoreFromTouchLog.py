@@ -118,7 +118,6 @@ plt.yticks(np.arange(9),['n','ft','st','fs','fsa','vss','bs','ss','c'])
 
 for n in names:
     plt.plot_date(idx.to_pydatetime(),gesture_pred[n],'-',label=n)
-
 plt.legend(loc='upper right')
 
 plt.savefig(outname + '.png', dpi=150, format="png")
