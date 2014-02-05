@@ -81,6 +81,7 @@ gesture_codes = {
     'VSS': 5,
     'BS': 6,
     'SS': 7,
+    
     'C': 8,
     '?': 9}
 

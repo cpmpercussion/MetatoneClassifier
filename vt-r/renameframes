@@ -1,6 +1,0 @@
-#!/bin/bash
-i=0
-for frame in *.png; do
-    mv -f $frame $(printf '%05i.png' $i)
-    i=$(( $i+1 ))
-done

@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 import matplotlib.dates as dates
 from matplotlib.lines import Line2D
 from mpl_toolkits.mplot3d import Axes3D
+from datetime import timedelta
 
 ## Int values for Gesture codes.
 gesture_codes = {
@@ -104,6 +105,14 @@ def diag_measure2(mat):
         d = 0.5
         print m/d
     return m/d
+    
+def diag_measure_1_norm(mat):
+    # 1.3 is a good split for "New events"
+    mat = np.array(mat)
+    d = np.linalg.norm(mat.diagonal(),1) 
+    m = np.linalg.norm(mat,1)
+    return m - d
+    
 
 def transition_sum(tran_arr):
     out = np.sum(tran_arr,axis=0).tolist()
@@ -118,7 +127,21 @@ def transition_sum(tran_arr):
 
 #processed_file = '/Users/charles/Dropbox/Metatone/touch-point-performance-analysis/markov-experiments/20130427-MetatoneGesturePredictions.csv'
 #processed_file = '/Users/charles/Dropbox/Metatone/touch-point-performance-analysis/markov-experiments/20130427-MetatoneGestureTargets.csv'
-processed_file = '/Users/charles/Dropbox/Metatone/touch-point-performance-analysis/metatone-performances/20130803-18h-performance/MetatoneGestureScore20130803-18h38m10s.csv'
+
+## Metatone iPad Only Performances.
+##
+#processed_file = '/Users/charles/Dropbox/Metatone/touch-point-performance-analysis/metatone-performances/20130420/MetatoneAutoGestureScore20130420-14h58m50s.csv'
+#processed_file = '/Users/charles/Dropbox/Metatone/touch-point-performance-analysis/metatone-performances/20130421/MetatoneAutoGestureScore20130421-11h47m10s.csv'
+#processed_file = '/Users/charles/Dropbox/Metatone/touch-point-performance-analysis/metatone-performances/20130427/MetatoneAutoGestureScore20130427-17h46m15s.csv'
+processed_file = '/Users/charles/Dropbox/Metatone/touch-point-performance-analysis/metatone-performances/20130803-17h-rehearsal/MetatoneGestureScore20130803-17h11m00s.csv'
+
+#processed_file = '/Users/charles/Dropbox/Metatone/touch-point-performance-analysis/metatone-performances/20130504-14h23/MetatoneAutoGestureScore20130504-14h24m20s.csv'
+
+
+#processed_file = '/Users/charles/Dropbox/Metatone/touch-point-performance-analysis/metatone-performances/20130803-18h-performance/MetatoneGestureScore20130803-18h38m10s.csv'
+
+#processed_file = '/Users/charles/Dropbox/Metatone/touch-point-performance-analysis/metatone-performances/20130803-18h-performance/MetatoneGestureScore20130803-18h52m55s.csv'
+
 
 state_data = pd.read_csv(processed_file, index_col="time", parse_dates=True)
 
@@ -197,25 +220,38 @@ def plot_old_windowed_transitions():
         plt.close()
 
 def plot_score_and_changeyness():
-    winlen = '10s'
+    window_seconds = 15
+    winlen = str(window_seconds) + "s"
+    new_idea_difference_threshold = 0.15
+    
     print "Calculating changeyness for window:" + winlen
     alt_windowed = create_transition_dataframe(state_data)
-    group_transitions = alt_windowed['jonathan'] + alt_windowed['christina'] + alt_windowed['yvonne'] + alt_windowed['charles']
+    #group_transitions = alt_windowed['jonathan'] + alt_windowed['christina'] + alt_windowed['yvonne'] + alt_windowed['charles']
+    #for
+    cols = [alt_windowed[n] for n in alt_windowed.columns]
+    for c in range(len(cols)):
+        if (c == 0):
+            group_transitions = cols[c]
+        else:
+            group_transitions = group_transitions + cols[c]     
+    
     group_transitions = group_transitions.dropna()
     group_transitions = group_transitions.resample(winlen,how=transition_sum)
     transition_activity = group_transitions.dropna().apply(diag_measure)
     transition_activity.name = 'transition_activity'
     
+    new_ideas = transition_activity.ix[transition_activity.diff() > new_idea_difference_threshold]
+    
     
     #Plot and save the Gesture Score as a png:
     idx = state_data.index
-    ax = plt.figure(figsize=(20,10),frameon=False,tight_layout=True).add_subplot(211)
+    ax = plt.figure(figsize=(25,10),frameon=False,tight_layout=True).add_subplot(211)
     ax.xaxis.set_major_locator(dates.SecondLocator(bysecond=[0,30]))
     ax.xaxis.set_major_formatter(dates.DateFormatter("%H:%M:%S"))
     ax.xaxis.set_minor_locator(dates.SecondLocator(bysecond=[0,10,20,30,40,50]))
     ax.xaxis.grid(True,which="minor")
     ax.yaxis.grid()
-    title = "Transition Activity and Changeyness" + transition_activity.index[0].isoformat() 
+    title = "Transition Activity and Changeyness" + transition_activity.index[0].isoformat() + " "+ str(len(new_ideas)) + " new ideas"
     plt.title(title)
     plt.ylabel("gesture")
     plt.xlabel("time")
@@ -225,18 +261,23 @@ def plot_score_and_changeyness():
         plt.plot_date(idx.to_pydatetime(),state_data[n],'-',label=n)
     plt.legend(loc='upper right')
     
-    for n in range(len(transition_activity)):
-        if (transition_activity[n] >= 1.3):
-            x_val = transition_activity.index[n].to_pydatetime()
-            ax.add_line(Line2D([x_val, x_val], [0, 8], transform=ax.transAxes, linewidth=2, color='b'))
-            print x_val
-    
+    #for n in range(len(new_ideas)):
+    #    x_val = new_ideas.index[n].to_pydatetime() + timedelta(seconds = window_seconds)
+    #    ax.axvline(x=x_val, color='r')
+    #    print x_val
     
     transition_activity = transition_activity.resample('1s', fill_method='ffill')
     ax2 = plt.subplot(212, sharex=ax)
     idx = transition_activity.index
     plt.plot_date(idx.to_pydatetime(),transition_activity,'-',label=transition_activity.name)
     plt.ylabel("changeyness")
+    
+    for n in range(len(new_ideas)):
+        x_val = new_ideas.index[n].to_pydatetime() + timedelta(seconds = window_seconds / 2)
+        ax.axvline(x=x_val, color='r')
+        ax2.axvline(x=x_val, color='r')
+        print x_val
+    
     #plt.xlabel("time")
     plt.savefig(title.replace(":","_") + " " + winlen + '.png', dpi=150, format="png")
     plt.close()
@@ -246,33 +287,56 @@ def plot_score_and_changeyness():
 ##
 ## Try scatter plot of diag_measured data
 ##
-winlen = '5s'
-print "Trying window length of:" + winlen
-alt_windowed = create_transition_dataframe(state_data)
-group_transitions = alt_windowed['jonathan'] + alt_windowed['christina'] + alt_windowed['yvonne'] + alt_windowed['charles']
-group_transitions = group_transitions.dropna()
-group_transitions = group_transitions.resample(winlen,how=transition_sum)
-transition_activity = group_transitions.dropna().apply(diag_measure)
-transition_activity.name = 'transition_activity'
-plt.scatter(transition_activity,[1]*len(transition_activity))
+def scatter_plots_of_changeyness():
+    winlen = '5s'
+    print "Trying window length of:" + winlen
+    alt_windowed = create_transition_dataframe(state_data)
+
+    cols = [alt_windowed[n] for n in alt_windowed.columns]
+    for c in range(len(cols)):
+        if (c == 0):
+            group_transitions = cols[c]
+        else:
+            group_transitions = group_transitions + cols[c]
+    
+    group_transitions = group_transitions.dropna()
+    group_transitions = group_transitions.resample(winlen,how=transition_sum)
+    transition_activity = group_transitions.dropna().apply(diag_measure)
+    transition_activity.name = 'transition_activity'
+    plt.scatter(transition_activity,[1]*len(transition_activity))
+    
+    winlen = '10s'
+    print "Trying window length of:" + winlen
+    alt_windowed = create_transition_dataframe(state_data)
+
+    cols = [alt_windowed[n] for n in alt_windowed.columns]
+    for c in range(len(cols)):
+        if (c == 0):
+            group_transitions = cols[c]
+        else:
+            group_transitions = group_transitions + cols[c]     
+    group_transitions = group_transitions.dropna()
+    group_transitions = group_transitions.resample(winlen,how=transition_sum)
+    transition_activity = group_transitions.dropna().apply(diag_measure)
+    transition_activity.name = 'transition_activity'
+    plt.scatter(transition_activity,[2]*len(transition_activity))
+    
+    winlen = '15s'
+    print "Trying window length of:" + winlen
+    alt_windowed = create_transition_dataframe(state_data)
+
+    cols = [alt_windowed[n] for n in alt_windowed.columns]
+    for c in range(len(cols)):
+        if (c == 0):
+            group_transitions = cols[c]
+        else:
+            group_transitions = group_transitions + cols[c]
+    group_transitions = group_transitions.dropna()
+    group_transitions = group_transitions.resample(winlen,how=transition_sum)
+    transition_activity = group_transitions.dropna().apply(diag_measure)
+    transition_activity.name = 'transition_activity'
+    plt.scatter(transition_activity,[3]*len(transition_activity))
+    plt.show()
 
 
-winlen = '10s'
-print "Trying window length of:" + winlen
-alt_windowed = create_transition_dataframe(state_data)
-group_transitions = alt_windowed['jonathan'] + alt_windowed['christina'] + alt_windowed['yvonne'] + alt_windowed['charles']
-group_transitions = group_transitions.dropna()
-group_transitions = group_transitions.resample(winlen,how=transition_sum)
-transition_activity = group_transitions.dropna().apply(diag_measure)
-transition_activity.name = 'transition_activity'
-plt.scatter(transition_activity,[2]*len(transition_activity))
-
-winlen = '15s'
-print "Trying window length of:" + winlen
-alt_windowed = create_transition_dataframe(state_data)
-group_transitions = alt_windowed['jonathan'] + alt_windowed['christina'] + alt_windowed['yvonne'] + alt_windowed['charles']
-group_transitions = group_transitions.dropna()
-group_transitions = group_transitions.resample(winlen,how=transition_sum)
-transition_activity = group_transitions.dropna().apply(diag_measure)
-transition_activity.name = 'transition_activity'
-plt.scatter(transition_activity,[3]*len(transition_activity))
+plot_score_and_changeyness()
