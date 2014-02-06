@@ -210,32 +210,48 @@ def log_messages(message,log):
     #print(message)
     log.append(message)
     if (len(log) > 1000):
-        print("logging all the messages!")
-        output_messages = []
-        for m in log:
-            output_messages.append(str(m).replace("[","").replace("]","").replace("'","") + "\n")
-        # log it to disk
-        del live_messages[:]
-        logging_file.writelines(output_messages)
-        # create a new live_messages
+        write_log(log)
+        #print("logging all the messages!")
+        #output_messages = []
+        #for m in log:
+        #    output_messages.append(str(m).replace("[","").replace("]","").replace("'","") + "\n")
+        #del live_messages[:]
+        #logging_file.writelines(output_messages)
 
 def write_log(log):
-    print("logging all the messages!")
+    print("writing all the messages to disk!")
     output_messages = []
     for m in log:
         output_messages.append(str(m).replace("[","").replace("]","").replace("'","") + "\n")
-    # log it to disk
     del live_messages[:]
     logging_file.writelines(output_messages)
-    # create a new live_messages
 
 def log_gestures(classes, log):
     if not classes:
         return
-    classes = [classes[n] for n in list(classes)]
     time = datetime.now()
+    ## First add to the file log.
+    message_log_line = [time.isoformat()]
+    message_log_line.append("/classifier/gestures")
+    for key in classes.keys():
+        message_log_line.append(key)
+        message_log_line.append(classes[key])
+    log_messages(message_log_line,live_messages)
+    
+    ## Now add to the gesture log.
+    classes = [classes[n] for n in classes.keys()]
     classes.insert(0,time)
     log.append(classes)
+
+
+def send_gestures(classes):
+    msg = OSC.OSCMessage("/metatone/classifier")
+    msg.extend([name,"new_idea","yes"])
+    send_message_to_sources(msg)
+    ##TODO
+    ## for each device in classes, send an OSC message 
+    ## with the gesture classification back to the device.
+    return 0
 
 ## OSC Sending Methods
 
@@ -327,7 +343,6 @@ startOscServer()
 try :
     while 1 :
         time.sleep(1)
-        ##
         classes = classify_touch_messages(touch_messages)
         log_gestures(classes,classified_gestures)
         gestures = make_gesture_frame(classified_gestures)
@@ -342,19 +357,13 @@ try :
                     send_message_to_sources(msg)
             except TypeError:
                 print("Not a transition frame.")
-        ## calculate group transition activity
-        ## check for new idea
-        #print(gestures[-30:])
-
-        ##
         pretty_print_classes(classes)
 
 except KeyboardInterrupt :
     print "\nClosing OSCServer."
-    print "Waiting for Server-thread to finish"
     close_server()
     close_log()
-    print "Done"
+    print "Closed."
 
 # Metatone Message Structure
 #
