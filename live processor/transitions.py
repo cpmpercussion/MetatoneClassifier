@@ -38,7 +38,6 @@ gesture_groups = {
 
 def transition_matrix(chains):
     states_n = 5
-    #transitions = np.zeros([states_n,states_n])
     output = []
     for col in chains:
         transitions = np.zeros([states_n,states_n])
@@ -52,7 +51,6 @@ def transition_matrix(chains):
             prev = s
         output.append(transitions)
     return output
-    #return np.reshape(transitions,-1)
 
 def one_step_transition(e1,e2):
     states_n = 5
@@ -80,9 +78,8 @@ def create_transition_dataframe(states):
                 output[col][s] = one_step_transition(states[col][prev],states[col][curr])
             prev = s
     return output
-    
+
 def diag_measure(mat):
-    # 1.3 is a good split for "New events"
     mat = np.array(mat)
     d = np.linalg.norm(mat.diagonal()) 
     m = np.linalg.norm(mat)
@@ -101,12 +98,24 @@ def diag_measure2(mat):
     return m/d
     
 def diag_measure_1_norm(mat):
-    # 1.3 is a good split for "New events"
     mat = np.array(mat)
     d = np.linalg.norm(mat.diagonal(),1) 
     m = np.linalg.norm(mat,1)
     return m - d
-    
+
+def transition_state_measure(mat):
+    mat = np.array(mat)
+    diag = mat.diagonal()
+    rows = [x for x in mat]
+    cols = [mat[:,x] for x in range(mat.shape[1])]
+    vecs = {}
+    vecs["stasis"] = diag
+    vecs["convergence"] = max(cols, key=np.linalg.norm)
+    vecs["divergence"] = max(rows, key=np.linalg.norm)
+    state = max(vecs, key = (lambda x: np.linalg.norm(vecs.get(x))))
+    spread = np.linalg.norm(vecs[state]) / np.linalg.norm(vecs[state],1)
+    return state,spread
+
 
 def transition_sum(tran_arr):
     out = np.sum(tran_arr,axis=0).tolist()
@@ -153,3 +162,29 @@ def is_new_idea(transitions):
         return True
     else:
         return False
+
+def current_transition_state(states_frame):
+    # Returns the current transition state as a string
+    transitions = calculate_group_transitions_for_window(states_frame,'15s')
+    if(not isinstance(transitions,pd.TimeSeries)):
+        raise TypeError, "Not enough gestures"
+    state, spread = transition_state_measure(transitions[-1])
+    return state, spread
+
+def calculate_group_transitions_for_window(states_frame,window_size):
+    if(not isinstance(states_frame,pd.DataFrame) or states_frame.empty):
+        return []
+    #window_size = '15s'
+    new_idea_difference_threshold = 0.15
+    transitions = create_transition_dataframe(states_frame).dropna()
+    if(transitions.empty):
+        return []
+    cols = [transitions[n] for n in transitions.columns]
+    for c in range(len(cols)):
+        if (c == 0):
+            group_transitions = cols[c]
+        else:
+            group_transitions = group_transitions + cols[c]       
+    group_transitions = group_transitions.dropna()
+    group_transitions = group_transitions.resample(window_size,how=transition_sum)
+    return group_transitions

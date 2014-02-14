@@ -142,7 +142,7 @@ pickle_file.close()
 
 def classify_touch_messages(messages):
     if not messages:
-        return []
+        return {}
     touch_frame = pd.DataFrame(messages,columns = ['time','device_id','x_pos','y_pos','velocity'])
     touch_frame = touch_frame.set_index('time')
     delta = timedelta(seconds=-5)
@@ -163,7 +163,6 @@ def pretty_print_classes(classes):
     pretty_classes = {}
     for n in names:
         pretty_classes[n] = class_names[classes[n]]
-    #print classes
     print pretty_classes
 
 def make_gesture_frame(gesture_log):
@@ -173,17 +172,6 @@ def make_gesture_frame(gesture_log):
     gesture_columns.extend(active_names)
     gesture_frame = pd.DataFrame(gesture_log, columns = gesture_columns).set_index('time')
     return gesture_frame
-
-#import sched, time
-#scheduler = sched.scheduler(time.time, time.sleep)
-#def do_something(sc): 
-#    print "Classifying"
-#    print classify_touch_messages(touch_messages)
-#    sc.enter(60, 1, do_something, (sc,))
-#
-#scheduler.enter(60, 1, do_something, (scheduler,))
-#scheduler.run()
-
 
 ##
 ## Logging data functions
@@ -211,12 +199,6 @@ def log_messages(message,log):
     log.append(message)
     if (len(log) > 1000):
         write_log(log)
-        #print("logging all the messages!")
-        #output_messages = []
-        #for m in log:
-        #    output_messages.append(str(m).replace("[","").replace("]","").replace("'","") + "\n")
-        #del live_messages[:]
-        #logging_file.writelines(output_messages)
 
 def write_log(log):
     print("writing all the messages to disk!")
@@ -245,26 +227,25 @@ def log_gestures(classes, log):
 
 
 def send_gestures(classes):
-    msg = OSC.OSCMessage("/metatone/classifier")
-    msg.extend([name,"new_idea","yes"])
-    send_message_to_sources(msg)
-    ##TODO
-    ## for each device in classes, send an OSC message 
-    ## with the gesture classification back to the device.
-    return 0
+    for n in osc_sources.keys():
+        if n in classes.keys():
+            msg = OSC.OSCMessage("/metatone/classifier")
+            msg.extend([name,"gesture",classes[n]])
+            oscClient.sendto(msg,osc_sources[n])
 
 ## OSC Sending Methods
 
-osc_sources = []
+osc_sources = {}
 
-def add_source_to_list(source):
+def add_source_to_list(name,source):
+    ## Addressing a dictionary.
     source_address = (source[0],METATONE_RECEIVING_PORT)
-    if (source_address not in osc_sources):
-        osc_sources.append(source_address)
+    if (name not in osc_sources.keys()):
+        osc_sources[name] = source_address
 
 def send_message_to_sources(msg):
-    for address in osc_sources:
-        oscClient.sendto(msg,address)
+    for name in osc_sources.keys():
+        oscClient.sendto(msg,osc_sources[name])
     log_line = [datetime.now().isoformat()]
     log_line.extend(msg)
     log_messages(log_line,live_messages)
@@ -284,7 +265,7 @@ def add_active_device(device_id):
 ## OSC Message Handling Functions
 ##
 def touch_handler(addr, tags, stuff, source):
-    add_source_to_list(source)
+    add_source_to_list(get_device_name(stuff[0]),source)
     add_active_device(stuff[0])
     if (tags == "sfff"):
         time = datetime.now()
@@ -293,21 +274,21 @@ def touch_handler(addr, tags, stuff, source):
         touch_messages.append([time,get_device_name(stuff[0]),stuff[1],stuff[2],stuff[3]])
         
 def touch_ended_handler(addr,tags,stuff,source):
-    add_source_to_list(source)
+    add_source_to_list(get_device_name(stuff[0]),source)
     add_active_device(stuff[0])
     if (tags == "s"):
         message = [datetime.now().isoformat(),"touch/ended",get_device_name(stuff[0])]
         log_messages(message,live_messages)
 
 def switch_handler(addr,tags,stuff,source):
-    add_source_to_list(source)
+    add_source_to_list(get_device_name(stuff[0]),source)
     add_active_device(stuff[0])
     if (tags == "sss"):
         message = [datetime.now().isoformat(),"switch",get_device_name(stuff[0]),stuff[1],stuff[2]]
         log_messages(message,live_messages)
         
 def onlineoffline_handler(addr,tags,stuff,source):
-    add_source_to_list(source)
+    add_source_to_list(get_device_name(stuff[0]),source)
     add_active_device(stuff[0])
     if (tags == "s"):
         message = [datetime.now().isoformat(),addr,get_device_name(stuff[0])]
@@ -315,7 +296,7 @@ def onlineoffline_handler(addr,tags,stuff,source):
         log_messages(message,live_messages)
         
 def accel_handler(addr,tags,stuff,source):
-    add_source_to_list(source)
+    add_source_to_list(get_device_name(stuff[0]),source)
     add_active_device(stuff[0])
     if (tags == "sfff"):
         #do nothing
@@ -344,11 +325,17 @@ try :
     while 1 :
         time.sleep(1)
         classes = classify_touch_messages(touch_messages)
+        send_gestures(classes)
         log_gestures(classes,classified_gestures)
         gestures = make_gesture_frame(classified_gestures)
         if(isinstance(gestures,pd.DataFrame) and not gestures.empty):
             current_transitions = transitions.calculate_transition_activity(gestures)
-            print(current_transitions)
+            #print(current_transitions)
+            try:
+                print(transitions.current_transition_state(gestures))
+            except TypeError:
+                # do nothing
+                print("Not enough gestures for transition state")
             try:
                 if(transitions.is_new_idea(current_transitions)):
                     print "New Idea!\n"
