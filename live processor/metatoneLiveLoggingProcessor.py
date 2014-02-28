@@ -229,8 +229,8 @@ def log_gestures(classes, log):
 def send_gestures(classes):
     for n in osc_sources.keys():
         if n in classes.keys():
-            msg = OSC.OSCMessage("/metatone/classifier")
-            msg.extend([name,"gesture",classes[n]])
+            msg = OSC.OSCMessage("/metatone/classifier/gesture")
+            msg.extend([n,classes[n]])
             oscClient.sendto(msg,osc_sources[n])
 
 ## OSC Sending Methods
@@ -332,15 +332,19 @@ try :
             current_transitions = transitions.calculate_transition_activity(gestures)
             #print(current_transitions)
             try:
-                print(transitions.current_transition_state(gestures))
+                state = transitions.current_transition_state(gestures)
+                print(state)
+                msg = OSC.OSCMessage("/metatone/classifier/ensemble/state")
+                msg.extend([state[0],state[1]])
+                send_message_to_sources(msg)
             except TypeError:
                 # do nothing
                 print("Not enough gestures for transition state")
             try:
                 if(transitions.is_new_idea(current_transitions)):
                     print "New Idea!\n"
-                    msg = OSC.OSCMessage("/metatone/classifier")
-                    msg.extend([name,"new_idea","yes"])
+                    msg = OSC.OSCMessage("/metatone/classifier/ensemble/event/new_idea")
+                    msg.extend([name,"new_idea"])
                     send_message_to_sources(msg)
             except TypeError:
                 print("Not a transition frame.")

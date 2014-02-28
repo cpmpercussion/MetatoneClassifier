@@ -101,7 +101,10 @@ def diag_measure_1_norm(mat):
     mat = np.array(mat)
     d = np.linalg.norm(mat.diagonal(),1) 
     m = np.linalg.norm(mat,1)
-    return m - d
+    measure = (m - d) / m 
+    # maximised at 1 when nothing on diagonal, 
+    # minimised at 0 when everything on diagonal.
+    return measure
 
 def transition_state_measure(mat):
     mat = np.array(mat)
@@ -114,6 +117,9 @@ def transition_state_measure(mat):
     vecs["divergence"] = max(rows, key=np.linalg.norm)
     state = max(vecs, key = (lambda x: np.linalg.norm(vecs.get(x))))
     spread = np.linalg.norm(vecs[state]) / np.linalg.norm(vecs[state],1)
+    rootn = np.sqrt(mat.shape[1])
+    spread = rootn * (1.0 - spread) / (1 - rootn)
+    spread = np.fabs(spread)
     return state,spread
 
 
@@ -132,7 +138,7 @@ def print_transition_plots(transitions):
 
 def calculate_transition_activity(states_frame):
     if(not isinstance(states_frame,pd.DataFrame) or states_frame.empty):
-        return []
+        return None
     ## TODO check for empty frame
     ## check for frame that's too small??
     window_size = '15s'
@@ -162,6 +168,9 @@ def is_new_idea(transitions):
         return True
     else:
         return False
+
+def is_event(states_frame):
+    return ("nothing","device_id",0)
 
 def current_transition_state(states_frame):
     # Returns the current transition state as a string
