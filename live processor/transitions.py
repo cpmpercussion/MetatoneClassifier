@@ -100,11 +100,14 @@ def diag_measure2(mat):
 def diag_measure_1_norm(mat):
     mat = np.array(mat)
     d = np.linalg.norm(mat.diagonal(),1) 
-    m = np.linalg.norm(mat,1)
+    #m = np.linalg.norm(mat,1)
+    m = sum(sum(abs(mat)))
     measure = (m - d) / m 
     # maximised at 1 when nothing on diagonal, 
     # minimised at 0 when everything on diagonal.
     return measure
+
+
 
 def transition_state_measure(mat):
     mat = np.array(mat)
@@ -115,6 +118,7 @@ def transition_state_measure(mat):
     vecs["stasis"] = diag
     vecs["convergence"] = max(cols, key=np.linalg.norm)
     vecs["divergence"] = max(rows, key=np.linalg.norm)
+    #TODO - fix this so that if there is no max, we get "development"
     state = max(vecs, key = (lambda x: np.linalg.norm(vecs.get(x))))
     spread = np.linalg.norm(vecs[state]) / np.linalg.norm(vecs[state],1)
     rootn = np.sqrt(mat.shape[1])
@@ -142,7 +146,8 @@ def calculate_transition_activity(states_frame):
     ## TODO check for empty frame
     ## check for frame that's too small??
     window_size = '15s'
-    new_idea_difference_threshold = 0.15
+    # new_idea_difference_threshold = 0.15
+    new_idea_difference_threshold = 0.80 # 1-norm version (experimental)
     transitions = create_transition_dataframe(states_frame).dropna()
     if(transitions.empty):
         return []
@@ -154,16 +159,22 @@ def calculate_transition_activity(states_frame):
             group_transitions = group_transitions + cols[c]       
     group_transitions = group_transitions.dropna()
     group_transitions = group_transitions.resample(window_size,how=transition_sum)
-    transition_activity = group_transitions.dropna().apply(diag_measure)
+    transition_activity = group_transitions.dropna().apply(diag_measure_1_norm) # changed to 1-norm version.
     transition_activity.name = 'transition_activity'
     new_ideas = transition_activity.ix[transition_activity.diff() > new_idea_difference_threshold]
     return transition_activity
 
+def calculate_new_ideas(transition_activity, threshold):
+    new_idea_difference_threshold = threshold
+    new_ideas = transition_activity.ix[transition_activity.diff() > new_idea_difference_threshold]
+    return new_ideas
+
 def is_new_idea(transitions):
     if not isinstance(transitions, pd.TimeSeries):
-        raise TypeError, "Transitions is not a TimeSeries"
+        return None
     measure = transitions[-2:].diff().dropna()
-    new_idea_difference_threshold = 0.15
+    #new_idea_difference_threshold = 0.15
+    new_idea_difference_threshold = 0.5 # 1-norm version (experimental)
     if (measure and measure[0] > new_idea_difference_threshold):
         return True
     else:
@@ -182,12 +193,10 @@ def current_transition_state(states_frame):
 
 def calculate_group_transitions_for_window(states_frame,window_size):
     if(not isinstance(states_frame,pd.DataFrame) or states_frame.empty):
-        return []
-    #window_size = '15s'
-    new_idea_difference_threshold = 0.15
+        return None
     transitions = create_transition_dataframe(states_frame).dropna()
     if(transitions.empty):
-        return []
+        return None
     cols = [transitions[n] for n in transitions.columns]
     for c in range(len(cols)):
         if (c == 0):

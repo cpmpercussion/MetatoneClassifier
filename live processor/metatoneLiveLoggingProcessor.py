@@ -142,7 +142,7 @@ pickle_file.close()
 
 def classify_touch_messages(messages):
     if not messages:
-        return {}
+        return None
     touch_frame = pd.DataFrame(messages,columns = ['time','device_id','x_pos','y_pos','velocity'])
     touch_frame = touch_frame.set_index('time')
     delta = timedelta(seconds=-5)
@@ -181,21 +181,20 @@ live_messages = []
 touch_messages = []
 classified_gestures = []
 logging_filename = datetime.now().isoformat().replace(":","-")[:19] + "-MetatoneOSCLog.txt"
-logging_file = open(logging_filename,'w')
+logging_file = open("logs/"+logging_filename,'w')
 
 def restart_log():
     live_messages = []
     touch_messages = []
     classified_gestures = []
     logging_filename = datetime.now().isoformat().replace(":","-")[:19] + "-MetatoneOSCLog.txt"
-    logging_file = open(logging_filename,'w')
+    logging_file = open("logs/"+logging_filename,'w')
 
 def close_log():
     write_log(live_messages)
     logging_file.close()
 
 def log_messages(message,log):
-    #print(message)
     log.append(message)
     if (len(log) > 1000):
         write_log(log)
