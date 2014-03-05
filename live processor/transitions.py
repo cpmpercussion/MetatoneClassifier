@@ -108,7 +108,21 @@ def diag_measure_1_norm(mat):
     return measure
 
 
+## Ratio of Vector to Matrix using the 1-Norm.
+def vector_ratio(mat,vec):
+    return np.linalg.norm(vec,1) / sum(sum(abs(mat)))
 
+## Spread of data along a vector - 0 if all data in one entry, 1 if evenly spread.
+def vector_spread(vec):
+    spread = np.linalg.norm(vec) / np.linalg.norm(vec,1)
+    rootn =  np.sqrt(len(vec))
+    spread = rootn * (1.0 - spread) / (1 - rootn)
+    spread = np.fabs(spread)
+    return spread
+
+## Chooses the vector with the most data in the matrix and 
+## returns a state interpretation as well as the spread of data along
+## that vector
 def transition_state_measure(mat):
     mat = np.array(mat)
     diag = mat.diagonal()
@@ -119,13 +133,41 @@ def transition_state_measure(mat):
     vecs["convergence"] = max(cols, key=np.linalg.norm)
     vecs["divergence"] = max(rows, key=np.linalg.norm)
     #TODO - fix this so that if there is no max, we get "development"
-    state = max(vecs, key = (lambda x: np.linalg.norm(vecs.get(x))))
-    spread = np.linalg.norm(vecs[state]) / np.linalg.norm(vecs[state],1)
-    rootn = np.sqrt(mat.shape[1])
-    spread = rootn * (1.0 - spread) / (1 - rootn)
-    spread = np.fabs(spread)
-    return state,spread
+    if (dict_vecs_equal_under_norm(vecs)):
+        state = dict_vecs_special_case_state(vecs)
+    else:
+        state = max(vecs, key = (lambda x: np.linalg.norm(vecs.get(x))))
+    
+    if (state == 'development'):
+        spread = 1 - vector_spread(diag)
+        ratio = 1 - vector_ratio(mat,diag)
+    else:    
+        spread = vector_spread(vecs[state])
+        ratio = vector_ratio(mat,vecs[state])
+    return state,spread,ratio
 
+def dict_vecs_equal_under_norm(vecs):
+    normvecs = [np.linalg.norm(v) for k,v in vecs.iteritems()]
+    mults = [x for x in normvecs if normvecs.count(x) > 1]
+    if mults:
+        return True
+    else:
+        return False
+
+def dict_vecs_special_case_state(vecs):
+    state = None
+    normvecs = {k: np.linalg.norm(v) for k,v in vecs.iteritems()}
+    singles = [k for k,v in normvecs.iteritems() if normvecs.values().count(v) == 1]
+    if (not singles):
+        #stasis
+        state = 'stasis'
+    elif (len(singles) == 1 and 'stasis' in singles):
+        state ='development'
+    elif (len(singles) == 1 and 'convergence' in singles):
+        state ='divergence'
+    elif (len(singles) == 1 and 'divergence' in singles):
+        state ='convergence'
+    return state
 
 def transition_sum(tran_arr):
     out = np.sum(tran_arr,axis=0).tolist()
@@ -133,9 +175,10 @@ def transition_sum(tran_arr):
 
 def print_transition_plots(transitions):
     for n in range(len(transitions)):
+        state,spread,ratio = transition_state_measure(transitions.ix[n])
         title = transitions.index[n].isoformat()
         print title
-        plt.title(title)
+        plt.title(title + " " + state + " " + str(spread) + " " + str(ratio))
         plt.imshow(transitions.ix[n], cmap=plt.cm.binary, interpolation='nearest')
         plt.savefig(title.replace(":","_") + '.png', dpi=150, format="png")
         plt.close()
@@ -143,10 +186,7 @@ def print_transition_plots(transitions):
 def calculate_transition_activity(states_frame):
     if(not isinstance(states_frame,pd.DataFrame) or states_frame.empty):
         return None
-    ## TODO check for empty frame
-    ## check for frame that's too small??
     window_size = '15s'
-    # new_idea_difference_threshold = 0.15
     new_idea_difference_threshold = 0.80 # 1-norm version (experimental)
     transitions = create_transition_dataframe(states_frame).dropna()
     if(transitions.empty):
@@ -161,7 +201,7 @@ def calculate_transition_activity(states_frame):
     group_transitions = group_transitions.resample(window_size,how=transition_sum)
     transition_activity = group_transitions.dropna().apply(diag_measure_1_norm) # changed to 1-norm version.
     transition_activity.name = 'transition_activity'
-    new_ideas = transition_activity.ix[transition_activity.diff() > new_idea_difference_threshold]
+    #new_ideas = transition_activity.ix[transition_activity.diff() > new_idea_difference_threshold]
     return transition_activity
 
 def calculate_new_ideas(transition_activity, threshold):
@@ -187,9 +227,9 @@ def current_transition_state(states_frame):
     # Returns the current transition state as a string
     transitions = calculate_group_transitions_for_window(states_frame,'15s')
     if(not isinstance(transitions,pd.TimeSeries)):
-        raise TypeError, "Not enough gestures"
-    state, spread = transition_state_measure(transitions[-1])
-    return state, spread
+        return None
+    state, spread, ratio = transition_state_measure(transitions[-1])
+    return state, spread, ratio
 
 def calculate_group_transitions_for_window(states_frame,window_size):
     if(not isinstance(states_frame,pd.DataFrame) or states_frame.empty):
