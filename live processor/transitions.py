@@ -1,4 +1,6 @@
+##
 ## Transition Functions Module
+## Charles Martin 2013-2014
 ## 
 
 
@@ -139,7 +141,7 @@ def transition_state_measure(mat):
         state = max(vecs, key = (lambda x: np.linalg.norm(vecs.get(x))))
     
     if (state == 'development'):
-        spread = 1 - vector_spread(diag)
+        spread = 1 # not a great choice todo better idea.
         ratio = 1 - vector_ratio(mat,diag)
     else:    
         spread = vector_spread(vecs[state])
@@ -183,22 +185,40 @@ def print_transition_plots(transitions):
         plt.savefig(title.replace(":","_") + '.png', dpi=150, format="png")
         plt.close()
 
+# def calculate_transition_activity(states_frame):
+#     if(not isinstance(states_frame,pd.DataFrame) or states_frame.empty):
+#         return None
+#     window_size = '15s'
+#     new_idea_difference_threshold = 0.80 # 1-norm version (experimental)
+#     transitions = create_transition_dataframe(states_frame).dropna()
+#     if(transitions.empty):
+#         return []
+#     cols = [transitions[n] for n in transitions.columns]
+#     for c in range(len(cols)):
+#         if (c == 0):
+#             group_transitions = cols[c]
+#         else:
+#             group_transitions = group_transitions + cols[c]       
+#     group_transitions = group_transitions.dropna()
+#     group_transitions = group_transitions.resample(window_size,how=transition_sum)
+#     transition_activity = group_transitions.dropna().apply(diag_measure_1_norm) # changed to 1-norm version.
+#     transition_activity.name = 'transition_activity'
+#     #new_ideas = transition_activity.ix[transition_activity.diff() > new_idea_difference_threshold]
+#     return transition_activity
+
 def calculate_transition_activity(states_frame):
     if(not isinstance(states_frame,pd.DataFrame) or states_frame.empty):
         return None
     window_size = '15s'
+    return calculate_transition_activity_for_window(states_frame,window_size)
+
+def calculate_transition_activity_for_window(states_frame,window_size):
+    if(not isinstance(states_frame,pd.DataFrame) or states_frame.empty):
+        return None
     new_idea_difference_threshold = 0.80 # 1-norm version (experimental)
-    transitions = create_transition_dataframe(states_frame).dropna()
-    if(transitions.empty):
-        return []
-    cols = [transitions[n] for n in transitions.columns]
-    for c in range(len(cols)):
-        if (c == 0):
-            group_transitions = cols[c]
-        else:
-            group_transitions = group_transitions + cols[c]       
-    group_transitions = group_transitions.dropna()
-    group_transitions = group_transitions.resample(window_size,how=transition_sum)
+    group_transitions = calculate_group_transitions_for_window(states_frame,window_size)
+    if (isinstance(group_transitions,type(None))):
+        return None
     transition_activity = group_transitions.dropna().apply(diag_measure_1_norm) # changed to 1-norm version.
     transition_activity.name = 'transition_activity'
     #new_ideas = transition_activity.ix[transition_activity.diff() > new_idea_difference_threshold]

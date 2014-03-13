@@ -73,6 +73,8 @@ device_names = {
     '1D7BCDC1-5AAB-441B-9C92-C3F00B6FF930':'jonathan', #old
     'D346C530-BBC9-4C1E-9714-F17654BCC3BC':'yvonne', # new names
     '30CB5985-FC54-43FC-8B77-C8BE24AA443C':'charles', # new names
+    'E9F60D46-EE37-489A-AD91-4ABC99E2BC80':'jonathan', # new names
+    '35F73141-D3D5-4F00-9A28-EC5449A1A73D':'christina', #new names
     '16742ED0-5061-4FC8-9BF6-6F23FF76D767':'charles_ipadair'
 }
 
@@ -166,7 +168,7 @@ def pretty_print_classes(classes):
 
 def make_gesture_frame(gesture_log):
     if not gesture_log:
-        return []
+        return pd.DataFrame(columns = ['time'])
     gesture_columns = ['time']
     gesture_columns.extend(active_names)
     gesture_frame = pd.DataFrame(gesture_log, columns = gesture_columns).set_index('time')
@@ -195,7 +197,7 @@ def close_log():
 
 def log_messages(message,log):
     log.append(message)
-    if (len(log) > 1000):
+    if (len(log) > 1000000):
         write_log(log)
 
 def write_log(log):
@@ -225,11 +227,17 @@ def log_gestures(classes, log):
 
 
 def send_gestures(classes):
+    class_names = ['n','ft','st','fs','fsa','vss','bs','ss','c']
     for n in osc_sources.keys():
         if n in classes.keys():
             msg = OSC.OSCMessage("/metatone/classifier/gesture")
-            msg.extend([n,classes[n]])
-            oscClient.sendto(msg,osc_sources[n])
+            msg.extend([n,class_names[classes[n]]])
+            try:
+                oscClient.sendto(msg,osc_sources[n])
+            except OSC.OSCClientError:
+                print("Couldn't send message to " + name)
+            except socket.error:
+                print("Couldn't send message to " + name + ", bad address.")
 
 ## OSC Sending Methods
 
@@ -243,7 +251,13 @@ def add_source_to_list(name,source):
 
 def send_message_to_sources(msg):
     for name in osc_sources.keys():
-        oscClient.sendto(msg,osc_sources[name])
+        try:
+            oscClient.sendto(msg,osc_sources[name])
+            #print("Message sent to " + name)
+        except OSC.OSCClientError:
+            print("Couldn't send message to " + name)
+        except socket.error:
+            print("Couldn't send message to " + name + ", bad address.")
     log_line = [datetime.now().isoformat()]
     log_line.extend(msg)
     log_messages(log_line,live_messages)
@@ -288,9 +302,9 @@ def switch_handler(addr,tags,stuff,source):
 def onlineoffline_handler(addr,tags,stuff,source):
     add_source_to_list(get_device_name(stuff[0]),source)
     add_active_device(stuff[0])
-    if (tags == "s"):
+    if (tags == "ss"):
         message = [datetime.now().isoformat(),addr,get_device_name(stuff[0])]
-        print(get_device_name(stuff[0]) + " is online.")
+        print(get_device_name(stuff[0]) + " is online with "+stuff[1]+".")
         log_messages(message,live_messages)
         
 def accel_handler(addr,tags,stuff,source):
@@ -300,12 +314,22 @@ def accel_handler(addr,tags,stuff,source):
         #do nothing
         message = [datetime.now().isoformat(),"accel",get_device_name(stuff[0]),stuff[1],stuff[2],stuff[3]]
 
+def metatone_app_handler(addr,tags,stuff,source):
+    add_source_to_list(get_device_name(stuff[0]),source)
+    add_active_device(stuff[0])
+    if (tags == "sss"):
+        message = [datetime.now().isoformat(),"metatone",get_device_name(stuff[0]),stuff[1],stuff[2]]
+        log_messages(message,live_messages)
+
+
+
 s.addMsgHandler("/metatone/touch", touch_handler)
 s.addMsgHandler("/metatone/touch/ended", touch_ended_handler)
 s.addMsgHandler("/metatone/switch", switch_handler)
 s.addMsgHandler("/metatone/online", onlineoffline_handler)
 s.addMsgHandler("/metatone/offline", onlineoffline_handler)
 s.addMsgHandler("/metatone/acceleration", accel_handler)
+s.addMsgHandler("/metatone/app",metatone_app_handler)
 
 print "Registered Callback-functions are :"
 for addr in s.getOSCAddressSpace():
@@ -329,14 +353,14 @@ try :
             log_gestures(classes,classified_gestures)
             pretty_print_classes(classes)
             #print(current_transitions)
-        gestures = make_gesture_frame(classified_gestures)
+        gestures = make_gesture_frame(classified_gestures).fillna(0)
         current_transitions = transitions.calculate_transition_activity(gestures)
         
         state = transitions.current_transition_state(gestures)
         if (state):
             print(state)
             msg = OSC.OSCMessage("/metatone/classifier/ensemble/state")
-            msg.extend([state[0],state[1]])
+            msg.extend([state[0],state[1],state[2]])
             send_message_to_sources(msg)
         
         if(transitions.is_new_idea(current_transitions)):
