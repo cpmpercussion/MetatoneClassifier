@@ -75,7 +75,8 @@ device_names = {
     '30CB5985-FC54-43FC-8B77-C8BE24AA443C':'charles', # new names
     'E9F60D46-EE37-489A-AD91-4ABC99E2BC80':'jonathan', # new names
     '35F73141-D3D5-4F00-9A28-EC5449A1A73D':'christina', #new names
-    '16742ED0-5061-4FC8-9BF6-6F23FF76D767':'charles_ipadair'
+    '16742ED0-5061-4FC8-9BF6-6F23FF76D767':'charles_ipadair',
+    '0E98DD2F-94C2-45EE-BEC5-18718CA36D8B':'charles_ipadair'
 }
 
 columns = ['time','device_id','x_pos','y_pos','velocity']
@@ -144,7 +145,7 @@ pickle_file.close()
 def classify_touch_messages(messages):
     if not messages:
         return None
-    touch_frame = pd.DataFrame(messages,columns = ['time','device_id','x_pos','y_pos','velocity'])
+    touch_frame = pd.DataFrame(messages,columns = ['time','device_id','x_pos','y_pos','velocity']) ## This line can fail with a ValueError exception
     touch_frame = touch_frame.set_index('time')
     delta = timedelta(seconds=-5)
     time_now = datetime.now()
@@ -346,8 +347,11 @@ startOscServer()
 try :
     while 1 :
         time.sleep(1)
-        classes = classify_touch_messages(touch_messages)
-        
+        try:
+            classes = classify_touch_messages(touch_messages)
+        except ValueError:
+            print("Couldn't classify messages.")
+
         if (classes):
             send_gestures(classes)
             log_gestures(classes,classified_gestures)
