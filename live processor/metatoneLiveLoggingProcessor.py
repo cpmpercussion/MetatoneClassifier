@@ -20,12 +20,14 @@ import transitions
 ip = ([ip for ip in socket.gethostbyname_ex(socket.gethostname())[2] if not ip.startswith("127.")][:1])
 #ip = ([ip for ip in socket.gethostbyname_ex(socket.gethostname())[2] if not ip.startswith("127.")][1:])
 
-name    = "Metatone LiveProc"
+name    = "MetatoneLiveProc"
 port    = 9000
 #receive_address = "10.0.1.2"
 receive_address = (ip[0], port)
 
 METATONE_RECEIVING_PORT = 51200
+
+#NEW_IDEA_THRESHOLD = 0.3
 
 # OSC Server. there are three different types of server. 
 s = OSC.OSCServer(receive_address) # basic
@@ -346,34 +348,38 @@ startOscServer()
 ##
 try :
     while 1 :
-        time.sleep(1)
         try:
-            classes = classify_touch_messages(touch_messages)
-        except ValueError:
-            print("Couldn't classify messages.")
+            time.sleep(1)
+            try:
+                classes = classify_touch_messages(touch_messages)
+            except ValueError:
+                print("Couldn't classify messages.")
 
-        if (classes):
-            send_gestures(classes)
-            log_gestures(classes,classified_gestures)
-            pretty_print_classes(classes)
-            #print(current_transitions)
-        gestures = make_gesture_frame(classified_gestures).fillna(0)
-        current_transitions = transitions.calculate_transition_activity(gestures)
-        
-        state = transitions.current_transition_state(gestures)
-        if (state):
-            print(state)
-            msg = OSC.OSCMessage("/metatone/classifier/ensemble/state")
-            msg.extend([state[0],state[1],state[2]])
-            send_message_to_sources(msg)
-        
-        if(transitions.is_new_idea(current_transitions)):
-            print "New Idea!\n"
-            msg = OSC.OSCMessage("/metatone/classifier/ensemble/event/new_idea")
-            msg.extend([name,"new_idea"])
-            send_message_to_sources(msg)
-
-except KeyboardInterrupt :
+            if (classes):
+                send_gestures(classes)
+                log_gestures(classes,classified_gestures)
+                pretty_print_classes(classes)
+                #print(current_transitions)
+            gestures = make_gesture_frame(classified_gestures).fillna(0)
+            current_transitions = transitions.calculate_transition_activity(gestures)
+            
+            state = transitions.current_transition_state(gestures)
+            if (state):
+                print(state)
+                msg = OSC.OSCMessage("/metatone/classifier/ensemble/state")
+                msg.extend([state[0],state[1],state[2]])
+                send_message_to_sources(msg)
+            
+            if(transitions.is_new_idea(current_transitions)):
+                print "New Idea!\n"
+                msg = OSC.OSCMessage("/metatone/classifier/ensemble/event/new_idea")
+                msg.extend([name,"new_idea"])
+                send_message_to_sources(msg)
+        except KeyboardInterrupt:
+            raise
+        except:
+            print("Couldn't perform analysis - exception")
+except KeyboardInterrupt:
     print "\nClosing OSCServer."
     close_server()
     close_log()
@@ -405,14 +411,6 @@ except KeyboardInterrupt :
 ## /metatone/acceleration sfff
 ## deviceID X Y Z
 #
-
-
-# {'charles': array([8])}
-# {'charles': array([8])}
-# OSCServer: KeyError on request from 10.0.0.52:57120: 'F'
-# {'charles': array([8])}
-# {'charles': array([8])}
-# {'charles': array([8])}
 
 ## TODO 2013-12-05 get it to go back to "n" when touches stop. Currently sits on most recent gesture.
 

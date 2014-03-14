@@ -234,11 +234,24 @@ def is_new_idea(transitions):
         return None
     measure = transitions[-2:].diff().dropna()
     #new_idea_difference_threshold = 0.15
-    new_idea_difference_threshold = 0.5 # 1-norm version (experimental)
+    #new_idea_difference_threshold = 0.5 # 1-norm version (experimental)
+    new_idea_difference_threshold = 0.3 # new 14/3/2014
     if (measure and measure[0] > new_idea_difference_threshold):
         return True
     else:
         return False
+
+def is_new_idea_with_threshold(transitions, threshold):
+    if not isinstance(transitions, pd.TimeSeries):
+        return None
+    measure = transitions[-2:].diff().dropna()
+    #new_idea_difference_threshold = 0.15
+    new_idea_difference_threshold = threshold # 1-norm version (experimental)
+    if (measure and measure[0] > new_idea_difference_threshold):
+        return True
+    else:
+        return False
+
 
 def is_event(states_frame):
     return ("nothing","device_id",0)
