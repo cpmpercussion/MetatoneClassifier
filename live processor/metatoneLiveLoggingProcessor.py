@@ -306,7 +306,7 @@ def onlineoffline_handler(addr,tags,stuff,source):
     add_source_to_list(get_device_name(stuff[0]),source)
     add_active_device(stuff[0])
     if (tags == "ss"):
-        message = [datetime.now().isoformat(),addr,get_device_name(stuff[0])]
+        message = [datetime.now().isoformat(),addr,get_device_name(stuff[0]),stuff[1]]
         print(get_device_name(stuff[0]) + " is online with "+stuff[1]+".")
         log_messages(message,live_messages)
         
@@ -400,8 +400,8 @@ except KeyboardInterrupt:
 ## deviceID switchname switchstate
 #
 ## Online
-## /metatone/online s
-## deviceID
+## /metatone/online s s
+## deviceID appID
 #
 ## Offline
 ## /metatone/offline s
