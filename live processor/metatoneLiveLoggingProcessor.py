@@ -78,7 +78,8 @@ device_names = {
     'E9F60D46-EE37-489A-AD91-4ABC99E2BC80':'jonathan', # new names
     '35F73141-D3D5-4F00-9A28-EC5449A1A73D':'christina', #new names
     '16742ED0-5061-4FC8-9BF6-6F23FF76D767':'charles_ipadair',
-    '0E98DD2F-94C2-45EE-BEC5-18718CA36D8B':'charles_ipadair'
+    '0E98DD2F-94C2-45EE-BEC5-18718CA36D8B':'charles_ipadair',
+    '6EAD764A-E424-48EB-9672-03EF44679A5E':'iPad2-64-white'
 }
 
 columns = ['time','device_id','x_pos','y_pos','velocity']
