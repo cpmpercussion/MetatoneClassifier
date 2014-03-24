@@ -5,10 +5,8 @@ from datetime import datetime
 from sklearn.ensemble import RandomForestClassifier
 import pickle
 
-
 ##
 ## Setup Classifier
-##
 ##
 
 ## Int values for Gesture codes.
@@ -23,7 +21,6 @@ gesture_codes = {
     'SS': 7,
     'C': 8,
     '?': 9}
-
 
 ## Column names in the feature vectors:
 feature_vector_columns = ['centroid_x','centroid_y','std_x','std_y','freq','movement_freq','touchdown_freq','velocity']
@@ -85,16 +82,11 @@ training_vectors = feature_vectors.take(sampler)
 input_vectors = training_vectors[feature_vector_columns]
 targets = training_vectors['gesture']
 
-
 # Train the classifier
 classifier = RandomForestClassifier(n_estimators=100, max_features=3,compute_importances=True)
 classifier = classifier.fit(input_vectors, targets)
 
-
 ## Save the classifier
 pickle_file = open( "20130701data-classifier.p", "wb" )
-
 pickle.dump(classifier, pickle_file)
-
 pickle_file.close()
-
