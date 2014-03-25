@@ -6,6 +6,7 @@ import matplotlib.dates as dates
 from matplotlib.lines import Line2D
 from mpl_toolkits.mplot3d import Axes3D
 from datetime import timedelta
+from ggplot import *
 
 
 directory_path = '/Users/charles/Dropbox/Metatone/20140317/metatoneset-performance/'
@@ -30,22 +31,21 @@ transition_states = {
     'convergence':1,
     'divergence':2,
     'development':3}
-transitions_frame['transition_type'].apply(lambda s: transition_states[s.replace(' ','')])
+
+## Transitions frame with number for 
+#transitions_frame['transition_type'].apply(lambda s: transition_states[s.replace(' ','')])
 
 #TODO use the players in the performance...
-performers = touches['device_id'].unique()
+#performers = touches['device_id'].unique()
 
 #TODO - change transitions frame to use states so it can be plotted.
-transitions.print_transition_plots(transitions.calculate_group_transitions_for_window(d,'15s'))
+#transitions.print_transition_plots(transitions.calculate_group_transitions_for_window(d,'15s'))
 
 #TODO - some kind of "activity" plot like....
-activity = touches['device_id'].resample('S', how='count')
+#activity = touches['device_id'].resample('S', how='count')
 
 
-group_trans.apply(lambda s: pd.Series({'state':transitions.transition_state_measure, 'spread':s-1, 'ratio':}))
-
-
-state, spread, ratio = transition_state_measure(transitions[-1])
+#group_trans.apply(lambda s: pd.Series({'state':transitions.transition_state_measure, 'spread':s-1, 'ratio':}))
 
 def plot_score_and_changeyness(gestures_frame,window,threshold):
     window_seconds = window #15
