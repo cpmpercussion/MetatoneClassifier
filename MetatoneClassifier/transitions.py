@@ -3,7 +3,6 @@
 ## Charles Martin 2013-2014
 ## 
 
-
 import pandas as pd
 import numpy as np
 import itertools as it
@@ -229,18 +228,12 @@ def calculate_new_ideas(transition_activity, threshold):
     new_ideas = transition_activity.ix[transition_activity.diff() > new_idea_difference_threshold]
     return new_ideas
 
-def is_new_idea(transitions):
-    if not isinstance(transitions, pd.TimeSeries):
-        return None
-    measure = transitions[-2:].diff().dropna()
-    #new_idea_difference_threshold = 0.15
-    #new_idea_difference_threshold = 0.5 # 1-norm version (experimental)
-    new_idea_difference_threshold = 0.3 # new 14/3/2014
-    if (measure and measure[0] > new_idea_difference_threshold):
-        return True
-    else:
-        return False
 
+
+
+#
+# Returns True if current transitions suggest a "new_idea" event according to the current threshold.
+#
 def is_new_idea_with_threshold(transitions, threshold):
     if not isinstance(transitions, pd.TimeSeries):
         return None
@@ -252,10 +245,25 @@ def is_new_idea_with_threshold(transitions, threshold):
     else:
         return False
 
+#
+# Shortcut for is_new_idea_with_threshold with built in threshold
+#
+def is_new_idea(transitions):
+    if not isinstance(transitions, pd.TimeSeries):
+        return None
+    #new_idea_difference_threshold = 0.15
+    #new_idea_difference_threshold = 0.5 # 1-norm version (experimental)
+    new_idea_difference_threshold = 0.3 # new 14/3/2014
+    if (is_new_idea_with_threshold(transitions,new_idea_difference_threshold)):
+        return True
+    else:
+        return False
 
-def is_event(states_frame):
-    return ("nothing","device_id",0)
 
+
+#
+# Returns the Current Transition State (string), spread (float), and ratio(float)
+#
 def current_transition_state(states_frame):
     # Returns the current transition state as a string
     transitions = calculate_group_transitions_for_window(states_frame,'15s')
@@ -279,3 +287,10 @@ def calculate_group_transitions_for_window(states_frame,window_size):
     group_transitions = group_transitions.dropna()
     group_transitions = group_transitions.resample(window_size,how=transition_sum)
     return group_transitions
+
+
+#
+# TODO - fixup functionality for this method - should return different kinds of events (or something for no event).
+#
+def is_event(states_frame):
+    return ("nothing","device_id",0)
