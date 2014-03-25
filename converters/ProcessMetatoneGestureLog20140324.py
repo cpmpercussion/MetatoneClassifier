@@ -26,20 +26,13 @@ device_names = {
     '46D2EBCA-A5BD-448A-8DB5-69C39D5220EE':'jonathan_iPad2'
 }
 
-#input_filename = '/Users/charles/Dropbox/Metatone/20140317/metatoneset-performance/2014-03-17T18-30-57-MetatoneOSCLog-gestures.csv'
-input_filename = '/Users/charles/Dropbox/Metatone/20140317/studyinbowls-performance/2014-03-17T18-09-46-MetatoneOSCLog-gestures.csv'
+input_filename = '/Users/charles/Dropbox/Metatone/20140317/metatoneset-performance/2014-03-17T18-30-57-MetatoneOSCLog-gestures.csv'
+#input_filename = '/Users/charles/Dropbox/Metatone/20140317/studyinbowls-performance/2014-03-17T18-09-46-MetatoneOSCLog-gestures.csv'
 
 
 gesture_filename = input_filename.replace("-gestures.csv","") + '-better_gestures.csv'
-
-
 raw_file = open(input_filename, 'r')
-
 gesture_file = open(gesture_filename,'w')
-
-# column_names = {
-#     'time':0
-# }
 
 gesture_column_names = ['time']
 all_gesture_lines = []

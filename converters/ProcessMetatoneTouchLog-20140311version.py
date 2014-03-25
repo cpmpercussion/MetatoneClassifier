@@ -1,15 +1,7 @@
-#import pandas as pd
-#import numpy as np
-#from datetime import timedelta
-#from datetime import datetime
 #import argparse
-
-
 #parser = argparse.ArgumentParser(description='Convert a Metatone OSC Logger file into a useful CSV.')
 #parser.add_argument('filename',help='A Metatone Supercollider OSC Log to be converted.')
-
 #args = parser.parse_args()
-
 #input_filename = args.filename
 
 device_names = {
@@ -27,9 +19,8 @@ device_names = {
 }
 
 #input_filename = '/Users/charles/Dropbox/Metatone/20140317/metatoneset-performance/2014-03-17T18-30-57-MetatoneOSCLog.txt'
-input_filename = '/Users/charles/Dropbox/Metatone/20140317/studyinbowls-performance/2014-03-17T18-09-46-MetatoneOSCLog.txt'
 #input_filename = '/Users/charles/Dropbox/Metatone/20140317/studyinbowls-performance/2014-03-17T18-09-46-MetatoneOSCLog.txt'
-
+input_filename = '/Users/charles/Dropbox/Metatone/20140317/studyinbowls-performance/2014-03-17T18-09-46-MetatoneOSCLog.txt'
 
 touch_filename = input_filename.replace(".txt","") + '-touches.csv'
 gesture_filename = input_filename.replace(".txt","") + '-gestures.csv'
@@ -38,9 +29,7 @@ events_filename = input_filename.replace(".txt","") + '-events.csv'
 metatone_filename = input_filename.replace(".txt","") + '-metatone.csv'
 online_filename = input_filename.replace(".txt","") + '-online.csv'
 
-
 raw_file = open(input_filename, 'r')
-
 touch_file = open(touch_filename,'w')
 gesture_file = open(gesture_filename,'w')
 transitions_file = open(transitions_filename,'w')
@@ -48,9 +37,7 @@ events_file = open(events_filename,'w')
 metatone_file = open(metatone_filename,'w')
 online_file = open(online_filename,'w')
 
-
 touch_file.write('time,device_id,x_pos,y_pos,velocity\n')
-# gesture_file.write('time,name1,gesture1,name2,gesture2,name3,gesture3,name4,gesture4,name5,gesture5,name6,gesture6,name7,gesture7,name8,gesture8\n')
 transitions_file.write('time,transition_type,spread,ratio\n')
 events_file.write('time,name,event_type\n')
 metatone_file.write('time,type,device_id,label,value\n')
@@ -64,8 +51,11 @@ for line in raw_file:
         if device_id in line:
             line = line.replace(device_id,device_names[device_id])
 
-    if "touch, " in line:
-        touch_file.write(line.replace("touch, ",""))
+    line = line.replace(" ","")
+
+    if "touch," in line:
+        #touch_file.write(line.replace("touch, ",""))
+        touch_file.write(line.replace("touch,",""))
     if "MetatoneLiveProc" in line:
         events_file.write(line)
     if "metatone," in line:
@@ -76,30 +66,29 @@ for line in raw_file:
         transitions_file.write(line)
 
     if "/classifier/gestures" in line:
-        line = line.replace("/classifier/gestures, ","")
+        #line = line.replace("/classifier/gestures, ","")
+        line = line.replace("/classifier/gestures,","")
         line = line.replace('\n','')
-        parts = line.split(", ")
+        parts = line.split(",")
         gestures = parts[1:]
         line_gestures = {'time':parts[0]}
         for n in range(len(gestures)/2):
             line_gestures[gestures[2*n]] = gestures[2*n + 1]
             if gestures[2*n] not in gesture_column_names:
                 gesture_column_names.append(gestures[2*n])
-
         out_data = [line_gestures[n] for n in gesture_column_names]
         all_gesture_lines.append(out_data)
 
 # write the gesture file:
 # write the header.
-gesture_file.write(', '.join(gesture_column_names) + '\n')
+gesture_file.write(','.join(gesture_column_names) + '\n')
 # write each line.
 for row in all_gesture_lines:
     # now write the line
-    out_data = ', '.join(row) + '\n'
+    out_data = ','.join(row) + '\n'
     gesture_file.write(out_data)
 
 raw_file.close()
-
 touch_file.close()
 gesture_file.close()
 transitions_file.close()
