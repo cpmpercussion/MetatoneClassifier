@@ -20,7 +20,7 @@ device_names = {
 
 #input_filename = '/Users/charles/Dropbox/Metatone/20140317/metatoneset-performance/2014-03-17T18-30-57-MetatoneOSCLog.txt'
 #input_filename = '/Users/charles/Dropbox/Metatone/20140317/studyinbowls-performance/2014-03-17T18-09-46-MetatoneOSCLog.txt'
-input_filename = '/Users/charles/Dropbox/Metatone/20140317/studyinbowls-performance/2014-03-17T18-09-46-MetatoneOSCLog.txt'
+input_filename = '/Users/charles/Dropbox/Metatone/20140317/studyinbowls-rehearsal/2014-03-17T17-40-14-MetatoneOSCLog.txt'
 
 touch_filename = input_filename.replace(".txt","") + '-touches.csv'
 gesture_filename = input_filename.replace(".txt","") + '-gestures.csv'
