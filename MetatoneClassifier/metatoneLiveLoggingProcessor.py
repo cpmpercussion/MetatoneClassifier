@@ -63,11 +63,11 @@ sdRef = pybonjour.DNSServiceRegister(name = name,
                                      callBack = register_callback)
 
 def startOscServer():
-    print "\nStarting OSCServer. Use ctrl-C to quit."
-    print "IP Address is: " + ip[0]
+    print("\nStarting OSCServer. Use ctrl-C to quit.")
+    print("IP Address is: " + receive_address[0])
     global st 
     st = threading.Thread(target = s.serve_forever)
-    st.start()    
+    st.start()
 
 def close_server():
     sdRef.close()
