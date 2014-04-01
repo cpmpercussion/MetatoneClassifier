@@ -14,6 +14,13 @@ import pickle
 import transitions
 
 ##
+METATONE_RECEIVING_PORT = 51200
+#NEW_IDEA_THRESHOLD = 0.3
+PICKLED_CLASSIFIER_FILE = '2013-07-01-TrainingData-classifier.p'
+##
+
+
+##
 ## Set up OSC server and Bonjour Service
 ##
 
@@ -29,9 +36,7 @@ except IndexError:
     receive_address = ("107.170.207.234",port)
 
 
-METATONE_RECEIVING_PORT = 51200
 
-#NEW_IDEA_THRESHOLD = 0.3
 
 # OSC Server. there are three different types of server. 
 s = OSC.OSCServer(receive_address) # basic
