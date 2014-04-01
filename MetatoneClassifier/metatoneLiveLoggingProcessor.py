@@ -150,7 +150,7 @@ def feature_frame(frame):
     return fframe.fillna(0)
 
 ## Load the classifier
-pickle_file = open( "20130701data-classifier.p", "rb" )
+pickle_file = open(PICKLED_CLASSIFIER_FILE, "rb" )
 classifier = pickle.load(pickle_file)
 pickle_file.close()
 
