@@ -23,7 +23,11 @@ ip = ([ip for ip in socket.gethostbyname_ex(socket.gethostname())[2] if not ip.s
 name    = "MetatoneLiveProc"
 port    = 9000
 #receive_address = "10.0.1.2"
-receive_address = (ip[0], port)
+try:
+    receive_address = (ip[0], port)
+except IndexError:
+    receive_address = ("107.170.207.234",port)
+
 
 METATONE_RECEIVING_PORT = 51200
 
