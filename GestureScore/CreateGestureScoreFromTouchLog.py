@@ -9,6 +9,10 @@ from sklearn.ensemble import RandomForestClassifier
 import pickle
 import argparse
 
+#classifier_file = "20130701data-classifier.p"
+#classifier_file = "2013-07-01-TrainingData-classifier.p"
+classifier_file = "2013-07-01-TrainingData1s-classifier.p"
+
 
 parser = argparse.ArgumentParser(description='Classify gestures from a Metatone Touch CSV with a CSV and PNG score output.')
 parser.add_argument('filename',help='A Metatone Touch CSV file to be classified.')
@@ -18,7 +22,7 @@ args = parser.parse_args()
 touchlog_file = args.filename
 
 ## Load the classifier
-pickle_file = open( "20130701data-classifier.p", "rb" )
+pickle_file = open( classifier_file, "rb" )
 classifier = pickle.load(pickle_file)
 pickle_file.close()
 
@@ -67,10 +71,6 @@ def feature_frame(frame):
 ##
 ##  Load up the next video data for Tests.
 ##
-#touchlog_file = '/Users/charles/Dropbox/Metatone/20130427/MetatoneOSCLog-20130427-17h29.txt-touches.csv'
-#touchlog_file = '/Users/charles/Dropbox/Metatone/20130803/performance/OSCLog20130803-18h37m03s.txt-touches.csv'
-
-
 messages = pd.read_csv(touchlog_file, index_col="time", parse_dates=True)
 names = messages['device_id'].unique()
 gesture_pred = pd.DataFrame(messages['device_id'].resample('5s',how='count'))
@@ -79,8 +79,6 @@ ticks = gesture_pred.resample('10s').index.to_pydatetime()
 
 for n in names:
     performer_features = feature_frame(messages.ix[messages['device_id'] == n])
-    
-    #performer_features['pred'] = map(int,classifier.predict(performer_features[feature_vector_columns]))
     
     performer_features['pred'] = classifier.predict(performer_features[feature_vector_columns])
     

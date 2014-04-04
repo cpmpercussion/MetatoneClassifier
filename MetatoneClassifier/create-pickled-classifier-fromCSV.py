@@ -29,7 +29,9 @@ feature_vector_columns = ['centroid_x','centroid_y','std_x','std_y','freq','move
 ##
 ##
 
-file_name = "2013-07-01-TrainingData.csv"
+# file_name = "2013-07-01-TrainingData.csv" # 5s windowed data
+file_name = "2013-07-01-TrainingData1s.csv" # 1s windowed data
+
 feature_vectors = pd.read_csv(file_name,index_col=0,parse_dates=True)
 
 
