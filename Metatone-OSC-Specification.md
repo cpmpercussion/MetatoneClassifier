@@ -6,6 +6,8 @@
 - Metatone App: `_metatoneapp._udp.`
 - Metatone Classifier Application: `_metatoneclassifier._udp` (unused
   so far...)
+- METACLASSIFIER_SERVICE_TYPE `_metatoneclassifier._http._tcp`
+
 
 ## Logging Protocol
 
