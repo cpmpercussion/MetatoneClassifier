@@ -344,9 +344,17 @@ s.addMsgHandler("/metatone/offline", onlineoffline_handler)
 s.addMsgHandler("/metatone/acceleration", accel_handler)
 s.addMsgHandler("/metatone/app",metatone_app_handler)
 
-print "Registered Callback-functions are :"
+print("Registered Callback-functions are :")
 for addr in s.getOSCAddressSpace():
     print addr
+
+def trim_touch_messages(messages):
+    # touch_messages.append([time,get_device_name(stuff[0]),stuff[1],stuff[2],stuff[3]])
+    current_time = datetime.now()
+    delta = timedelta(seconds=-5)
+    # x for x in messages if x[0] is within the last five seconds.
+    # return [x for x in messages if ]
+
 
 # Start OSCServer
 startOscServer()

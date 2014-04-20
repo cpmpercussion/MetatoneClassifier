@@ -6,9 +6,14 @@ import tornado.web
 import tornado.websocket
 import os.path
 import uuid
-
+from datetime import timedelta
+from datetime import datetime
 from tornado.options import define, options
+
 define("port", default=8888, help="run on the given port", type=int)
+
+#logger = logging.getLogger('gateway')
+
 
 class Application(tornado.web.Application):
     def __init__(self):
@@ -32,20 +37,49 @@ class MainHandler(tornado.web.RequestHandler):
 connections = set()
 clients = dict()
 
-def ProcessMetatoneMessageString(message):
+def ProcessMetatoneMessageString(time,message):
     #something
+    # ought to wrap this stuff in exception handling.
+    if "/metatone/touch/ended" in message:
+        # touch ended
+    elif "/metatone/touch" in message:
+        # touch! Go ahead and parse and add to the messages.
+        parts = message.split()
+    elif "/metatone/switch" in message:
+        #switch
+    elif "/metatone/online" in message:
+        # online! add to something.
+    elif "/metatone/offline" in message:
+        # offline
+    elif "/metatone/acceleration" in message:
+        # accel.
+    elif "/metatone/app" in message:
+        # app message.
+
+# # def classify():
+# #     # calculate gestures
+# #     # calculate performance state
+# #     # performance evemt?
+# #     for c in connections:
+# #         # send gesture to c
+# #         # send performance state to c
+# #         if performanceEvent:
+# #             #send performance event to c
 
 class ClassifierHandler(tornado.websocket.WebSocketHandler):
     def open(self):
         connections.add(self)
-        print("classifier Opened")
+        logging.info(datetime.now().isoformat() + "Classifier Opened.")
 
     def on_message(self,message):
-        print(message)
-        # self.write_message(u"You said: "+ message)
-
+        time = datetime.now()
+        logging.info(time.isoformat() + " " + message)
+        ProcessMetatoneMessageString(time,message)
+        #print(message)
+        
     def on_close(self):
         print "WebSocket closed"
+        logging.info(datetime.now().isoformat() + " Classifier Closed.")
 
     # waiters = set()
     # cache = []
@@ -91,6 +125,13 @@ class ClassifierHandler(tornado.websocket.WebSocketHandler):
 
 
 def main():
+    # Logging
+    global logger
+    logging_filename = datetime.now().isoformat().replace(":","-")[:19] + "-MetatoneOSCLog.log"
+    logging.basicConfig(filename="logs/"+logging_filename,level=logging.DEBUG)
+    logging.info("Logging started - " + logging_filename)
+    print ("Classifier Server Started - logging to: " + logging_filename)
+
     tornado.options.parse_command_line()
     app = Application()
     app.listen(options.port)
