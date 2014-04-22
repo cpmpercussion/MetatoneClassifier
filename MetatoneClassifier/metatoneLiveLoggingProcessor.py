@@ -259,18 +259,27 @@ def send_gestures(classes):
             try:
                 oscClient.sendto(msg,osc_sources[n])
             except OSC.OSCClientError:
-                print("Couldn't send message to " + name)
+                print("Couldn't send message to " + name + "removed from sources.")
+                # logging.warning("Couldn't send message to " + name + "removed from sources.")
+                remove_source(name)
             except socket.error:
-                print("Couldn't send message to " + name + ", bad address.")
+                print("Couldn't send message to " + name + ", bad address. removed from sources.")
+                remove_source(name)
 
 ## OSC Sending Methods
 osc_sources = {}
 
 def add_source_to_list(name,source):
     ## Addressing a dictionary.
+    global osc_sources
     source_address = (source[0],METATONE_RECEIVING_PORT)
     if (name not in osc_sources.keys()):
         osc_sources[name] = source_address
+
+def remove_source(name):
+    global osc_sources
+    if name in osc_sources: del osc_source[name]
+
 
 def send_message_to_sources(msg):
     for name in osc_sources.keys():
@@ -279,8 +288,10 @@ def send_message_to_sources(msg):
             #print("Message sent to " + name)
         except OSC.OSCClientError:
             print("Couldn't send message to " + name)
+            remove_source(name)
         except socket.error:
             print("Couldn't send message to " + name + ", bad address.")
+            remove_source(name)
     log_line = [datetime.now().isoformat()]
     log_line.extend(msg)
     log_messages(log_line,live_messages)
@@ -345,13 +356,12 @@ def metatone_app_handler(addr,tags,stuff,source):
         log_messages(message,live_messages)
 
 def trim_touch_messages():
+    # Only keeps the last five seconds of touch messages.
     # touch_messages.append([time,get_device_name(stuff[0]),stuff[1],stuff[2],stuff[3]])
     global touch_messages
     current_time = datetime.now()
     delta = timedelta(seconds=-5)
-    
-    # x for x in messages if x[0] is within the last five seconds.
-    # return [x for x in messages if ]
+    touch_messages = [x for x in touch_messages if (x[0] > datetime.now() + delta)]
 
 def main():
     s.addMsgHandler("/metatone/touch", touch_handler)
@@ -391,6 +401,7 @@ def main():
         while 1 :
             try:
                 time.sleep(1)
+                #TODO: make sure there's a sensible answer if touch_messages is an empty list.
                 try:
                     classes = classify_touch_messages(touch_messages)
                 except ValueError:
@@ -400,7 +411,6 @@ def main():
                     send_gestures(classes)
                     log_gestures(classes,classified_gestures)
                     pretty_print_classes(classes)
-                    #print(current_transitions)
                 gestures = make_gesture_frame(classified_gestures).fillna(0)
                 current_transitions = transitions.calculate_transition_activity(gestures)
                 
@@ -416,6 +426,8 @@ def main():
                     msg = OSC.OSCMessage("/metatone/classifier/ensemble/event/new_idea")
                     msg.extend([name,"new_idea"])
                     send_message_to_sources(msg)
+
+                trim_touch_messages()
             except KeyboardInterrupt:
                 raise
             except:
@@ -425,8 +437,6 @@ def main():
         close_server()
         # close_log()
         print "Closed."
-
-
 
 if __name__ == "__main__":
     main()
