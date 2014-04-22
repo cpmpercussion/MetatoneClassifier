@@ -11,7 +11,9 @@ import numpy as np
 from sklearn.ensemble import RandomForestClassifier
 import time,sched
 import pickle
+import logging
 import transitions
+
 
 ##
 METATONE_RECEIVING_PORT = 51200
@@ -19,11 +21,9 @@ METATONE_RECEIVING_PORT = 51200
 PICKLED_CLASSIFIER_FILE = '2013-07-01-TrainingData-classifier.p'
 ##
 
-
 ##
 ## Set up OSC server and Bonjour Service
 ##
-
 ip = ([ip for ip in socket.gethostbyname_ex(socket.gethostname())[2] if not ip.startswith("127.")][:1])
 #ip = ([ip for ip in socket.gethostbyname_ex(socket.gethostname())[2] if not ip.startswith("127.")][1:])
 
@@ -34,9 +34,6 @@ try:
     receive_address = (ip[0], port)
 except IndexError:
     receive_address = ("107.170.207.234",port)
-
-
-
 
 # OSC Server. there are three different types of server. 
 s = OSC.OSCServer(receive_address) # basic
@@ -190,36 +187,49 @@ def make_gesture_frame(gesture_log):
 ##
 ## Logging data functions
 ##
-
 live_messages = []
 touch_messages = []
 classified_gestures = []
-logging_filename = datetime.now().isoformat().replace(":","-")[:19] + "-MetatoneOSCLog.txt"
-logging_file = open("logs/"+logging_filename,'w')
+# logging_filename = datetime.now().isoformat().replace(":","-")[:19] + "-MetatoneOSCLog.txt"
+# logging_file = open("logs/"+logging_filename,'w')
 
-def restart_log():
-    live_messages = []
-    touch_messages = []
-    classified_gestures = []
-    logging_filename = datetime.now().isoformat().replace(":","-")[:19] + "-MetatoneOSCLog.txt"
-    logging_file = open("logs/"+logging_filename,'w')
+# def restart_log():
+#     global live_messages
+#     global touch_messages
+#     global classified_gestures
+#     global logging_filename
+#     global logging_file
 
-def close_log():
-    write_log(live_messages)
-    logging_file.close()
+#     live_messages = []
+#     touch_messages = []
+#     classified_gestures = []
+#     logging_filename = datetime.now().isoformat().replace(":","-")[:19] + "-MetatoneOSCLog.txt"
+#     logging_file = open("logs/"+logging_filename,'w')
+
+# def close_log():
+#     global live_messages
+#     global logging_file
+#     write_log(live_messages)
+#     logging_file.close()
 
 def log_messages(message,log):
-    log.append(message)
-    if (len(log) > 1000000):
-        write_log(log)
+    global logging
+    logging.info(str(message).replace("[","").replace("]","").replace("'",""))
+    # log.append(message)
+    # if (len(log) > 1000000):
+    #     write_log(log)
 
-def write_log(log):
-    print("writing all the messages to disk!")
-    output_messages = []
-    for m in log:
-        output_messages.append(str(m).replace("[","").replace("]","").replace("'","") + "\n")
-    del live_messages[:]
-    logging_file.writelines(output_messages)
+def log_message_new(message_list):
+    global logging
+    logging.info(str(message_list).replace("[","").replace("]","").replace("'",""))
+
+# def write_log(log):
+#     print("writing all the messages to disk!")
+#     output_messages = []
+#     for m in log:
+#         output_messages.append(str(m).replace("[","").replace("]","").replace("'","") + "\n")
+#     del live_messages[:]
+#     logging_file.writelines(output_messages)
 
 def log_gestures(classes, log):
     if not classes:
@@ -237,6 +247,7 @@ def log_gestures(classes, log):
     classes = [classes[n] for n in classes.keys()]
     classes.insert(0,time)
     log.append(classes)
+    # log_message_new(message_list)
 
 
 def send_gestures(classes):
@@ -253,7 +264,6 @@ def send_gestures(classes):
                 print("Couldn't send message to " + name + ", bad address.")
 
 ## OSC Sending Methods
-
 osc_sources = {}
 
 def add_source_to_list(name,source):
@@ -334,105 +344,89 @@ def metatone_app_handler(addr,tags,stuff,source):
         message = [datetime.now().isoformat(),"metatone",get_device_name(stuff[0]),stuff[1],stuff[2]]
         log_messages(message,live_messages)
 
-
-
-s.addMsgHandler("/metatone/touch", touch_handler)
-s.addMsgHandler("/metatone/touch/ended", touch_ended_handler)
-s.addMsgHandler("/metatone/switch", switch_handler)
-s.addMsgHandler("/metatone/online", onlineoffline_handler)
-s.addMsgHandler("/metatone/offline", onlineoffline_handler)
-s.addMsgHandler("/metatone/acceleration", accel_handler)
-s.addMsgHandler("/metatone/app",metatone_app_handler)
-
-print("Registered Callback-functions are :")
-for addr in s.getOSCAddressSpace():
-    print addr
-
-def trim_touch_messages(messages):
+def trim_touch_messages():
     # touch_messages.append([time,get_device_name(stuff[0]),stuff[1],stuff[2],stuff[3]])
+    global touch_messages
     current_time = datetime.now()
     delta = timedelta(seconds=-5)
+    
     # x for x in messages if x[0] is within the last five seconds.
     # return [x for x in messages if ]
 
+def main():
+    s.addMsgHandler("/metatone/touch", touch_handler)
+    s.addMsgHandler("/metatone/touch/ended", touch_ended_handler)
+    s.addMsgHandler("/metatone/switch", switch_handler)
+    s.addMsgHandler("/metatone/online", onlineoffline_handler)
+    s.addMsgHandler("/metatone/offline", onlineoffline_handler)
+    s.addMsgHandler("/metatone/acceleration", accel_handler)
+    s.addMsgHandler("/metatone/app",metatone_app_handler)
+    print("Registered Callback-functions are :")
+    for addr in s.getOSCAddressSpace():
+        print addr
 
-# Start OSCServer
-startOscServer()
+    # Start OSCServer
+    startOscServer()
 
-##
-## Run Loop
-## Classifies all touch data every 1 second
-## Ctrl-C closes server, thread and exits.
-##
-try :
-    while 1 :
-        try:
-            time.sleep(1)
+    ## Old Logging
+    global live_messages
+    global touch_messages
+    global classified_gestures
+    global logging_filename
+    global logging_file
+
+    ## Better Logging
+    global logger
+    logging_filename = datetime.now().isoformat().replace(":","-")[:19] + "-MetatoneOSCLog.log"
+    logging.basicConfig(filename="logs/"+logging_filename,level=logging.DEBUG,format='%(message)s')
+    logging.info("Logging started - " + logging_filename)
+    print("Classifier Server Started - logging to: " + logging_filename)
+
+    ##
+    ## Run Loop
+    ## Classifies all touch data every 1 second
+    ## Ctrl-C closes server, thread and exits.
+    ##
+    try :
+        while 1 :
             try:
-                classes = classify_touch_messages(touch_messages)
-            except ValueError:
-                print("Couldn't classify messages.")
+                time.sleep(1)
+                try:
+                    classes = classify_touch_messages(touch_messages)
+                except ValueError:
+                    print("Couldn't classify messages.")
 
-            if (classes):
-                send_gestures(classes)
-                log_gestures(classes,classified_gestures)
-                pretty_print_classes(classes)
-                #print(current_transitions)
-            gestures = make_gesture_frame(classified_gestures).fillna(0)
-            current_transitions = transitions.calculate_transition_activity(gestures)
-            
-            state = transitions.current_transition_state(gestures)
-            if (state):
-                print(state)
-                msg = OSC.OSCMessage("/metatone/classifier/ensemble/state")
-                msg.extend([state[0],state[1],state[2]])
-                send_message_to_sources(msg)
-            
-            if(transitions.is_new_idea(current_transitions)):
-                print "New Idea!\n"
-                msg = OSC.OSCMessage("/metatone/classifier/ensemble/event/new_idea")
-                msg.extend([name,"new_idea"])
-                send_message_to_sources(msg)
-        except KeyboardInterrupt:
-            raise
-        except:
-            print("Couldn't perform analysis - exception")
-except KeyboardInterrupt:
-    print "\nClosing OSCServer."
-    close_server()
-    close_log()
-    print "Closed."
-
-# Metatone Message Structure
-#
-## Touch
-## /metatone/touch sfff
-## deviceID X Y vel
-#
-## Touch Ended
-## /metatone/touch/ended s
-## deviceID
-#
-## Switch
-## /metatone/switch ssb
-## deviceID switchname switchstate
-#
-## Online
-## /metatone/online s s
-## deviceID appID
-#
-## Offline
-## /metatone/offline s
-## deviceID
-#
-## Acceleration
-## /metatone/acceleration sfff
-## deviceID X Y Z
-#
-
-## TODO 2013-12-05 get it to go back to "n" when touches stop. Currently sits on most recent gesture.
+                if (classes):
+                    send_gestures(classes)
+                    log_gestures(classes,classified_gestures)
+                    pretty_print_classes(classes)
+                    #print(current_transitions)
+                gestures = make_gesture_frame(classified_gestures).fillna(0)
+                current_transitions = transitions.calculate_transition_activity(gestures)
+                
+                state = transitions.current_transition_state(gestures)
+                if (state):
+                    print(state)
+                    msg = OSC.OSCMessage("/metatone/classifier/ensemble/state")
+                    msg.extend([state[0],state[1],state[2]])
+                    send_message_to_sources(msg)
+                
+                if(transitions.is_new_idea(current_transitions)):
+                    print "New Idea!\n"
+                    msg = OSC.OSCMessage("/metatone/classifier/ensemble/event/new_idea")
+                    msg.extend([name,"new_idea"])
+                    send_message_to_sources(msg)
+            except KeyboardInterrupt:
+                raise
+            except:
+                print("Couldn't perform analysis - exception")
+    except KeyboardInterrupt:
+        print "\nClosing OSCServer."
+        close_server()
+        # close_log()
+        print "Closed."
 
 
-## something like - 
-## take the time now -
-## select all entries that are within 5 seconds of now
+
+if __name__ == "__main__":
+    main()
