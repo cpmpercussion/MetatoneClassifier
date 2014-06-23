@@ -1,12 +1,14 @@
 String touchFileName = "/Users/charles/Dropbox/Metatone/20140317/studyinbowls-rehearsal/2014-03-17T17-40-14-MetatoneOSCLog-touches.csv";
-// Drawing Code
+boolean saving_frames = false;
+
+// Drawing Objects
 PImage fader;
 PFont f;
 PGraphics pg;
+int drawingPositionNumber;
 
-// Reading Vars:
+
 BufferedReader reader;
-
 String currentLine;
 String[] currentLineParts;
 Float currentLineTime;
@@ -18,9 +20,10 @@ int day;
 int startHour;
 int startMinute;
 int startSecond;
- 
+int startTotalSeconds;
+
 void setup() {
-  size(1024, 768,P2D);
+  size(768, 1024,P2D);
   pg = createGraphics( width, height );
   f = loadFont("HelveticaNeue-18.vlw"); // Arial, 16 point, anti-aliasing on
   textFont(f,18);
@@ -33,16 +36,24 @@ void setup() {
   fill(255);
 
   reader = createReader(touchFileName);
-  year = 2013;
-  month = 5;
-  day = 4;
-  startHour = 12;
-  startMinute = 12;
-  startSecond = 0;
+  year = 2014;
+  month = 3;
+  day = 17;
+  startHour = 17;
+  startMinute = 40;
+  startSecond = 14;
+  startTotalSeconds = startHour * 3600 + startMinute * 60 + startSecond;
 
+  drawingPositionNumber = 0;
   currentLineTime = 0.0;  
   currentFrameTime = 0.0;
-  getNextLine(); // load up the first line ready to draw.
+  
+
+  while (!getNextLine()) {
+    println("Finding first touch line");
+  } // load up the first line ready to draw.
+  println(currentLineParts);
+  println(currentLineTime);
 }
  
 String[] processLine(String line) {
@@ -50,76 +61,79 @@ String[] processLine(String line) {
 }
 
 int[] getColourForName(String name) {
-  int[] colour = { 225, 0 , 0 };
-  return colour;
+  String lastTwo = name.substring(name.length()-2);
+  byte[] bytes = name.getBytes();
+  //println(bytes);
+  int hueNumber = 0;
 
-  // // Choose colours for each iPad
-  // if (parts[3].equals("1D7BCDC1-5AAB-441B-9C92-C3F00B6FF930")) {
-  //   pg.fill(224,23,26);
-  // } else if (parts[3].equals("6769FE40-5F64-455B-82D4-814E26986A99")) {
-  //   pg.fill(23,27,224);
-  // } else if (parts[3].equals("2678456D-9AE7-4DCC-A561-688A4766C325")) {
-  //   pg.fill(23,224,105);
-  // } else if (parts[3].equals("97F37307-2A95-4796-BAC9-935BF417AC42")) {
-  //   pg.fill(224,204,23);
-  // } else {
-  //   pg.fill(255);
-  // }
+  for (int i = 0; i < bytes.length; i++) {
+    hueNumber += bytes[i];
+  }
+
+  hueNumber = hueNumber % 256; 
+
+  // int hueNumber = Integer.parseInt(lastTwo,16);
+  int[] colour = { hueNumber, 255 , 255 };
+  return colour;
 }
 
 void drawTouch(String[] parts) {
-  int[] colour = getColourForName(parts[3]);
+    //0 2014-03-17T17:40:46.074877,
+    //1 jonathan,
+    //2 433.5,
+    //3 461.5,
+    //4 0.0
+  int[] colour = getColourForName(parts[1]);
   pg.stroke(255,0);
+  pg.colorMode(HSB);
   pg.fill(colour[0],colour[1],colour[2]);
-  pg.ellipse(Float.parseFloat(parts[4]),Float.parseFloat(parts[5]),20,20);
+  pg.ellipse(Float.parseFloat(parts[2]),Float.parseFloat(parts[3]),20,20);
+  pg.colorMode(RGB);
 }
 
 void drawNonTouch(String[] parts) {
-  int[] colour = getColourForName(parts[3]);
+  int[] colour = getColourForName(parts[1]);
   pg.stroke(255,0.0);
+  pg.colorMode(HSB);
   pg.fill(colour[0],colour[1],colour[2]);
-  int number = 0;
-  if (parts[3].equals("1D7BCDC1-5AAB-441B-9C92-C3F00B6FF930")) {
-    number = 0;
-  } else if (parts[3].equals("6769FE40-5F64-455B-82D4-814E26986A99")) {
-    number = 1;
-  } else if (parts[3].equals("2678456D-9AE7-4DCC-A561-688A4766C325")) {
-    number = 2;
-  } else if (parts[3].equals("97F37307-2A95-4796-BAC9-935BF417AC42")) {
-    number = 3;
-  }
   String messageString = parts[2] + " ";
   if (parts.length == 6) {
     messageString += parts[4] + " " + parts[5];
   }
-  pg.text(messageString,10,(number * 15) + 15);
+  pg.text(messageString,10,(drawingPositionNumber * 15) + 15);
+  drawingPositionNumber = (drawingPositionNumber + 1) % 5;
+  pg.colorMode(RGB);
 }
 
-Double parseDateToSeconds(String dateString) {
-  // 2014-03-17T17:40:46.074877,jonathan,433.5,461.5,0.0
+Float parseDateToSeconds(String dateString) {
   String time = split(dateString,"T")[1];
   String[] timeParts = split(time,":");
-  Double seconds = (Double.parseDouble(timeParts[0]) * 3600) 
-    + (Double.parseDouble(timeParts[1]) * 60 )
-    + Double.parseDouble(timeParts[2]);
+  Float seconds = (Float.parseFloat(timeParts[0]) * 3600) 
+    + (Float.parseFloat(timeParts[1]) * 60 )
+    + Float.parseFloat(timeParts[2]);
   return seconds;
 }
 
 
-void getNextLine() {
+boolean getNextLine() {
+  // 2014-03-17T17:40:46.074877,jonathan,433.5,461.5,0.0
   currentLine = "";
   
   try {
     currentLine = reader.readLine();
   } catch (IOException e) {
     currentLine = null;
+    println("Reached end of file.");
+    noLoop();
+    return false;
   }
   
-  if (currentLine == null) {
-    noLoop();  // Stop looping when we get to the end of the file.
+  if (currentLine.contains("time,device_id,x_pos,y_pos,velocity")) {
+    return false;
   } else {
     currentLineParts = processLine(currentLine);
-    currentLineTime = 1000 * (Float.parseFloat(currentLineParts[0]));
+    currentLineTime = 1000 * (parseDateToSeconds(currentLineParts[0]) - startTotalSeconds);
+    return true;
   }
 }
  
@@ -127,17 +141,18 @@ void draw() {
   background(255);
   currentFrameTime = frameCount * 1000.0 / 25.0;// Hard coded to 25 frames per second
 
-
+  // 2014-03-17T17:40:46.074877,jonathan,433.5,461.5,0.0
   pg.beginDraw();
   while (currentLineTime < currentFrameTime) {
     // Draw the line
     if (currentLine != null) {
-      if (currentLineParts[2].equals("/metatone/touch")) { 
-        drawTouch(currentLineParts); // draw the touch
-      } else {
-        drawNonTouch(currentLineParts);
-        println(currentLineParts[0] + " " + currentLineParts[2] + " " + currentLineParts[3]);
-      }
+      drawTouch(currentLineParts);
+      // if (currentLineParts[2].equals("/metatone/touch")) { 
+      //   drawTouch(currentLineParts); // draw the touch
+      // } else {
+      //   drawNonTouch(currentLineParts);
+      //   println(currentLineParts[0] + " " + currentLineParts[2] + " " + currentLineParts[3]);
+      // }
       // get next line
       getNextLine();
     } else {
@@ -155,7 +170,9 @@ void draw() {
   
   // Save frame to make movie later.
   // Turn on for saving mode...
-  saveFrame("/Users/charles/Movies/framestga/metatone-######.png");
+  if(saving_frames) {
+    saveFrame("/Users/charles/Movies/framestga/metatone-######.png");
+  }
 }
 
 
