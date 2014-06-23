@@ -30,12 +30,12 @@ String[] currentLineParts;
 Float currentLineTime;
 Float currentFrameTime;
 
-int year;
-int month;
-int day;
-int startHour;
-int startMinute;
-int startSecond;
+int year = 2014;
+int month = 3;
+int day = 17;
+int startHour = 17;
+int startMinute = 40;
+int startSecond = 14;
 int startTotalSeconds;
 
 public void setup() {
@@ -52,24 +52,18 @@ public void setup() {
   fill(255);
 
   reader = createReader(touchFileName);
-  year = 2014;
-  month = 3;
-  day = 17;
-  startHour = 17;
-  startMinute = 40;
-  startSecond = 44;
-  startTotalSeconds = startHour * 3600 + startMinute * 60 + startSecond;
 
+  startTotalSeconds = startHour * 3600 + startMinute * 60 + startSecond;
   drawingPositionNumber = 0;
   currentLineTime = 0.0f;  
   currentFrameTime = 0.0f;
   
-
+  // load up the first line ready to draw.
   while (!getNextLine()) {
     println("Finding first touch line");
-  } // load up the first line ready to draw.
+  }
   println(currentLineParts);
-  println(currentLineTime);
+  //println(currentLineTime);
 }
  
 public String[] processLine(String line) {
@@ -79,26 +73,16 @@ public String[] processLine(String line) {
 public int[] getColourForName(String name) {
   String lastTwo = name.substring(name.length()-2);
   byte[] bytes = name.getBytes();
-  //println(bytes);
   int hueNumber = 0;
-
   for (int i = 0; i < bytes.length; i++) {
     hueNumber += bytes[i];
   }
-
   hueNumber = hueNumber % 256; 
-
-  // int hueNumber = Integer.parseInt(lastTwo,16);
   int[] colour = { hueNumber, 255 , 255 };
   return colour;
 }
 
 public void drawTouch(String[] parts) {
-    //0 2014-03-17T17:40:46.074877,
-    //1 jonathan,
-    //2 433.5,
-    //3 461.5,
-    //4 0.0
   int[] colour = getColourForName(parts[1]);
   pg.stroke(255,0);
   pg.colorMode(HSB);
@@ -181,7 +165,10 @@ public void draw() {
   image(pg,0,0);  
   fill(255);
   //text("Framerate: " + frameRate, 10,height - 10);
+
+  // TODO  make this just print the timestamp from the CSV...
   text("Log Time: " + makeTimeString(currentFrameTime/1000), 10, height - 10);
+  // TODO get rid of this one?
   text(makeDateString(currentFrameTime/1000),10,height - 35);
   
   // Save frame to make movie later.
