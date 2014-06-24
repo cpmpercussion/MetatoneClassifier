@@ -14,8 +14,19 @@ import java.io.IOException;
 
 public class MetatoneTouchLogPlayer201406 extends PApplet {
 
-String touchFileName = "/Users/charles/Dropbox/Metatone/20140317/studyinbowls-rehearsal/2014-03-17T17-40-14-MetatoneOSCLog-touches.csv";
+//String touchFileName = "/Users/charles/Dropbox/Metatone/20140317/studyinbowls-rehearsal/2014-03-17T17-40-14-MetatoneOSCLog-touches.csv";
+String touchFileName = "/Users/charles/Dropbox/Metatone/20140317/studyinbowls-rehearsal/testTouchDataShort.csv";
+
 boolean saving_frames = false;
+
+int year = 2014;
+int month = 3;
+int day = 17;
+int startHour = 17;
+int startMinute = 40;
+int startSecond = 45;
+
+int endFrames = 80;
 
 // Drawing Objects
 PImage fader;
@@ -23,25 +34,20 @@ PFont f;
 PGraphics pg;
 int drawingPositionNumber;
 
-
 BufferedReader reader;
+Table touchTable;
 String currentLine;
 String[] currentLineParts;
 Float currentLineTime;
 Float currentFrameTime;
-
-int year = 2014;
-int month = 3;
-int day = 17;
-int startHour = 17;
-int startMinute = 40;
-int startSecond = 14;
 int startTotalSeconds;
+int currentRow;
+int totalRows;
 
 public void setup() {
   size(768, 1024,P2D);
   pg = createGraphics( width, height );
-  f = loadFont("HelveticaNeue-18.vlw"); // Arial, 16 point, anti-aliasing on
+  f = loadFont("HelveticaNeue-18.vlw");
   textFont(f,18);
   pg.textFont(f,18);
 
@@ -51,27 +57,78 @@ public void setup() {
   background(0);
   fill(255);
 
-  reader = createReader(touchFileName);
+  touchTable = loadTable(touchFileName,"header");
+  totalRows = touchTable.getRowCount();
+  currentRow = 0;
+  currentLineTime = (parseDateToSeconds(
+    touchTable.getRow(currentRow).getString("time")) - startTotalSeconds);
 
   startTotalSeconds = startHour * 3600 + startMinute * 60 + startSecond;
   drawingPositionNumber = 0;
   currentLineTime = 0.0f;  
   currentFrameTime = 0.0f;
-  
-  // load up the first line ready to draw.
-  while (!getNextLine()) {
-    println("Finding first touch line");
-  }
-  println(currentLineParts);
-  //println(currentLineTime);
+
+  // println("Table first line:");
+  // TableRow firstRow = touchTable.getRow(0);
+  // println(firstRow.getString("time"));
+  // println(firstRow.getString("device_id"));
+  // println(firstRow.getFloat("x_pos"));
+  // println(firstRow.getFloat("y_pos"));
 }
  
-public String[] processLine(String line) {
-  return split(line,",");
+public void draw() {
+  background(255);
+  currentFrameTime = frameCount / 25.0f;// Hard coded to 25 frames per second
+  // 2014-03-17T17:40:46.074877,jonathan,433.5,461.5,0.0
+  pg.beginDraw();
+  while ((currentLineTime < currentFrameTime) && (currentRow < totalRows)) {
+    println("Drawing the row.");
+    drawTouch(touchTable.getRow(currentRow));
+    currentRow++;
+
+    if (currentRow < totalRows) {
+      currentLineTime = (parseDateToSeconds(
+        touchTable.getRow(currentRow).getString("time")) - startTotalSeconds);
+    } else {
+      println("End of file.");
+      //noLoop();
+      break;
+    }
+
+  }
+
+  // End frames counter
+  if (currentRow >= totalRows) {
+    if (endFrames > 0) {
+      println("Drawing end frame...");
+      endFrames--;
+    } else {
+      noLoop();
+    }
+  }
+
+  
+  // fade towards white
+  pg.blend(fader,0,0,width,height,0,0,width,height,SUBTRACT);
+  pg.endDraw();
+  image(pg,0,0);  
+  fill(255);
+
+  // Write timestamp String on the screen.
+  text(makeDateString(currentFrameTime),10,height - 10);
+  
+  if(saving_frames) {
+    saveFrame("/Users/charles/Movies/framestga/metatone-######.tga");
+  }
 }
 
+///////////////////////////////////////
+//                                   //
+// drawing Helper functions          //
+//                                   //
+///////////////////////////////////////
+
 public int[] getColourForName(String name) {
-  String lastTwo = name.substring(name.length()-2);
   byte[] bytes = name.getBytes();
   int hueNumber = 0;
   for (int i = 0; i < bytes.length; i++) {
@@ -82,12 +139,12 @@ public int[] getColourForName(String name) {
   return colour;
 }
 
-public void drawTouch(String[] parts) {
-  int[] colour = getColourForName(parts[1]);
+public void drawTouch(TableRow row) {
+  int[] colour = getColourForName(row.getString("device_id"));
   pg.stroke(255,0);
   pg.colorMode(HSB);
   pg.fill(colour[0],colour[1],colour[2]);
-  pg.ellipse(Float.parseFloat(parts[2]),Float.parseFloat(parts[3]),20,20);
+  pg.ellipse(row.getFloat("x_pos"),row.getFloat("y_pos"),20,20);
   pg.colorMode(RGB);
 }
 
@@ -105,6 +162,13 @@ public void drawNonTouch(String[] parts) {
   pg.colorMode(RGB);
 }
 
+
+///////////////////////////////////////
+//                                   //
+// dateString to seconds             //
+//                                   //
+///////////////////////////////////////
+
 public Float parseDateToSeconds(String dateString) {
   String time = split(dateString,"T")[1];
   String[] timeParts = split(time,":");
@@ -113,71 +177,6 @@ public Float parseDateToSeconds(String dateString) {
     + Float.parseFloat(timeParts[2]);
   return seconds;
 }
-
-
-public boolean getNextLine() {
-  // 2014-03-17T17:40:46.074877,jonathan,433.5,461.5,0.0
-  currentLine = "";
-  
-  try {
-    currentLine = reader.readLine();
-  } catch (IOException e) {
-    currentLine = null;
-    println("Reached end of file.");
-    noLoop();
-    return false;
-  }
-  
-  if (currentLine.contains("time,device_id,x_pos,y_pos,velocity")) {
-    return false;
-  } else {
-    currentLineParts = processLine(currentLine);
-    currentLineTime = 1000 * (parseDateToSeconds(currentLineParts[0]) - startTotalSeconds);
-    return true;
-  }
-}
- 
-public void draw() {
-  background(255);
-  currentFrameTime = frameCount * 1000.0f / 25.0f;// Hard coded to 25 frames per second
-
-  // 2014-03-17T17:40:46.074877,jonathan,433.5,461.5,0.0
-  pg.beginDraw();
-  while (currentLineTime < currentFrameTime) {
-    // Draw the line
-    if (currentLine != null) {
-      drawTouch(currentLineParts);
-      // if (currentLineParts[2].equals("/metatone/touch")) { 
-      //   drawTouch(currentLineParts); // draw the touch
-      // } else {
-      //   drawNonTouch(currentLineParts);
-      //   println(currentLineParts[0] + " " + currentLineParts[2] + " " + currentLineParts[3]);
-      // }
-      // get next line
-      getNextLine();
-    } else {
-      noLoop();
-    }
-  }
-  // fade towards white
-  pg.blend(fader,0,0,width,height,0,0,width,height,SUBTRACT);
-  pg.endDraw();
-  image(pg,0,0);  
-  fill(255);
-  //text("Framerate: " + frameRate, 10,height - 10);
-
-  // TODO  make this just print the timestamp from the CSV...
-  text("Log Time: " + makeTimeString(currentFrameTime/1000), 10, height - 10);
-  // TODO get rid of this one?
-  text(makeDateString(currentFrameTime/1000),10,height - 35);
-  
-  // Save frame to make movie later.
-  // Turn on for saving mode...
-  if(saving_frames) {
-    saveFrame("/Users/charles/Movies/framestga/metatone-######.png");
-  }
-}
-
 
 ///////////////////////////////////////
 //                                   //
@@ -226,6 +225,9 @@ public String makeTimeString(float nowTime) {
   String timeString = nowSeconds + "." + nowHundredths;
   return timeString;
 }
+
+
+
   static public void main(String[] passedArgs) {
     String[] appletArgs = new String[] { "MetatoneTouchLogPlayer201406" };
     if (passedArgs != null) {
