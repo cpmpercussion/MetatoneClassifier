@@ -16,8 +16,7 @@ public class MetatoneTouchLogPlayer201406 extends PApplet {
 
 //String touchFileName = "/Users/charles/Dropbox/Metatone/20140317/studyinbowls-rehearsal/2014-03-17T17-40-14-MetatoneOSCLog-touches.csv";
 String touchFileName = "/Users/charles/Dropbox/Metatone/20140317/studyinbowls-rehearsal/testTouchDataShort.csv";
-
-boolean saving_frames = false;
+boolean saving_frames = true;
 
 int year = 2014;
 int month = 3;
@@ -34,10 +33,7 @@ PFont f;
 PGraphics pg;
 int drawingPositionNumber;
 
-BufferedReader reader;
 Table touchTable;
-String currentLine;
-String[] currentLineParts;
 Float currentLineTime;
 Float currentFrameTime;
 int startTotalSeconds;
@@ -67,13 +63,6 @@ public void setup() {
   drawingPositionNumber = 0;
   currentLineTime = 0.0f;  
   currentFrameTime = 0.0f;
-
-  // println("Table first line:");
-  // TableRow firstRow = touchTable.getRow(0);
-  // println(firstRow.getString("time"));
-  // println(firstRow.getString("device_id"));
-  // println(firstRow.getFloat("x_pos"));
-  // println(firstRow.getFloat("y_pos"));
 }
  
 public void draw() {
@@ -82,16 +71,13 @@ public void draw() {
   // 2014-03-17T17:40:46.074877,jonathan,433.5,461.5,0.0
   pg.beginDraw();
   while ((currentLineTime < currentFrameTime) && (currentRow < totalRows)) {
-    println("Drawing the row.");
     drawTouch(touchTable.getRow(currentRow));
     currentRow++;
-
     if (currentRow < totalRows) {
       currentLineTime = (parseDateToSeconds(
         touchTable.getRow(currentRow).getString("time")) - startTotalSeconds);
     } else {
       println("End of file.");
-      //noLoop();
       break;
     }
 
@@ -106,7 +92,6 @@ public void draw() {
       noLoop();
     }
   }
-
   
   // fade towards white
   pg.blend(fader,0,0,width,height,0,0,width,height,SUBTRACT);

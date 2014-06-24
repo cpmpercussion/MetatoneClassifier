@@ -1,7 +1,6 @@
 //String touchFileName = "/Users/charles/Dropbox/Metatone/20140317/studyinbowls-rehearsal/2014-03-17T17-40-14-MetatoneOSCLog-touches.csv";
 String touchFileName = "/Users/charles/Dropbox/Metatone/20140317/studyinbowls-rehearsal/testTouchDataShort.csv";
-
-boolean saving_frames = false;
+boolean saving_frames = true;
 
 int year = 2014;
 int month = 3;
@@ -48,7 +47,7 @@ void setup() {
   drawingPositionNumber = 0;
   currentLineTime = 0.0;  
   currentFrameTime = 0.0;
-}d
+}
  
 void draw() {
   background(255);
