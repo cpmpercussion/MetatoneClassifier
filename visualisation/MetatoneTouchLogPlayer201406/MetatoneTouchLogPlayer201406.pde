@@ -1,13 +1,12 @@
-//String touchFileName = "/Users/charles/Dropbox/Metatone/20140317/studyinbowls-rehearsal/2014-03-17T17-40-14-MetatoneOSCLog-touches.csv";
-String touchFileName = "/Users/charles/Dropbox/Metatone/20140317/studyinbowls-rehearsal/testTouchDataShort.csv";
+String touchFileName = "/Users/charles/Dropbox/Metatone/20140317/studyinbowls-performance/2014-03-17T18-09-46-MetatoneOSCLog-touches.csv";
 boolean saving_frames = true;
 
 int year = 2014;
 int month = 3;
 int day = 17;
-int startHour = 17;
-int startMinute = 40;
-int startSecond = 45;
+int startHour = 18;
+int startMinute = 9;
+int startSecond = 46;
 
 int endFrames = 80;
 
@@ -18,9 +17,11 @@ PGraphics pg;
 int drawingPositionNumber;
 
 Table touchTable;
-Float currentLineTime;
-Float currentFrameTime;
-int startTotalSeconds;
+
+float currentLineTime;
+float currentFrameTime;
+
+float startTotalSeconds;
 int currentRow;
 int totalRows;
 
@@ -29,7 +30,7 @@ void setup() {
   pg = createGraphics( width, height );
   f = loadFont("HelveticaNeue-18.vlw");
   textFont(f,18);
-  pg.textFont(f,18);
+  pg.textFont(f,18); 
 
   // Setup the fader.
   background(8);
@@ -40,19 +41,22 @@ void setup() {
   touchTable = loadTable(touchFileName,"header");
   totalRows = touchTable.getRowCount();
   currentRow = 0;
-  currentLineTime = (parseDateToSeconds(
-    touchTable.getRow(currentRow).getString("time")) - startTotalSeconds);
-
-  startTotalSeconds = startHour * 3600 + startMinute * 60 + startSecond;
-  drawingPositionNumber = 0;
-  currentLineTime = 0.0;  
+  startTotalSeconds = startHour * 3600.0 + startMinute * 60.0 + startSecond;
+  currentLineTime = (parseDateToSeconds(touchTable.getRow(currentRow).getString("time")) - startTotalSeconds);
   currentFrameTime = 0.0;
+  drawingPositionNumber = 0;
+  
+
+  println("Ready to draw - total rows is: " + 
+    totalRows + " and first line time is: " + 
+    touchTable.getRow(currentRow).getString("time"));
+  println("CurrentFrame: " + currentFrameTime + " currentLineTime: " + currentLineTime);
 }
  
 void draw() {
   background(255);
   currentFrameTime = frameCount / 25.0;// Hard coded to 25 frames per second
-  // 2014-03-17T17:40:46.074877,jonathan,433.5,461.5,0.0
+
   pg.beginDraw();
   while ((currentLineTime < currentFrameTime) && (currentRow < totalRows)) {
     drawTouch(touchTable.getRow(currentRow));
@@ -193,6 +197,17 @@ String makeTimeString(float nowTime) {
   int nowHundredths = floor((nowTime - nowSeconds) * 100);
   String timeString = nowSeconds + "." + nowHundredths;
   return timeString;
+}
+
+
+/////
+//
+// Framerate method
+//
+/////
+
+void mouseReleased() {
+  println("Framerate is: " + frameRate);
 }
 
 

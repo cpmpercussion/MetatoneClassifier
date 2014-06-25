@@ -14,19 +14,19 @@ import java.io.IOException;
 
 public class MetatoneGesturesPlotter extends PApplet {
 
-String fileDirectory = "/Users/charles/Dropbox/Metatone/20140317/studyinbowls-rehearsal/";
-String eventsFileName = "2014-03-17T17-40-14-MetatoneOSCLog-events.csv";
-String gestureFileName = "2014-03-17T17-40-14-MetatoneOSCLog-gestures.csv";
-String transitionsFileName = "2014-03-17T17-40-14-MetatoneOSCLog-transitions.csv";
+String fileDirectory = "/Users/charles/Dropbox/Metatone/20140317/studyinbowls-performance/2014-03-17T18-09-46-MetatoneOSCLog-";
+String eventsFileName = "events.csv";
+String gestureFileName = "gestures.csv";
+String transitionsFileName = "transitions.csv";
 
-boolean saving_frames = false;
+boolean saving_frames = true;
 
 int year = 2014;
 int month = 3;
 int day = 17;
-int startHour = 17;
-int startMinute = 40;
-int startSecond = 14;
+int startHour = 18;
+int startMinute = 9;
+int startSecond = 46;
 
 int endFrames = 80;
 int margins = 50;
@@ -151,6 +151,8 @@ public void draw() {
   background(0);
   currentFrameTime = frameCount / 25.0f;// Hard coded to 25 frames per second
 
+  if (currentFrameTime > performanceLengthSeconds) noLoop();
+
   // Draw the gesturePlot offscreen image
   image(gesturePlot,0,0);
 
@@ -173,7 +175,7 @@ public void draw() {
   text(makeDateString(currentFrameTime),10,height - 10); 
   
   if(saving_frames) {
-    saveFrame("/Users/charles/Movies/framestga/metatone-######.tga");
+    saveFrame("/Users/charles/Movies/framestga/######.tga");
   }
 }
 
