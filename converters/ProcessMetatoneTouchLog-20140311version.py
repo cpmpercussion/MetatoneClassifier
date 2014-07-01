@@ -4,6 +4,9 @@
 #args = parser.parse_args()
 #input_filename = args.filename
 
+## This script splits up Metatone Classifier logs into 6 CSV files according to the type of data.
+## 30/06/2014
+
 device_names = {
     '2678456D-9AE7-4DCC-A561-688A4766C325':'charles', # old
     '97F37307-2A95-4796-BAC9-935BF417AC42':'christina', # old
@@ -20,14 +23,19 @@ device_names = {
 
 #input_filename = '/Users/charles/Dropbox/Metatone/20140317/metatoneset-performance/2014-03-17T18-30-57-MetatoneOSCLog.txt'
 #input_filename = '/Users/charles/Dropbox/Metatone/20140317/studyinbowls-performance/2014-03-17T18-09-46-MetatoneOSCLog.txt'
-input_filename = '/Users/charles/Dropbox/Metatone/20140317/studyinbowls-rehearsal/2014-03-17T17-40-14-MetatoneOSCLog.txt'
+#input_filename = '/Users/charles/Dropbox/Metatone/20140317/studyinbowls-rehearsal/2014-03-17T17-40-14-MetatoneOSCLog.txt'
+#input_filename = '/Users/charles/Dropbox/Metatone/20140505/1-StudyInBowls/2014-05-05T20-02-01-MetatoneOSCLog.log'
+#input_filename = '/Users/charles/Dropbox/Metatone/20140505/2-MetaLonsdale/2014-05-05T20-26-38-MetatoneOSCLog.log'
+#input_filename = '/Users/charles/Dropbox/Metatone/20140505/3-BirdsNest/2014-05-05T20-39-43-MetatoneOSCLog.log'
+input_filename = '/Users/charles/Dropbox/Metatone/20140505/2014-05-05T21-34-04-MetatoneOSCLog.log'
 
-touch_filename = input_filename.replace(".txt","") + '-touches.csv'
-gesture_filename = input_filename.replace(".txt","") + '-gestures.csv'
-transitions_filename = input_filename.replace(".txt","") + '-transitions.csv'
-events_filename = input_filename.replace(".txt","") + '-events.csv'
-metatone_filename = input_filename.replace(".txt","") + '-metatone.csv'
-online_filename = input_filename.replace(".txt","") + '-online.csv'
+
+touch_filename = input_filename.replace(".log","") + '-touches.csv'
+gesture_filename = input_filename.replace(".log","") + '-gestures.csv'
+transitions_filename = input_filename.replace(".log","") + '-transitions.csv'
+events_filename = input_filename.replace(".log","") + '-events.csv'
+metatone_filename = input_filename.replace(".log","") + '-metatone.csv'
+online_filename = input_filename.replace(".log","") + '-online.csv'
 
 raw_file = open(input_filename, 'r')
 touch_file = open(touch_filename,'w')
