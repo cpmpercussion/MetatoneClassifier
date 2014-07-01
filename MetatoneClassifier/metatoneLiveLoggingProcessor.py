@@ -22,6 +22,16 @@ PICKLED_CLASSIFIER_FILE = '2013-07-01-TrainingData-classifier.p'
 ##
 
 ##
+VISUALISER_MODE_ON = True
+VISUALISER_PORT = 61200
+VISUALISER_HOST = 'localhost'
+##
+
+##
+WEB_SERVER_MODE = False
+##
+
+##
 ## Set up OSC server and Bonjour Service
 ##
 ip = ([ip for ip in socket.gethostbyname_ex(socket.gethostname())[2] if not ip.startswith("127.")][:1])
@@ -33,7 +43,10 @@ port    = 9000
 try:
     receive_address = (ip[0], port)
 except IndexError:
-    receive_address = ("107.170.207.234",port)
+    if (WEB_SERVER_MODE):
+        receive_address = ("107.170.207.234",port)
+    else:
+        receive_address = ("localhost",port)
 
 # OSC Server. there are three different types of server. 
 s = OSC.OSCServer(receive_address) # basic
@@ -104,8 +117,7 @@ gesture_codes = {
     'C': 8,
     '?': 9}
 
-## Active Device names:
-active_names = []
+
 
 ## Function to calculate feature vectors 
 ## (for a dataframe containing one 'device_id'
@@ -151,9 +163,13 @@ pickle_file = open(PICKLED_CLASSIFIER_FILE, "rb" )
 classifier = pickle.load(pickle_file)
 pickle_file.close()
 
+## Active Device names:
+active_names = []
+
 def classify_touch_messages(messages):
     if not messages:
-        return None
+        # return None
+        return classify_empty_touch_messages()
     touch_frame = pd.DataFrame(messages,columns = ['time','device_id','x_pos','y_pos','velocity']) ## This line can fail with a ValueError exception
     touch_frame = touch_frame.set_index('time')
     delta = timedelta(seconds=-5)
@@ -166,6 +182,12 @@ def classify_touch_messages(messages):
         features = feature_frame(touch_frame.ix[touch_frame['device_id'] == n])
         gesture = classifier.predict(features[feature_vector_columns][-1:])
         classes[n] = list(gesture)[0]
+    return classes
+
+def classify_empty_touch_messages():
+    classes = {}
+    for n in active_names:
+        classes[n] = 0
     return classes
 
 def pretty_print_classes(classes):
@@ -190,46 +212,14 @@ def make_gesture_frame(gesture_log):
 live_messages = []
 touch_messages = []
 classified_gestures = []
-# logging_filename = datetime.now().isoformat().replace(":","-")[:19] + "-MetatoneOSCLog.txt"
-# logging_file = open("logs/"+logging_filename,'w')
-
-# def restart_log():
-#     global live_messages
-#     global touch_messages
-#     global classified_gestures
-#     global logging_filename
-#     global logging_file
-
-#     live_messages = []
-#     touch_messages = []
-#     classified_gestures = []
-#     logging_filename = datetime.now().isoformat().replace(":","-")[:19] + "-MetatoneOSCLog.txt"
-#     logging_file = open("logs/"+logging_filename,'w')
-
-# def close_log():
-#     global live_messages
-#     global logging_file
-#     write_log(live_messages)
-#     logging_file.close()
 
 def log_messages(message,log):
     global logging
     logging.info(str(message).replace("[","").replace("]","").replace("'",""))
-    # log.append(message)
-    # if (len(log) > 1000000):
-    #     write_log(log)
 
 def log_message_new(message_list):
     global logging
     logging.info(str(message_list).replace("[","").replace("]","").replace("'",""))
-
-# def write_log(log):
-#     print("writing all the messages to disk!")
-#     output_messages = []
-#     for m in log:
-#         output_messages.append(str(m).replace("[","").replace("]","").replace("'","") + "\n")
-#     del live_messages[:]
-#     logging_file.writelines(output_messages)
 
 def log_gestures(classes, log):
     if not classes:
@@ -269,6 +259,17 @@ def send_gestures(classes):
 ## OSC Sending Methods
 osc_sources = {}
 
+
+def send_touch_to_visualiser(touch_data):
+    msg = OSC.OSCMessage("/metatone/touch")
+    msg.extend(touch_data)
+    try: 
+        oscClient.sendto(msg,(VISUALISER_HOST,VISUALISER_PORT))
+    except:
+        msg = ""
+        # print("Can't send messsages to visualiser.")
+
+
 def add_source_to_list(name,source):
     ## Addressing a dictionary.
     global osc_sources
@@ -279,7 +280,6 @@ def add_source_to_list(name,source):
 def remove_source(name):
     global osc_sources
     if name in osc_sources: del osc_source[name]
-
 
 def send_message_to_sources(msg):
     for name in osc_sources.keys():
@@ -318,6 +318,9 @@ def touch_handler(addr, tags, stuff, source):
         message = [time.isoformat(),"touch",get_device_name(stuff[0]),stuff[1],stuff[2],stuff[3]]
         log_messages(message,live_messages)
         touch_messages.append([time,get_device_name(stuff[0]),stuff[1],stuff[2],stuff[3]])
+        ## Repeat Message to visualiser:
+        if (VISUALISER_MODE_ON): 
+            send_touch_to_visualiser(stuff)
         
 def touch_ended_handler(addr,tags,stuff,source):
     add_source_to_list(get_device_name(stuff[0]),source)
@@ -371,9 +374,9 @@ def main():
     s.addMsgHandler("/metatone/offline", onlineoffline_handler)
     s.addMsgHandler("/metatone/acceleration", accel_handler)
     s.addMsgHandler("/metatone/app",metatone_app_handler)
-    print("Registered Callback-functions are :")
-    for addr in s.getOSCAddressSpace():
-        print addr
+    # print("Registered Callback-functions are :")
+    # for addr in s.getOSCAddressSpace():
+    #     print addr
 
     # Start OSCServer
     startOscServer()
@@ -404,17 +407,26 @@ def main():
                 #TODO: make sure there's a sensible answer if touch_messages is an empty list.
                 try:
                     classes = classify_touch_messages(touch_messages)
-                except ValueError:
+                except:
                     print("Couldn't classify messages.")
 
-                if (classes):
-                    send_gestures(classes)
-                    log_gestures(classes,classified_gestures)
-                    pretty_print_classes(classes)
-                gestures = make_gesture_frame(classified_gestures).fillna(0)
-                current_transitions = transitions.calculate_transition_activity(gestures)
+                #print(classes)
+
+                try: 
+                    if (classes):
+                        send_gestures(classes)
+                        log_gestures(classes,classified_gestures)
+                        pretty_print_classes(classes)
+                    gestures = make_gesture_frame(classified_gestures).fillna(0)
+                except:
+                    print("Couldn't update gestures.")
                 
-                state = transitions.current_transition_state(gestures)
+                try:
+                    current_transitions = transitions.calculate_transition_activity(gestures)
+                    state = transitions.current_transition_state(gestures)
+                except:
+                    print ("Couldn't perform transition calculations.")
+
                 if (state):
                     print(state)
                     msg = OSC.OSCMessage("/metatone/classifier/ensemble/state")
