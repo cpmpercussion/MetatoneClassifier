@@ -1,12 +1,17 @@
-String touchFileName = "/Users/charles/Dropbox/Metatone/20140317/studyinbowls-performance/2014-03-17T18-09-46-MetatoneOSCLog-touches.csv";
+// String touchFileName = "/Users/charles/Dropbox/Metatone/20140317/studyinbowls-performance/2014-03-17T18-09-46-MetatoneOSCLog-touches.csv";
+//String touchFileName = "/Users/charles/Dropbox/Metatone/20140317/studyinbowls-rehearsal/2014-03-17T17-40-14-MetatoneOSCLog-touches.csv";
+String touchFileDir = "/Users/charles/Dropbox/Metatone/20140505/20-39-StudyInBowls/";
+String touchFileName = touchFileDir + "2014-05-05T20-39-43-MetatoneOSCLog-touches.csv";
+
 boolean saving_frames = true;
+boolean portrait = true;
 
 int year = 2014;
-int month = 3;
-int day = 17;
-int startHour = 18;
-int startMinute = 9;
-int startSecond = 46;
+int month = 5;
+int day = 5;
+int startHour = 20;
+int startMinute = 39;
+int startSecond = 43;
 
 int endFrames = 80;
 
@@ -26,7 +31,12 @@ int currentRow;
 int totalRows;
 
 void setup() {
-  size(768, 1024,P2D);
+  if (portrait) {
+    size(768, 1024);
+  } else {
+    size(1024, 768);
+  }
+  
   pg = createGraphics( width, height );
   f = loadFont("HelveticaNeue-18.vlw");
   textFont(f,18);
@@ -78,6 +88,7 @@ void draw() {
       endFrames--;
     } else {
       noLoop();
+      exit();
     }
   }
   
@@ -91,7 +102,7 @@ void draw() {
   text(makeDateString(currentFrameTime),10,height - 10);
   
   if(saving_frames) {
-    saveFrame("/Users/charles/Movies/framestga/metatone-######.tga");
+    saveFrame("/Users/charles/Movies/framestga/######.tga");
   }
 }
 

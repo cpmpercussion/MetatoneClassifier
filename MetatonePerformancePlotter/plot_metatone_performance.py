@@ -10,14 +10,22 @@ from ggplot import *
 import time
 
 #
-directory_path = '/Users/charles/Dropbox/Metatone/20140317/metatoneset-performance/'
-performance_name = '2014-03-17T18-30-57-MetatoneOSCLog'
+#directory_path = '/Users/charles/Dropbox/Metatone/20140317/metatoneset-performance/'
+#performance_name = '2014-03-17T18-30-57-MetatoneOSCLog'
 #
 # directory_path = '/Users/charles/Dropbox/Metatone/20140317/studyinbowls-performance/'
 # performance_name = '2014-03-17T18-09-46-MetatoneOSCLog'
 #
 # directory_path = '/Users/charles/Dropbox/Metatone/20140317/studyinbowls-rehearsal/'
 # performance_name = '2014-03-17T17-40-14-MetatoneOSCLog'
+#
+# directory_path = '/Users/charles/Dropbox/Metatone/20140505/21-05-MetaLonsdale/'
+# performance_name = '2014-05-05T21-05-37-MetatoneOSCLog'
+
+# directory_path = '/Users/charles/Dropbox/Metatone/20140505/21-12-BirdsNest/'
+# performance_name = '2014-05-05T21-12-48-MetatoneOSCLog'
+directory_path = '/Users/charles/Dropbox/Metatone/20140505/20-39-StudyInBowls/'
+performance_name = '2014-05-05T20-39-43-MetatoneOSCLog'
 
 #
 # Setup

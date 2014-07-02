@@ -18,9 +18,7 @@ classifier_file = "2013-07-01-TrainingData-classifier.p"
 
 parser = argparse.ArgumentParser(description='Classify gestures from a Metatone Touch CSV with a CSV and PNG score output.')
 parser.add_argument('filename',help='A Metatone Touch CSV file to be classified.')
-
 args = parser.parse_args()
-
 touchlog_file = args.filename
 
 ## Load the classifier

@@ -1,4 +1,8 @@
-String fileDirectory = "/Users/charles/Dropbox/Metatone/20140317/studyinbowls-performance/2014-03-17T18-09-46-MetatoneOSCLog-";
+// String fileDirectory = "/Users/charles/Dropbox/Metatone/20140317/studyinbowls-performance/2014-03-17T18-09-46-MetatoneOSCLog-";
+// String fileDirectory = "/Users/charles/Dropbox/Metatone/20140317/metatoneset-performance/2014-03-17T18-30-57-MetatoneOSCLog-";
+String fileDirectory = "/Users/charles/Dropbox/Metatone/20140505/20-39-StudyInBowls/2014-05-05T20-39-43-MetatoneOSCLog-";
+
+// String fileDirectory = "/Users/charles/Dropbox/Metatone/20140317/studyinbowls-rehearsal/2014-03-17T17-40-14-MetatoneOSCLog-";
 String eventsFileName = "events.csv";
 String gestureFileName = "gestures.csv";
 String transitionsFileName = "transitions.csv";
@@ -6,11 +10,11 @@ String transitionsFileName = "transitions.csv";
 boolean saving_frames = true;
 
 int year = 2014;
-int month = 3;
-int day = 17;
-int startHour = 18;
-int startMinute = 9;
-int startSecond = 46;
+int month = 5;
+int day = 5;
+int startHour = 20;
+int startMinute = 39;
+int startSecond = 43;
 
 int endFrames = 80;
 int margins = 50;
@@ -135,7 +139,10 @@ void draw() {
   background(0);
   currentFrameTime = frameCount / 25.0;// Hard coded to 25 frames per second
 
-  if (currentFrameTime > performanceLengthSeconds) noLoop();
+  if (currentFrameTime > performanceLengthSeconds) {
+    noLoop();
+    exit();
+  }
 
   // Draw the gesturePlot offscreen image
   image(gesturePlot,0,0);
