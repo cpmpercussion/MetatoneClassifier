@@ -11,6 +11,7 @@ import matplotlib.dates as dates
 from matplotlib.lines import Line2D
 from mpl_toolkits.mplot3d import Axes3D
 from datetime import timedelta
+import random
 
 ## Int values for Gesture codes.
 gesture_codes = {
@@ -310,6 +311,38 @@ def calculate_group_transition_matrix(states_frame):
     ####
     #group_transitions = group_transitions.resample(window_size,how=transition_sum)
     return group_matrix
+
+##
+## GenerativeAgent Stuff
+##
+
+def create_full_transition_dataframe(states):
+    output = pd.DataFrame(index = states.index, columns = states.columns)
+    for col in states:
+        prev = -1
+        for s in states[col].index:
+            curr = s
+            if (prev != -1):
+                output[col][s] = one_step_full_transition(states[col][prev],states[col][curr])
+            prev = s
+    return output
+
+def one_step_full_transition(e1,e2):
+    states_n = 9
+    transition = np.zeros([states_n,states_n])
+    transition[e2][e1] = transition[e2][e1] + 1
+    return transition
+
+def transition_matrix_to_stochastic_matrix(trans_matrix):
+    result = map((lambda x: map((lambda n: n/sum(x)),x)), trans_matrix)
+    return result
+
+def weighted_choice(weights):
+    rnd = random.random() * sum(weights)
+    for i, w in enumerate(weights):
+        rnd -= w
+        if rnd < 0:
+            return i
 
 #
 # TODO - fixup functionality for this method - should return different kinds of events (or something for no event).
