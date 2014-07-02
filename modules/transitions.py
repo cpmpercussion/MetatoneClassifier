@@ -288,6 +288,28 @@ def calculate_group_transitions_for_window(states_frame,window_size):
     group_transitions = group_transitions.resample(window_size,how=transition_sum)
     return group_transitions
 
+#
+# Returns the group's transition matrix for a whole performance.
+#
+def calculate_group_transition_matrix(states_frame):
+    if(not isinstance(states_frame,pd.DataFrame) or states_frame.empty):
+        return None
+    transitions = create_transition_dataframe(states_frame).dropna()
+    if(transitions.empty):
+        return None
+    cols = [transitions[n] for n in transitions.columns]
+    for c in range(len(cols)):
+        if (c == 0):
+            group_transitions = cols[c]
+        else:
+            group_transitions = group_transitions + cols[c]       
+    group_transitions = group_transitions.dropna()
+    # add all the transitions together...
+    group_matrix = transition_sum(group_transitions)
+    # turn the group matrix into a left stochastic matrix?
+    ####
+    #group_transitions = group_transitions.resample(window_size,how=transition_sum)
+    return group_matrix
 
 #
 # TODO - fixup functionality for this method - should return different kinds of events (or something for no event).
