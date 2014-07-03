@@ -13,6 +13,8 @@ from mpl_toolkits.mplot3d import Axes3D
 from datetime import timedelta
 import random
 
+NUMBER_STATES = 5
+
 ## Int values for Gesture codes.
 gesture_codes = {
     'N': 0,
@@ -39,7 +41,7 @@ gesture_groups = {
     9 : 4}
 
 def transition_matrix(chains):
-    states_n = 5
+    states_n = NUMBER_STATES
     output = []
     for col in chains:
         transitions = np.zeros([states_n,states_n])
@@ -55,7 +57,7 @@ def transition_matrix(chains):
     return output
 
 def one_step_transition(e1,e2):
-    states_n = 5
+    states_n = NUMBER_STATES
     transition = np.zeros([states_n,states_n])
     transition[gesture_groups[e2]][gesture_groups[e1]] = transition[gesture_groups[e2]][gesture_groups[e1]] + 1
     return transition
@@ -316,22 +318,22 @@ def calculate_group_transition_matrix(states_frame):
 ## GenerativeAgent Stuff
 ##
 
-def create_full_transition_dataframe(states):
-    output = pd.DataFrame(index = states.index, columns = states.columns)
-    for col in states:
-        prev = -1
-        for s in states[col].index:
-            curr = s
-            if (prev != -1):
-                output[col][s] = one_step_full_transition(states[col][prev],states[col][curr])
-            prev = s
-    return output
+# def create_full_transition_dataframe(states):
+#     output = pd.DataFrame(index = states.index, columns = states.columns)
+#     for col in states:
+#         prev = -1
+#         for s in states[col].index:
+#             curr = s
+#             if (prev != -1):
+#                 output[col][s] = one_step_full_transition(states[col][prev],states[col][curr])
+#             prev = s
+#     return output
 
-def one_step_full_transition(e1,e2):
-    states_n = 9
-    transition = np.zeros([states_n,states_n])
-    transition[e2][e1] = transition[e2][e1] + 1
-    return transition
+# def one_step_full_transition(e1,e2):
+#     states_n = 9
+#     transition = np.zeros([states_n,states_n])
+#     transition[e2][e1] = transition[e2][e1] + 1
+#     return transition
 
 def transition_matrix_to_stochastic_matrix(trans_matrix):
     result = map((lambda x: map((lambda n: n/sum(x)),x)), trans_matrix)
