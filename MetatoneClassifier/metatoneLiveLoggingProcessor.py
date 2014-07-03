@@ -279,7 +279,7 @@ def add_source_to_list(name,source):
 
 def remove_source(name):
     global osc_sources
-    if name in osc_sources: del osc_source[name]
+    if name in osc_sources: del osc_sources[name]
 
 def send_message_to_sources(msg):
     for name in osc_sources.keys():
