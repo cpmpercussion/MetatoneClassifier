@@ -52,7 +52,6 @@ except IndexError:
 s = OSC.OSCServer(receive_address) # basic
 ##s = OSC.ThreadingOSCServer(receive_address) # threading
 ##s = OSC.ForkingOSCServer(receive_address) # forking
-#s.addDefaultHandlers()
 
 # Setup OSC Client.
 oscClient = OSC.OSCClient()
