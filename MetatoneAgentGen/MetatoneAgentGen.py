@@ -154,6 +154,7 @@ active_names = []
 
 def classify_touch_messages(messages):
 	global TRANSITION_MATRIX
+	global active_names
 	if not messages:
 		return classify_empty_touch_messages()
 	classes = {}
@@ -162,9 +163,10 @@ def classify_touch_messages(messages):
 			classes[n] = weighted_choice_sub(TRANSITION_MATRIX[LAST_GESTURES[n]])
 		except:
 			classes[n] = 0
-		return classes
+	return classes
 
 def classify_empty_touch_messages():
+	global active_names
 	classes = {}
 	for n in active_names:
 		classes[n] = 0
@@ -286,6 +288,7 @@ def get_device_name(device_id):
 		return device_id
 
 def add_active_device(device_id):
+	global active_names
 	device_name = get_device_name(device_id)
 	if device_name not in active_names:
 		active_names.append(device_name)
