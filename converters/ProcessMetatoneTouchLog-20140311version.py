@@ -1,8 +1,8 @@
-#import argparse
-#parser = argparse.ArgumentParser(description='Convert a Metatone OSC Logger file into a useful CSV.')
-#parser.add_argument('filename',help='A Metatone Supercollider OSC Log to be converted.')
-#args = parser.parse_args()
-#input_filename = args.filename
+import argparse
+parser = argparse.ArgumentParser(description='Convert a Metatone OSC Logger file into a useful CSV.')
+parser.add_argument('filename',help='A Metatone Supercollider OSC Log to be converted.')
+args = parser.parse_args()
+input_filename = args.filename
 
 ## This script splits up Metatone Classifier logs into 6 CSV files according to the type of data.
 ## 30/06/2014
@@ -27,8 +27,8 @@ device_names = {
 #input_filename = '/Users/charles/Dropbox/Metatone/20140505/1-StudyInBowls/2014-05-05T20-02-01-MetatoneOSCLog.log'
 #input_filename = '/Users/charles/Dropbox/Metatone/20140505/2-MetaLonsdale/2014-05-05T20-26-38-MetatoneOSCLog.log'
 #input_filename = '/Users/charles/Dropbox/Metatone/20140505/3-BirdsNest/2014-05-05T20-39-43-MetatoneOSCLog.log'
-input_filename = '/Users/charles/Dropbox/Metatone/20140505/2014-05-05T21-34-04-MetatoneOSCLog.log'
-
+#input_filename = '/Users/charles/Dropbox/Metatone/20140505/2014-05-05T21-34-04-MetatoneOSCLog.log'
+#input_filename = '/Users/charles/Dropbox/Metatone/touch-point-performance-analysis/MetatoneAgentGen/testLog2014-07-04/2014-07-04T15-57-04-MetatoneOSCLog.log'
 
 touch_filename = input_filename.replace(".log","") + '-touches.csv'
 gesture_filename = input_filename.replace(".log","") + '-gestures.csv'

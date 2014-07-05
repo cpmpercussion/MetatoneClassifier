@@ -24,8 +24,11 @@ import time
 
 # directory_path = '/Users/charles/Dropbox/Metatone/20140505/21-12-BirdsNest/'
 # performance_name = '2014-05-05T21-12-48-MetatoneOSCLog'
-directory_path = '/Users/charles/Dropbox/Metatone/20140505/20-39-StudyInBowls/'
-performance_name = '2014-05-05T20-39-43-MetatoneOSCLog'
+# directory_path = '/Users/charles/Dropbox/Metatone/20140505/20-39-StudyInBowls/'
+# performance_name = '2014-05-05T20-39-43-MetatoneOSCLog'
+
+# directory_path = '/Users/charles/Dropbox/Metatone/touch-point-performance-analysis/MetatoneAgentGen/testLog2014-07-04/'
+# performance_name = '2014-07-04T15-57-04-MetatoneOSCLog'
 
 #
 # Setup
