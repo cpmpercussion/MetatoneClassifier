@@ -13,7 +13,20 @@ VISUALISER_PORT = 61200
 VISUALISER_HOST = 'localhost'
 ##
 
+##
+## Register the Bonjour service
+##
+def register_callback(sdRef, flags, errorCode, name, regtype, domain):
+	if errorCode == pybonjour.kDNSServiceErr_NoError:
+		print 'Registered service:'
+		print '  name    =', name
+		print '  regtype =', regtype
+		print '  domain  =', domain
+
+
+
 class NetworkManager:
+	class_names = ['n','ft','st','fs','fsa','vss','bs','ss','c']
 
 	def __init__(self):
 		self.ip = ([ip for ip in socket.gethostbyname_ex(socket.gethostname())[2] if not ip.startswith("127.")][:1])
@@ -39,104 +52,88 @@ class NetworkManager:
 		# Setup OSC Client.
 		
 
-		self.server.addMsgHandler("/metatone/touch", self.touch_handler)
-		self.server.addMsgHandler("/metatone/touch/ended", self.touch_ended_handler)
-		self.server.addMsgHandler("/metatone/switch", self.switch_handler)
-		self.server.addMsgHandler("/metatone/online", self.onlineoffline_handler)
-		self.server.addMsgHandler("/metatone/offline", self.onlineoffline_handler)
-		self.server.addMsgHandler("/metatone/acceleration", self.accel_handler)
-		self.server.addMsgHandler("/metatone/app",self.metatone_app_handler)
+		self.server.addMsgHandler("/metatone/touch", touch_handler)
+		self.server.addMsgHandler("/metatone/touch/ended", touch_ended_handler)
+		self.server.addMsgHandler("/metatone/switch", switch_handler)
+		self.server.addMsgHandler("/metatone/online", onlineoffline_handler)
+		self.server.addMsgHandler("/metatone/offline", onlineoffline_handler)
+		self.server.addMsgHandler("/metatone/acceleration", accel_handler)
+		self.server.addMsgHandler("/metatone/app",metatone_app_handler)
 
 		# Bonjour Advertising
 		self.bonjourService = pybonjour.DNSServiceRegister(name = self.name,
 									 regtype = CLASSIFIER_SERVICE_TYPE,
 									 port = self.port,
-									 callBack = self.register_callback)
+									 callBack = register_callback)
 
-	##
-	## Register the Bonjour service
-	##
-	def register_callback(sdRef, flags, errorCode, name, regtype, domain):
-		if errorCode == pybonjour.kDNSServiceErr_NoError:
-			print 'Registered service:'
-			print '  name    =', name
-			print '  regtype =', regtype
-			print '  domain  =', domain
-
-	def startOscServer():
-		print("\nStarting OSCServer.")
+	def startOscServer(self):
+		print("\nStarting Metatone OSCServer.")
 		print("IP Address is: " + self.receive_address[0])
-		global st 
-		st = threading.Thread(target = self.server.serve_forever)
-		st.start()
+		self.st = threading.Thread(target = self.server.serve_forever)
+		self.st.start()
 
-	def close_server():
+	def close_server(self):
 		self.bonjourService.close()
 		self.server.close()
-		global st
-		st.join()
+		self.st.join()
 
-	def send_gestures(classes):
-		class_names = ['n','ft','st','fs','fsa','vss','bs','ss','c']
-		for n in osc_sources.keys():
+	def send_gestures(self, classes):
+		for n in self.osc_sources.keys():
 			if n in classes.keys():
 				msg = OSC.OSCMessage("/metatone/classifier/gesture")
-				msg.extend([n,class_names[classes[n]]])
+				msg.extend([n,self.class_names[classes[n]]])
 				try:
-					oscClient.sendto(msg,osc_sources[n])
+					self.client.sendto(msg,self.osc_sources[n])
 				except OSC.OSCClientError:
-					print("Couldn't send message to " + name + "removed from sources.")
-					# logging.warning("Couldn't send message to " + name + "removed from sources.")
-					remove_source(name)
+					print("Couldn't send message to " + n + "removed from sources.")
+					self.remove_source(n)
 				except socket.error:
-					print("Couldn't send message to " + name + ", bad address. removed from sources.")
-					remove_source(name)
+					print("Couldn't send message to " + n + ", bad address. removed from sources.")
+					self.remove_source(n)
 
-	def send_touch_to_visualiser(touch_data):
+	def send_message_to_sources(self,msg):
+		for name in self.osc_sources.keys():
+			try:
+				self.client.sendto(msg,osc_sources[name])
+			except OSC.OSCClientError:
+				print("Couldn't send message to " + name)
+				self.remove_source(name)
+			except socket.error:
+				print("Couldn't send message to " + name + ", bad address.")
+				self.remove_source(name)
+		log_line = [datetime.now().isoformat()]
+		log_line.extend(msg)
+		
+		## TODO deal with loging:
+		log_messages(log_line,live_messages)
+
+	def send_touch_to_visualiser(self, touch_data):
 		msg = OSC.OSCMessage("/metatone/touch")
 		msg.extend(touch_data)
 		try: 
-			oscClient.sendto(msg,(VISUALISER_HOST,VISUALISER_PORT))
+			self.client.sendto(msg,(VISUALISER_HOST,VISUALISER_PORT))
 		except:
 			msg = ""
 			# print("Can't send messsages to visualiser.")
 
-	def add_source_to_list(name,source):
-		## Addressing a dictionary.
-		global osc_sources
+	def add_source_to_list(self,name,source):
 		source_address = (source[0],METATONE_RECEIVING_PORT)
-		if (name not in osc_sources.keys()):
-			osc_sources[name] = source_address
+		if (name not in self.osc_sources.keys()):
+			self.osc_sources[name] = source_address
 
-	def remove_source(name):
-		global osc_sources
-		if name in osc_sources: del osc_sources[name]
+	def remove_source(self,name):
+		if name in self.osc_sources: del self.osc_sources[name]
 
-	def send_message_to_sources(msg):
-		for name in osc_sources.keys():
-			try:
-				oscClient.sendto(msg,osc_sources[name])
-				#print("Message sent to " + name)
-			except OSC.OSCClientError:
-				print("Couldn't send message to " + name)
-				remove_source(name)
-			except socket.error:
-				print("Couldn't send message to " + name + ", bad address.")
-				remove_source(name)
-		log_line = [datetime.now().isoformat()]
-		log_line.extend(msg)
-		log_messages(log_line,live_messages)
-
-	def get_device_name(device_id):
-		if device_id in device_names:
-			return device_names[device_id]
+	def get_device_name(self,device_id):
+		if device_id in self.device_names:
+			return self.device_names[device_id]
 		else:
 			return device_id
 
-	def add_active_device(device_id):
-		device_name = get_device_name(device_id)
-		if device_name not in active_names:
-			active_names.append(device_name)
+	def add_active_device(self,device_id):
+		device_name = self.get_device_name(device_id)
+		if device_name not in self.active_names:
+			self.active_names.append(device_name)
 
 	##
 	## OSC Message Handling Functions
