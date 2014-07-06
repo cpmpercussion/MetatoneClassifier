@@ -14,6 +14,8 @@ from datetime import timedelta
 import random
 
 NUMBER_STATES = 5
+NEW_IDEA_THRESHOLD = 0.3
+TRANSITIONS_WINDOW = '15s'
 
 ## Int values for Gesture codes.
 gesture_codes = {
@@ -187,32 +189,14 @@ def print_transition_plots(transitions):
         plt.savefig(title.replace(":","_") + '.png', dpi=150, format="png")
         plt.close()
 
-# def calculate_transition_activity(states_frame):
-#     if(not isinstance(states_frame,pd.DataFrame) or states_frame.empty):
-#         return None
-#     window_size = '15s'
-#     new_idea_difference_threshold = 0.80 # 1-norm version (experimental)
-#     transitions = create_transition_dataframe(states_frame).dropna()
-#     if(transitions.empty):
-#         return []
-#     cols = [transitions[n] for n in transitions.columns]
-#     for c in range(len(cols)):
-#         if (c == 0):
-#             group_transitions = cols[c]
-#         else:
-#             group_transitions = group_transitions + cols[c]       
-#     group_transitions = group_transitions.dropna()
-#     group_transitions = group_transitions.resample(window_size,how=transition_sum)
-#     transition_activity = group_transitions.dropna().apply(diag_measure_1_norm) # changed to 1-norm version.
-#     transition_activity.name = 'transition_activity'
-#     #new_ideas = transition_activity.ix[transition_activity.diff() > new_idea_difference_threshold]
-#     return transition_activity
+##
+# User Functions:
+##
 
 def calculate_transition_activity(states_frame):
     if(not isinstance(states_frame,pd.DataFrame) or states_frame.empty):
         return None
-    window_size = '15s'
-    return calculate_transition_activity_for_window(states_frame,window_size)
+    return calculate_transition_activity_for_window(states_frame,TRANSITIONS_WINDOW)
 
 def calculate_transition_activity_for_window(states_frame,window_size):
     if(not isinstance(states_frame,pd.DataFrame) or states_frame.empty):
@@ -223,16 +207,10 @@ def calculate_transition_activity_for_window(states_frame,window_size):
         return None
     transition_activity = group_transitions.dropna().apply(diag_measure_1_norm) # changed to 1-norm version.
     transition_activity.name = 'transition_activity'
-    #new_ideas = transition_activity.ix[transition_activity.diff() > new_idea_difference_threshold]
     return transition_activity
 
 def calculate_new_ideas(transition_activity, threshold):
-    new_idea_difference_threshold = threshold
-    new_ideas = transition_activity.ix[transition_activity.diff() > new_idea_difference_threshold]
-    return new_ideas
-
-
-
+    return transition_activity.ix[transition_activity.diff() > threshold]
 
 #
 # Returns True if current transitions suggest a "new_idea" event according to the current threshold.
@@ -241,9 +219,7 @@ def is_new_idea_with_threshold(transitions, threshold):
     if not isinstance(transitions, pd.TimeSeries):
         return None
     measure = transitions[-2:].diff().dropna()
-    #new_idea_difference_threshold = 0.15
-    new_idea_difference_threshold = threshold # 1-norm version (experimental)
-    if (measure and measure[0] > new_idea_difference_threshold):
+    if (measure and measure[0] > threshold):
         return True
     else:
         return False
@@ -256,7 +232,8 @@ def is_new_idea(transitions):
         return None
     #new_idea_difference_threshold = 0.15
     #new_idea_difference_threshold = 0.5 # 1-norm version (experimental)
-    new_idea_difference_threshold = 0.3 # new 14/3/2014
+    # new_idea_difference_threshold = 0.3 # new 14/3/2014
+    new_idea_difference_threshold = NEW_IDEA_THRESHOLD # new 6/7/2014
     if (is_new_idea_with_threshold(transitions,new_idea_difference_threshold)):
         return True
     else:
@@ -307,33 +284,12 @@ def calculate_group_transition_matrix(states_frame):
         else:
             group_transitions = group_transitions + cols[c]       
     group_transitions = group_transitions.dropna()
-    # add all the transitions together...
     group_matrix = transition_sum(group_transitions)
-    # turn the group matrix into a left stochastic matrix?
-    ####
-    #group_transitions = group_transitions.resample(window_size,how=transition_sum)
     return group_matrix
 
 ##
 ## GenerativeAgent Stuff
 ##
-
-# def create_full_transition_dataframe(states):
-#     output = pd.DataFrame(index = states.index, columns = states.columns)
-#     for col in states:
-#         prev = -1
-#         for s in states[col].index:
-#             curr = s
-#             if (prev != -1):
-#                 output[col][s] = one_step_full_transition(states[col][prev],states[col][curr])
-#             prev = s
-#     return output
-
-# def one_step_full_transition(e1,e2):
-#     states_n = 9
-#     transition = np.zeros([states_n,states_n])
-#     transition[e2][e1] = transition[e2][e1] + 1
-#     return transition
 
 def transition_matrix_to_stochastic_matrix(trans_matrix):
     result = map((lambda x: map((lambda n: n/sum(x)),x)), trans_matrix)
