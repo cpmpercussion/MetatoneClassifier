@@ -408,11 +408,11 @@ def main():
 					gestures = make_gesture_frame(classified_gestures).fillna(0)
 				except:
 					print("Couldn't update gestures." + str(sys.exc_info()[0]))
-					
 				
 				try:
-					current_transitions = transitions.calculate_transition_activity(gestures)
-					state = transitions.current_transition_state(gestures)
+					latest_gestures = transitions.trim_gesture_frame(gestures)
+					current_transitions = transitions.calculate_transition_activity(latest_gestures)
+					state = transitions.current_transition_state(latest_gestures)
 				except:
 					print ("Couldn't perform transition calculations.")
 
