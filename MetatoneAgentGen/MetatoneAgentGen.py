@@ -241,6 +241,22 @@ def send_gestures(classes):
 ## OSC Sending Methods
 osc_sources = {}
 
+def send_message_to_sources(msg):
+	for name in osc_sources.keys():
+		try:
+			oscClient.sendto(msg,osc_sources[name])
+		except OSC.OSCClientError:
+			print("Couldn't send message: " + str(msg) + " to: " + name + " " + str(osc_sources[name]))
+			remove_source(name)
+			## It seems to not like connecting to clients who are sending a lot of messages...
+			## Does this mean it could be a problem with the MetatoneOSC server?
+		except socket.error:
+			print("Couldn't send message to " + name + ", bad address. removed from sources.")
+			remove_source(name)
+	log_line = [datetime.now().isoformat()]
+	log_line.extend(msg)
+	log_messages(log_line,live_messages)
+
 
 def send_touch_to_visualiser(touch_data):
 	msg = OSC.OSCMessage("/metatone/touch")
@@ -265,21 +281,7 @@ def remove_source(name):
 	global osc_sources
 	if name in osc_sources: del osc_sources[name]
 
-def send_message_to_sources(msg):
-	for name in osc_sources.keys():
-		try:
-			oscClient.sendto(msg,osc_sources[name])
-		except OSC.OSCClientError:
-			print("Couldn't send message: " + str(msg) + " to: " + name + " " + str(osc_sources[name]))
-			remove_source(name)
-			## It seems to not like connecting to clients who are sending a lot of messages...
-			## Does this mean it could be a problem with the MetatoneOSC server?
-		except socket.error:
-			print("Couldn't send message to " + name + ", bad address. removed from sources.")
-			remove_source(name)
-	log_line = [datetime.now().isoformat()]
-	log_line.extend(msg)
-	log_messages(log_line,live_messages)
+
 
 def get_device_name(device_id):
 	if device_id in device_names:

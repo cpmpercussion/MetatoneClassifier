@@ -248,23 +248,26 @@ def send_gestures(classes):
 			msg = OSC.OSCMessage("/metatone/classifier/gesture")
 			msg.extend([n,class_names[classes[n]]])
 			try:
-				oscClient.sendto(msg,osc_sources[n])
-			except OSC.OSCClientError:
-				print("Couldn't send gestures to " + n + " OSCClientError.")
+				oscClient.sendto(msg,osc_sources[n],timeout=10.0)
+			except OSC.OSCClientError as err:
+				print("Couldn't send gestures to " + n + ". OSCClientError")
+				print(msg)
+				print(err)
 			except socket.error:
 				print("Couldn't send gestures to " + n + ", bad address (removed).")
 				remove_source(n)
 
 def send_message_to_sources(msg):
-	for name in osc_sources.keys():
+	for n in osc_sources.keys():
 		try:
-			oscClient.sendto(msg,osc_sources[name])
-			#print("Message sent to " + name)
-		except OSC.OSCClientError:
-			print("Couldn't send message to " + name + " OSCClientError")
+			oscClient.sendto(msg,osc_sources[n],timeout=10.0)
+		except OSC.OSCClientError as err:
+			print("Couldn't send message to " + n + ". OSCClientError")
+			print(msg)
+			print(err)
 		except socket.error:
-			print("Couldn't send message to " + name + ", bad address (removed).")
-			remove_source(name)
+			print("Couldn't send message to " + n + ", bad address (removed).")
+			remove_source(n)
 	log_line = [datetime.now().isoformat()]
 	log_line.extend(msg)
 	log_messages(log_line,live_messages)
@@ -304,6 +307,7 @@ def add_active_device(device_id):
 ##
 ## OSC Message Handling Functions
 ##
+
 def touch_handler(addr, tags, stuff, source):
 	add_source_to_list(get_device_name(stuff[0]),source)
 	add_active_device(stuff[0])
@@ -359,6 +363,12 @@ def trim_touch_messages():
 	delta = timedelta(seconds=-5)
 	touch_messages = [x for x in touch_messages if (x[0] > datetime.now() + delta)]
 
+##
+##
+## End OSC Handlers.
+##
+##
+
 def main():
 	s.addMsgHandler("/metatone/touch", touch_handler)
 	s.addMsgHandler("/metatone/touch/ended", touch_ended_handler)
@@ -413,6 +423,7 @@ def main():
 					gestures = make_gesture_frame(classified_gestures).fillna(0)
 				except:
 					print("Couldn't update gestures.")
+					raise
 				
 				try:
 					latest_gestures = transitions.trim_gesture_frame(gestures)
@@ -420,6 +431,7 @@ def main():
 					state = transitions.current_transition_state(latest_gestures)
 				except:
 					print ("Couldn't perform transition calculations.")
+					raise
 
 				if (state):
 					print(state)
@@ -438,6 +450,7 @@ def main():
 				raise
 			except:
 				print("Couldn't perform analysis - exception")
+				raise
 	except KeyboardInterrupt:
 		print "\nClosing OSCServer."
 		close_server()
