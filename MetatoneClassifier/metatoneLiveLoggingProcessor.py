@@ -31,8 +31,9 @@ VISUALISER_HOST = 'localhost'
 WEB_SERVER_MODE = False
 ##
 
-## OSC Sending Methods
+## Global Variables
 osc_sources = {}
+active_names = []
 
 ##
 ## Set up OSC server and Bonjour Service
@@ -165,8 +166,7 @@ pickle_file = open(PICKLED_CLASSIFIER_FILE, "rb" )
 classifier = pickle.load(pickle_file)
 pickle_file.close()
 
-## Active Device names:
-active_names = []
+
 
 def classify_touch_messages(messages):
 	if not messages:
