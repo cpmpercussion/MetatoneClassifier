@@ -63,6 +63,10 @@ VISUALISER_HOST = 'localhost'
 WEB_SERVER_MODE = False
 ##
 
+## Global Variables
+osc_sources = {}
+active_names = []
+
 ##
 ## Set up OSC server and Bonjour Service
 ##
@@ -84,7 +88,6 @@ except IndexError:
 s = OSC.OSCServer(receive_address) # basic
 ##s = OSC.ThreadingOSCServer(receive_address) # threading
 ##s = OSC.ForkingOSCServer(receive_address) # forking
-#s.addDefaultHandlers()
 
 # Setup OSC Client.
 oscClient = OSC.OSCClient()
@@ -149,8 +152,7 @@ gesture_codes = {
 	'C': 8,
 	'?': 9}
 
-## Active Device names:
-active_names = []
+
 
 def classify_touch_messages(messages):
 	global TRANSITION_MATRIX
@@ -229,34 +231,29 @@ def send_gestures(classes):
 			msg = OSC.OSCMessage("/metatone/classifier/gesture")
 			msg.extend([n,class_names[classes[n]]])
 			try:
-				oscClient.sendto(msg,osc_sources[n])
-			except OSC.OSCClientError:
-				print("Couldn't send gesture message to " + n + " " + str(osc_sources[n]) +" - removed from sources.")
-				# print(str(sys.exc_info()[0]))
-				remove_source(n)
+				oscClient.sendto(msg,osc_sources[n],timeout=10.0)
+			except OSC.OSCClientError as err:
+				print("Couldn't send gestures to " + n + ". OSCClientError")
+				print(msg)
+				print(err)
 			except socket.error:
-				print("Couldn't send gesture message to " + n + ", bad address. removed from sources.")
+				print("Couldn't send gestures to " + n + ", bad address (removed).")
 				remove_source(n)
-
-## OSC Sending Methods
-osc_sources = {}
 
 def send_message_to_sources(msg):
-	for name in osc_sources.keys():
+	for n in osc_sources.keys():
 		try:
-			oscClient.sendto(msg,osc_sources[name])
-		except OSC.OSCClientError:
-			print("Couldn't send message: " + str(msg) + " to: " + name + " " + str(osc_sources[name]))
-			remove_source(name)
-			## It seems to not like connecting to clients who are sending a lot of messages...
-			## Does this mean it could be a problem with the MetatoneOSC server?
+			oscClient.sendto(msg,osc_sources[n],timeout=10.0)
+		except OSC.OSCClientError as err:
+			print("Couldn't send message to " + n + ". OSCClientError")
+			print(msg)
+			print(err)
 		except socket.error:
-			print("Couldn't send message to " + name + ", bad address. removed from sources.")
-			remove_source(name)
+			print("Couldn't send message to " + n + ", bad address (removed).")
+			remove_source(n)
 	log_line = [datetime.now().isoformat()]
 	log_line.extend(msg)
 	log_messages(log_line,live_messages)
-
 
 def send_touch_to_visualiser(touch_data):
 	msg = OSC.OSCMessage("/metatone/touch")
@@ -266,7 +263,6 @@ def send_touch_to_visualiser(touch_data):
 	except:
 		msg = ""
 		# print("Can't send messsages to visualiser.")
-
 
 def add_source_to_list(name,source):
 	## Addressing a dictionary.
