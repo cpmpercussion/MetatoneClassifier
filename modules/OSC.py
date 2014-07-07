@@ -128,6 +128,9 @@ v0.3.6 - 19 April 2010
 		inspection keeps the code backward compatible
 	Moved testing code into separate testbench (testbench.py)
 
+CPM Edits in 2014
+	Fixed up OSCClient.sendto so that it works with a connectionless socket.
+
 -----------------
 Original Comments
 -----------------
