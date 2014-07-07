@@ -241,7 +241,6 @@ def log_gestures(classes, log):
 	log.append(classes)
 	# log_message_new(message_list)
 
-
 def send_gestures(classes):
 	class_names = ['n','ft','st','fs','fsa','vss','bs','ss','c']
 	for n in osc_sources.keys():
@@ -252,8 +251,6 @@ def send_gestures(classes):
 				oscClient.sendto(msg,osc_sources[n])
 			except OSC.OSCClientError:
 				print("Couldn't send gestures to " + n + " OSCClientError.")
-				# logging.warning("Couldn't send message to " + name + "removed from sources.")
-				# remove_source(n)
 			except socket.error:
 				print("Couldn't send gestures to " + n + ", bad address (removed).")
 				remove_source(n)
@@ -265,7 +262,6 @@ def send_message_to_sources(msg):
 			#print("Message sent to " + name)
 		except OSC.OSCClientError:
 			print("Couldn't send message to " + name + " OSCClientError")
-			# remove_source(name)
 		except socket.error:
 			print("Couldn't send message to " + name + ", bad address (removed).")
 			remove_source(name)
@@ -280,8 +276,6 @@ def send_touch_to_visualiser(touch_data):
 		oscClient.sendto(msg,(VISUALISER_HOST,VISUALISER_PORT))
 	except:
 		msg = ""
-		# print("Can't send messsages to visualiser.")
-
 
 def add_source_to_list(name,source):
 	## Addressing a dictionary.
@@ -360,7 +354,6 @@ def metatone_app_handler(addr,tags,stuff,source):
 
 def trim_touch_messages():
 	# Only keeps the last five seconds of touch messages.
-	# touch_messages.append([time,get_device_name(stuff[0]),stuff[1],stuff[2],stuff[3]])
 	global touch_messages
 	current_time = datetime.now()
 	delta = timedelta(seconds=-5)
