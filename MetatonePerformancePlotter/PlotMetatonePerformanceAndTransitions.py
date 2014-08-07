@@ -1,3 +1,8 @@
+#! /usr/bin/env python
+#
+# This script plots the data captured in Metatone Performances!
+# Uses all 6 CSV files output during the performance.
+#
 import numpy as np
 import pandas as pd
 import transitions
@@ -8,6 +13,15 @@ from mpl_toolkits.mplot3d import Axes3D
 from datetime import timedelta
 from ggplot import *
 import time
+import argparse
+
+parser = argparse.ArgumentParser(description='Plot Gestures and transitions of a set of Metatone CSVs. Input is the .log file')
+parser.add_argument('filename',help='A Metatone Classifier .log file to be converted.')
+args = parser.parse_args()
+input_filename = args.filename
+
+directory_path = input_filename.replace(".log","")[:-34]
+performance_name = input_filename.replace(".log","")[-34:]
 
 #
 #directory_path = '/Users/charles/Dropbox/Metatone/20140317/metatoneset-performance/'
@@ -30,11 +44,19 @@ import time
 # directory_path = '/Users/charles/Dropbox/Metatone/touch-point-performance-analysis/MetatoneAgentGen/testLog2014-07-04/'
 # performance_name = '2014-07-04T15-57-04-MetatoneOSCLog'
 
+# directory_path = '/Users/charles/Dropbox/Metatone/touch-point-performance-analysis/MetatoneAgentGen/logs/'
+# performance_name = '2014-07-07T15-06-02-MetatoneOSCLog'
+
+# input_filename = '/Users/charles/Dropbox/Metatone/touch-point-performance-analysis/MetatoneAgentGen/logs/2014-07-07T15-06-02-MetatoneOSCLog.log'
+
 #
 # Setup
 #
 performance_time = time.strptime(performance_name[:19],'%Y-%m-%dT%H-%M-%S')
 plot_title = "Metatone " + time.strftime('%y-%m-%d %H:%M',performance_time)
+
+print("Plot Title: " + plot_title)
+
 
 events_path = directory_path + performance_name + '-events.csv'
 gestures_path = directory_path + performance_name + '-gestures.csv'
@@ -55,12 +77,6 @@ transition_states = {
     'convergence':1,
     'divergence':2,
     'development':3}
-
-#TODO use the players in the performance...
-# performers = touches['device_id'].unique()
-
-#TODO - some kind of "activity" plot like....
-#activity = touches['device_id'].resample('S', how='count')
 
 def plot_gesture_score_and_transitions():
     transitions_to_plot = transitions_frame.apply(lambda s: [transition_states[s[0]],s[1],s[2]], axis=1)
@@ -109,7 +125,7 @@ def plot_gesture_score_and_transitions():
         ax.axvline(x=x_val, color='black')
         ax2.axvline(x=x_val, color='black')
         ax3.axvline(x=x_val, color='black')
-    plt.savefig(plot_title.replace(":","_") + '.png', dpi=150, format="png")
+    plt.savefig(plot_title.replace(":","_") + '.pdf', dpi=150, format="pdf")
     plt.close()
 
 
@@ -122,7 +138,7 @@ def plot_score_and_changeyness(gestures_frame,window,threshold):
     transition_activity = transitions.calculate_transition_activity_for_window(gestures_frame,winlen)
     new_ideas = transitions.calculate_new_ideas(transition_activity, new_idea_difference_threshold)    
 	
-    #Plot and save the Gesture Score as a png:
+    #Plot and save the Gesture Score as a pdf:
     idx = gestures_frame.index
     ax = plt.figure(figsize=(25,10),frameon=False,tight_layout=True).add_subplot(211)
     ax.xaxis.set_major_locator(dates.SecondLocator(bysecond=[0,30]))
@@ -153,7 +169,7 @@ def plot_score_and_changeyness(gestures_frame,window,threshold):
         print x_val
     
     #plt.xlabel("time")
-    plt.savefig(title.replace(":","_") + " " + winlen + '.png', dpi=150, format="png")
+    plt.savefig(title.replace(":","_") + " " + winlen + '.pdf', dpi=150, format="pdf")
     plt.close()
 
 # Testing ggplot
