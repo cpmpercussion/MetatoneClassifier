@@ -15,13 +15,11 @@ from ggplot import *
 import time
 import argparse
 
-parser = argparse.ArgumentParser(description='Plot Gestures and transitions of a set of Metatone CSVs. Input is the .log file')
-parser.add_argument('filename',help='A Metatone Classifier .log file to be converted.')
-args = parser.parse_args()
-input_filename = args.filename
-
-directory_path = input_filename.replace(".log","")[:-34]
-performance_name = input_filename.replace(".log","")[-34:]
+transition_states = {
+    'stasis':0,
+    'convergence':1,
+    'divergence':2,
+    'development':3}
 
 #
 #directory_path = '/Users/charles/Dropbox/Metatone/20140317/metatoneset-performance/'
@@ -49,36 +47,8 @@ performance_name = input_filename.replace(".log","")[-34:]
 
 # input_filename = '/Users/charles/Dropbox/Metatone/touch-point-performance-analysis/MetatoneAgentGen/logs/2014-07-07T15-06-02-MetatoneOSCLog.log'
 
-#
-# Setup
-#
-performance_time = time.strptime(performance_name[:19],'%Y-%m-%dT%H-%M-%S')
-plot_title = "Metatone " + time.strftime('%y-%m-%d %H:%M',performance_time)
 
-print("Plot Title: " + plot_title)
-
-
-events_path = directory_path + performance_name + '-events.csv'
-gestures_path = directory_path + performance_name + '-gestures.csv'
-metatone_path = directory_path + performance_name + '-metatone.csv'
-online_path = directory_path + performance_name + '-online.csv'
-touches_path = directory_path + performance_name + '-touches.csv'
-transitions_path = directory_path + performance_name + '-transitions.csv'
-
-events = pd.read_csv(events_path, index_col='time', parse_dates=True)
-gestures = pd.read_csv(gestures_path, index_col='time', parse_dates=True)
-metatone = pd.read_csv(metatone_path, index_col='time', parse_dates=True)
-online = pd.read_csv(online_path, index_col='time', parse_dates=True)
-touches = pd.read_csv(touches_path, index_col='time', parse_dates=True)
-transitions_frame = pd.read_csv(transitions_path, index_col='time', parse_dates=True)
-
-transition_states = {
-    'stasis':0,
-    'convergence':1,
-    'divergence':2,
-    'development':3}
-
-def plot_gesture_score_and_transitions():
+def plot_gesture_score_and_transitions(plot_title,events,gestures,metatone,online,touches,transitions_frame):
     transitions_to_plot = transitions_frame.apply(lambda s: [transition_states[s[0]],s[1],s[2]], axis=1)
     new_ideas = events.index
 
@@ -179,4 +149,40 @@ def testing_ggplot():
     gestures_lng = pd.melt(gestures, id_vars=['date'])
     gestures_lng.columns = ['date','performer','gesture']
     ggplot(aes(x='date', y='gesture', colour='performer'), data=gestures_lng) + geom_line() + ggtitle(plot_title) + scale_x_date(breaks=dates.SecondLocator(bysecond=[0]),labels="%H:%M:%S")
+
+
+if __name__ == "__main__":
+    #
+    # Setup
+    #
+    parser = argparse.ArgumentParser(description='Plot Gestures and transitions of a set of Metatone CSVs. Input is the .log file')
+    parser.add_argument('filename',help='A Metatone Classifier .log file to be converted.')
+    args = parser.parse_args()
+    input_filename = args.filename
+
+    directory_path = input_filename.replace(".log","")[:-34]
+    performance_name = input_filename.replace(".log","")[-34:]
+
+    performance_time = time.strptime(performance_name[:19],'%Y-%m-%dT%H-%M-%S')
+    plot_title = "Metatone " + time.strftime('%y-%m-%d %H:%M',performance_time)
+
+    print("Plot Title: " + plot_title)
+
+    events_path = directory_path + performance_name + '-events.csv'
+    gestures_path = directory_path + performance_name + '-gestures.csv'
+    metatone_path = directory_path + performance_name + '-metatone.csv'
+    online_path = directory_path + performance_name + '-online.csv'
+    touches_path = directory_path + performance_name + '-touches.csv'
+    transitions_path = directory_path + performance_name + '-transitions.csv'
+
+    events = pd.read_csv(events_path, index_col='time', parse_dates=True)
+    gestures = pd.read_csv(gestures_path, index_col='time', parse_dates=True)
+    metatone = pd.read_csv(metatone_path, index_col='time', parse_dates=True)
+    online = pd.read_csv(online_path, index_col='time', parse_dates=True)
+    touches = pd.read_csv(touches_path, index_col='time', parse_dates=True)
+    transitions_frame = pd.read_csv(transitions_path, index_col='time', parse_dates=True)
+
+    ## Do the plotting
+    plot_gesture_score_and_transitions(plot_title,events,gestures,metatone,online,touches,transitions_frame)
+    print("Done! Plotted: " + plot_title)
 

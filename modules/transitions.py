@@ -1,7 +1,9 @@
-##
-## Transition Functions Module
-## Charles Martin 2013-2014
-## 
+"""
+Transition Functions Module
+Charles Martin 2013-2014
+
+Calculates and manipulates transition matrices.
+"""
 
 import pandas as pd
 import numpy as np
@@ -15,8 +17,18 @@ from datetime import datetime
 import random
 
 NUMBER_STATES = 5
+
+##
+## Settings up to July 2014 - as used in the 17/3 concert
+## and CHI2014 demos etc.
+##
 NEW_IDEA_THRESHOLD = 0.3
 TRANSITIONS_WINDOW = '15s'
+
+##
+## Experimental Settings post July 2014...
+##
+##
 
 ## Int values for Gesture codes.
 gesture_codes = {
@@ -60,6 +72,7 @@ def transition_matrix(chains):
 	return output
 
 def one_step_transition(e1,e2):
+	"""Calculates the transition between two states."""
 	states_n = NUMBER_STATES
 	transition = np.zeros([states_n,states_n])
 	transition[gesture_groups[e2]][gesture_groups[e1]] = transition[gesture_groups[e2]][gesture_groups[e1]] + 1
@@ -87,6 +100,9 @@ def create_transition_dataframe(states):
 	return output
 
 def diag_measure(mat):
+	"""Given a numpy matrix mat, returns the 2-norm of the matrix divided by 
+	the two norm of the diagonal provided the diagonal is not the zero vector.
+	(In this case returns the 2-norm of the matrix.)"""
 	mat = np.array(mat)
 	d = np.linalg.norm(mat.diagonal()) 
 	m = np.linalg.norm(mat)
@@ -95,6 +111,11 @@ def diag_measure(mat):
 	return m/d
 
 def diag_measure2(mat):
+	"""
+	Given a numpy matrix mat, returns the 2-norm of the matrix divided by 
+	the two norm of the diagonal provided the diagonal is not the zero vector.
+	(In this case returns the 2-norm of the matrix divided by 2.)
+	"""
 	# 1.3 is a good split for "New events"
 	mat = np.array(mat)
 	d = np.linalg.norm(mat.diagonal()) 
@@ -105,32 +126,37 @@ def diag_measure2(mat):
 	return m/d
 	
 def diag_measure_1_norm(mat):
+	"""
+	Measure of a transition matrix's flux. Given a numpy matrix M with diagonal D, 
+	returns the ||M||_1 - ||D||_1 / ||M||_1
+	Maximised at 1 when nothing on diagonal, 
+	Minimised at 0 when everything on diagonal.
+	"""
 	mat = np.array(mat)
 	d = np.linalg.norm(mat.diagonal(),1) 
-	#m = np.linalg.norm(mat,1)
 	m = sum(sum(abs(mat)))
 	measure = (m - d) / m 
-	# maximised at 1 when nothing on diagonal, 
-	# minimised at 0 when everything on diagonal.
 	return measure
 
 
-## Ratio of Vector to Matrix using the 1-Norm.
 def vector_ratio(mat,vec):
+	"""Ratio of Vector to Matrix using the 1-Norm."""
 	return np.linalg.norm(vec,1) / sum(sum(abs(mat)))
 
-## Spread of data along a vector - 0 if all data in one entry, 1 if evenly spread.
 def vector_spread(vec):
+	"""Spread of data along a vector - 0 if all data in one entry, 1 if evenly spread."""
 	spread = np.linalg.norm(vec) / np.linalg.norm(vec,1)
 	rootn =  np.sqrt(len(vec))
 	spread = rootn * (1.0 - spread) / (1 - rootn)
 	spread = np.fabs(spread)
 	return spread
 
-## Chooses the vector with the most data in the matrix and 
-## returns a state interpretation as well as the spread of data along
-## that vector
 def transition_state_measure(mat):
+	"""
+	Chooses the vector with the most data in the matrix and 
+	returns a state interpretation as well as the spread of data along
+	that vector.
+	"""
 	mat = np.array(mat)
 	diag = mat.diagonal()
 	rows = [x for x in mat]
@@ -176,6 +202,7 @@ def dict_vecs_special_case_state(vecs):
 	return state
 
 def transition_sum(tran_arr):
+	"""Sums an array of transition matrices."""
 	out = np.sum(tran_arr,axis=0).tolist()
 	return out
 
@@ -212,10 +239,10 @@ def calculate_transition_activity_for_window(states_frame,window_size):
 def calculate_new_ideas(transition_activity, threshold):
 	return transition_activity.ix[transition_activity.diff() > threshold]
 
-#
-# Returns True if current transitions suggest a "new_idea" event according to the current threshold.
-#
 def is_new_idea_with_threshold(transitions, threshold):
+	"""
+	Returns True if current transitions suggest a "new_idea" event according to the current threshold.
+	"""
 	if not isinstance(transitions, pd.TimeSeries):
 		return None
 	measure = transitions[-2:].diff().dropna()
@@ -239,10 +266,8 @@ def is_new_idea(transitions):
 	else:
 		return False
 
-#
-# Returns the Current Transition State (string), spread (float), and ratio(float)
-#
 def current_transition_state(states_frame):
+	"""Returns the Current Transition State (string), spread (float), and ratio(float)"""
 	# Returns the current transition state as a string
 	transitions = calculate_group_transitions_for_window(states_frame,'15s')
 	if(not isinstance(transitions,pd.TimeSeries)):
@@ -266,10 +291,8 @@ def calculate_group_transitions_for_window(states_frame,window_size):
 	group_transitions = group_transitions.resample(window_size,how=transition_sum)
 	return group_transitions
 
-#
-# Returns the group's transition matrix for a whole performance.
-#
 def calculate_group_transition_matrix(states_frame):
+	"""Returns the group's transition matrix for a whole performance."""
 	if(not isinstance(states_frame,pd.DataFrame) or states_frame.empty):
 		return None
 	transitions = create_transition_dataframe(states_frame).dropna()
@@ -286,6 +309,7 @@ def calculate_group_transition_matrix(states_frame):
 	return group_matrix
 
 def trim_gesture_frame(gestures):
+	""" Returns the last 60 seconds of entries in a dataframe with a timeseries index."""
 	current_time = datetime.now()
 	delta = timedelta(seconds=-60)
 	cutoff = current_time + delta
@@ -296,10 +320,12 @@ def trim_gesture_frame(gestures):
 ##
 
 def transition_matrix_to_stochastic_matrix(trans_matrix):
+	""" Convert a transition matrix with entries >1 to a stochastic matrix where rows sum to 1. """
 	result = map((lambda x: map((lambda n: n/sum(x)),x)), trans_matrix)
 	return result
 
 def weighted_choice(weights):
+	""" Returns a random index from a list weighted by the list's entries."""
 	rnd = random.random() * sum(weights)
 	for i, w in enumerate(weights):
 		rnd -= w
