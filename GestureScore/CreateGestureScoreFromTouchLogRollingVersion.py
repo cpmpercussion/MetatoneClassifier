@@ -1,4 +1,5 @@
-# Creates a Gesture Score (png file) from a Metatone Touch Log of the format:
+#! /usr/bin/env python
+# Classifies Gestures from Metatone Touch Log at 1s intervals. Gestures are output as a CSV file and PDF plot.
 # datetime, name, x_pos, y_pos, vel
 
 import pandas as pd
@@ -11,15 +12,15 @@ from sklearn.ensemble import RandomForestClassifier
 import pickle
 import argparse
 
+##
+## Pick whichever classifier you wish.
+##
 #classifier_file = "20130701data-classifier.p"
 classifier_file = "2013-07-01-TrainingData-classifier.p"
 #classifier_file = "2013-07-01-TrainingData1s-classifier.p"
-
-
-parser = argparse.ArgumentParser(description='Classify gestures from a Metatone Touch CSV with a CSV and PNG score output.')
-parser.add_argument('filename',help='A Metatone Touch CSV file to be classified.')
-args = parser.parse_args()
-touchlog_file = args.filename
+##
+##
+##
 
 ## Load the classifier
 pickle_file = open( classifier_file, "rb" )
@@ -121,6 +122,18 @@ def generate_rolling_feature_frame(messages,name):
 
 
 ##
+## - Start doing the processing.
+##
+
+parser = argparse.ArgumentParser(description='Classifies Gestures from Metatone Touch Log at 1s intervals. Gestures are output as a CSV file and PDF plot.')
+parser.add_argument('filename',help='A Metatone Touch CSV file to be classified.')
+args = parser.parse_args()
+touchlog_file = args.filename
+# touchlog_file = '/Users/charles/Dropbox/Metatone/20140719-AgentStudy/1/2014-07-19T13-58-10-MetatoneOSCLog-touches.csv'
+
+print("Classifying Touch CSV file...")
+
+##
 ##  Load up the next video data for Tests.
 ##
 messages = pd.read_csv(touchlog_file, index_col="time", parse_dates=True)
@@ -128,39 +141,27 @@ names = messages['device_id'].unique()
 gesture_pred = pd.DataFrame(messages['device_id'].resample('1s',how='count'))
 ticks = gesture_pred.resample('10s').index.to_pydatetime()
 
-
-# feature_vectors = pd.DataFrame()
-# for n in names:
-#     feature_vectors = pd.concat([feature_vectors, 
-#         #feature_frame(messages.ix[messages['device_id'] == n])
-#         generate_rolling_feature_frame(messages.ix[messages['device_id'] == n],n)
-#         ])
-        
-# feature_vectors = feature_vectors[feature_vector_columns].join(gesture_targets)
-# feature_vectors['gesture'] = feature_vectors['gesture'].fillna('N')
-
-
 for n in names:
+    print ("Processing Performer data for: " + n)
     performer_features = generate_rolling_feature_frame(messages.ix[messages['device_id'] == n],n)
     performer_features['pred'] = classifier.predict(performer_features[feature_vector_columns])
     gesture_pred[n] = performer_features['pred']
-    print ("Processing Performer data for: " + n)
 
 gesture_pred = gesture_pred.fillna(0)
 gesture_pred = gesture_pred[names]
 gesture_pred[names] = gesture_pred[names].astype(int)
 
-
 # Create a good filename for the gesture score:
-outname = gesture_pred.index[0].strftime('MetatoneAutoGestureScore%Y%m%d-%Hh%Mm%Ss')
+outname = gesture_pred.index[0].strftime('%Y-%m-%dT%H-%M-%S-MetatonePostHoc-gestures')
 performance_date = gesture_pred.index[0].strftime('%Y-%m-%d %H:%M:%S')
 
-print ("Classification complete, saving output to CSV and PNG files named: " + outname)
+print ("Classification complete, saving output to CSV and PDF files named: " + outname)
 
 # Save the gesture score as a CSV
-gesture_pred.to_csv(outname + '.csv')
+gesture_pred.to_csv(outname + '.csv',date_format='%Y-%m-%dT%H:%M:%S')
+# 2014-07-19T13:58:13.993319
 
-#Plot and save the Gesture Score as a png:
+#Plot and save the Gesture Score as a pdf:
 idx = gesture_pred.index
 ax = plt.figure(figsize=(28,8),frameon=False,tight_layout=True).add_subplot(111)
 ax.xaxis.set_major_locator(dates.SecondLocator(bysecond=[0,30]))
@@ -169,7 +170,7 @@ ax.xaxis.set_minor_locator(dates.SecondLocator(bysecond=[0,10,20,30,40,50]))
 ax.xaxis.grid(True,which="minor")
 ax.yaxis.grid()
  
-plt.title("Automatically Generated Gesture Score for Performance: " + performance_date)
+plt.title("Post-hoc Gesture Score for Performance: " + performance_date)
 plt.ylabel("gesture")
 plt.xlabel("time")
 plt.ylim(-0.5,8.5)
@@ -179,5 +180,5 @@ for n in names:
     plt.plot_date(idx.to_pydatetime(),gesture_pred[n],'-',label=n)
 plt.legend(loc='upper right')
 
-plt.savefig(outname + '.png', dpi=150, format="png")
+plt.savefig(outname + '.pdf', dpi=150, format="pdf")
 plt.close()
