@@ -100,11 +100,10 @@ def plot_gesture_score_and_transitions(plot_title,events,gestures,metatone,onlin
 
 
 def plot_score_and_changeyness(gestures_frame,window,threshold):
-    window_seconds = window #15
-    winlen = str(window_seconds) + "s"
+    winlen = str(window) + "s"
     new_idea_difference_threshold = threshold #0.15
     
-    group_trans = transitions.calculate_group_transitions_for_window(gestures_frame,'15s')
+    # group_trans = transitions.calculate_group_transitions_for_window(gestures_frame,'15s')
     transition_activity = transitions.calculate_transition_activity_for_window(gestures_frame,winlen)
     new_ideas = transitions.calculate_new_ideas(transition_activity, new_idea_difference_threshold)    
 	
@@ -133,7 +132,7 @@ def plot_score_and_changeyness(gestures_frame,window,threshold):
     plt.ylabel("changeyness")
     
     for n in range(len(new_ideas)):
-        x_val = new_ideas.index[n].to_pydatetime() + timedelta(seconds = window_seconds / 2)
+        x_val = new_ideas.index[n].to_pydatetime() + timedelta(seconds = window / 2)
         ax.axvline(x=x_val, color='r')
         ax2.axvline(x=x_val, color='r')
         print x_val
