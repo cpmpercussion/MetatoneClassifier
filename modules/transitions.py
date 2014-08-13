@@ -133,8 +133,8 @@ def diag_measure_1_norm(mat):
 	Minimised at 0 when everything on diagonal.
 	"""
 	mat = np.array(mat)
-	d = np.linalg.norm(mat.diagonal(),1) 
-	m = sum(sum(abs(mat)))
+	d = np.linalg.norm(mat.diagonal(),1) # |d|_1 
+	m = sum(sum(abs(mat))) # |M|_1
 	measure = (m - d) / m 
 	return measure
 
@@ -246,7 +246,8 @@ def is_new_idea_with_threshold(transitions, threshold):
 	if not isinstance(transitions, pd.TimeSeries):
 		return None
 	measure = transitions[-2:].diff().dropna()
-	if (measure and measure[0] > threshold):
+	# if (measure and measure[0] > threshold):
+	if ((not measure.empty) and measure[0] > threshold):
 		return True
 	else:
 		return False
