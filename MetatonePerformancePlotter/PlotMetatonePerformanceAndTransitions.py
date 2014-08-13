@@ -92,18 +92,18 @@ def plot_gesture_score_and_transitions(plot_title,events,gestures,metatone,onlin
     ## Plot Lines for each event.
     for n in range(len(new_ideas)):
         x_val = new_ideas[n].to_pydatetime()
-        ax.axvline(x=x_val, color='black')
-        ax2.axvline(x=x_val, color='black')
-        ax3.axvline(x=x_val, color='black')
+        ax.axvline(x=x_val, color='r', alpha=0.7, linestyle='--')
+        ax2.axvline(x=x_val, color='r', alpha=0.7, linestyle='--')
+        ax3.axvline(x=x_val, color='r', alpha=0.7, linestyle='--')
     plt.savefig(plot_title.replace(":","_") + '.pdf', dpi=150, format="pdf")
     plt.close()
 
 
-def plot_score_and_changeyness(gestures_frame,window,threshold):
+def plot_score_posthoc_flux(gestures_frame,window,threshold):
     winlen = str(window) + "s"
     new_idea_difference_threshold = threshold #0.15
-    
-    # group_trans = transitions.calculate_group_transitions_for_window(gestures_frame,'15s')
+
+    # Setup Data.    
     transition_activity = transitions.calculate_transition_activity_for_window(gestures_frame,winlen)
     new_ideas = transitions.calculate_new_ideas(transition_activity, new_idea_difference_threshold)    
 	
@@ -115,10 +115,11 @@ def plot_score_and_changeyness(gestures_frame,window,threshold):
     ax.xaxis.set_minor_locator(dates.SecondLocator(bysecond=[0,10,20,30,40,50]))
     ax.xaxis.grid(True,which="minor")
     ax.yaxis.grid()
-    title = "Gesture Score and Transitions " + transition_activity.index[0].isoformat() + " " + str(len(new_ideas)) + " new ideas with threshold " + str(new_idea_difference_threshold)
-    plt.title(title)
-    plt.ylabel("gesture")
-    plt.xlabel("time")
+    title = "Post-Hoc: Gestures and Group Flux " + transition_activity.index[0].isoformat()
+     # + " " + str(len(new_ideas)) + " new ideas with threshold " + str(new_idea_difference_threshold)
+    plt.title(title + " (" + winlen + ", " + str(new_idea_difference_threshold) + ")")
+    plt.ylabel("Gesture")
+    plt.xlabel("Time")
     plt.ylim(-0.5,8.5)
     plt.yticks(np.arange(9),['n','ft','st','fs','fsa','vss','bs','ss','c'])
     for n in gestures_frame.columns:
@@ -129,26 +130,24 @@ def plot_score_and_changeyness(gestures_frame,window,threshold):
     ax2 = plt.subplot(212, sharex=ax)
     idx = transition_activity.index
     plt.plot_date(idx.to_pydatetime(),transition_activity,'-',label=transition_activity.name)
-    plt.ylabel("changeyness")
+    plt.ylabel("Flux")
     
     for n in range(len(new_ideas)):
         x_val = new_ideas.index[n].to_pydatetime() + timedelta(seconds = window / 2)
-        ax.axvline(x=x_val, color='r')
-        ax2.axvline(x=x_val, color='r')
+        ax.axvline(x=x_val, color='r', alpha=0.7, linestyle='--')
+        ax2.axvline(x=x_val, color='r', alpha=0.7, linestyle='--')
         print x_val
     
-    #plt.xlabel("time")
-    plt.savefig(title.replace(":","_") + " " + winlen + '.pdf', dpi=150, format="pdf")
+    plt.savefig(title.replace(":","_") +'.pdf', dpi=150, format="pdf")
     plt.close()
 
-# Testing ggplot
+# Testing ggplot (doesn't really work well)
 def testing_ggplot():
     gestures['date'] = gestures.index
     #gestures_lng = pd.melt(gestures, id_vars=['date'], var_name="performer", value_name="gesture")
     gestures_lng = pd.melt(gestures, id_vars=['date'])
     gestures_lng.columns = ['date','performer','gesture']
     ggplot(aes(x='date', y='gesture', colour='performer'), data=gestures_lng) + geom_line() + ggtitle(plot_title) + scale_x_date(breaks=dates.SecondLocator(bysecond=[0]),labels="%H:%M:%S")
-
 
 if __name__ == "__main__":
     #
@@ -183,5 +182,6 @@ if __name__ == "__main__":
 
     ## Do the plotting
     plot_gesture_score_and_transitions(plot_title,events,gestures,metatone,online,touches,transitions_frame)
+    plot_score_posthoc_flux(gestures.fillna(0),5,0.25)
     print("Done! Plotted: " + plot_title)
 

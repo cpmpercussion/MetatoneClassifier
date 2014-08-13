@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#! /usr/bin/env python
 
 import argparse
 parser = argparse.ArgumentParser(description='Convert a Metatone Classifier log file into a set of useful CSV.')
