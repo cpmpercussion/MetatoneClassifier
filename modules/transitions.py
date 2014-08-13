@@ -25,9 +25,15 @@ NUMBER_STATES = 5
 NEW_IDEA_THRESHOLD = 0.3
 TRANSITIONS_WINDOW = '15s'
 
+## Old values for the NEW_IDEA_THRESHOLD.
+#new_idea_difference_threshold = 0.15
+# new_idea_difference_threshold = 0.80 # 1-norm version (experimental)
+#new_idea_difference_threshold = 0.5 # 1-norm version (experimental)
+# new_idea_difference_threshold = 0.3 # new 14/3/2014
+#new_idea_difference_threshold =  0.3# new 6/7/2014
+
 ##
 ## Experimental Settings post July 2014...
-##
 ##
 
 ## Int values for Gesture codes.
@@ -42,7 +48,7 @@ gesture_codes = {
 	'SS': 7,
 	'C': 8,
 	'?': 9}
-	
+
 gesture_groups = {
 	0 : 0,
 	1 : 1,
@@ -131,11 +137,12 @@ def diag_measure_1_norm(mat):
 	returns the ||M||_1 - ||D||_1 / ||M||_1
 	Maximised at 1 when nothing on diagonal, 
 	Minimised at 0 when everything on diagonal.
+	Name is deprecated and will be migrated to "flux" in later code.
 	"""
 	mat = np.array(mat)
 	d = np.linalg.norm(mat.diagonal(),1) # |d|_1 
 	m = sum(sum(abs(mat))) # |M|_1
-	measure = (m - d) / m 
+	measure = (m - d) / m # Flux.
 	return measure
 
 
@@ -180,6 +187,10 @@ def transition_state_measure(mat):
 	return state,spread,ratio
 
 def dict_vecs_equal_under_norm(vecs):
+	"""
+	Applies the two-norm to each value in vecs, a dictionary of vectors, 
+	Returns true if there are any vectors with identical norms.
+	"""
 	normvecs = [np.linalg.norm(v) for k,v in vecs.iteritems()]
 	mults = [x for x in normvecs if normvecs.count(x) > 1]
 	if mults:
@@ -207,13 +218,14 @@ def transition_sum(tran_arr):
 	return out
 
 def print_transition_plots(transitions):
+	"""Saves a PDF of a heatmap plot of each transition matrix in the given list: transitions."""
 	for n in range(len(transitions)):
 		state,spread,ratio = transition_state_measure(transitions.ix[n])
 		title = transitions.index[n].isoformat()
 		print title
 		plt.title(title + " " + state + " " + str(spread) + " " + str(ratio))
 		plt.imshow(transitions.ix[n], cmap=plt.cm.binary, interpolation='nearest')
-		plt.savefig(title.replace(":","_") + '.png', dpi=150, format="png")
+		plt.savefig(title.replace(":","_") + '.pdf', dpi=150, format="pdf")
 		plt.close()
 
 ##
@@ -221,14 +233,15 @@ def print_transition_plots(transitions):
 ##
 
 def calculate_transition_activity(states_frame):
+	"""Returns a time-series of flux using the default window to divide the given states_frame."""
 	if(not isinstance(states_frame,pd.DataFrame) or states_frame.empty):
 		return None
 	return calculate_transition_activity_for_window(states_frame,TRANSITIONS_WINDOW)
 
 def calculate_transition_activity_for_window(states_frame,window_size):
+	"""Returns a time-series of flux using the window_size (string) to divide the given states_frame."""
 	if(not isinstance(states_frame,pd.DataFrame) or states_frame.empty):
 		return None
-	new_idea_difference_threshold = 0.80 # 1-norm version (experimental)
 	group_transitions = calculate_group_transitions_for_window(states_frame,window_size)
 	if (isinstance(group_transitions,type(None))):
 		return None
@@ -237,32 +250,32 @@ def calculate_transition_activity_for_window(states_frame,window_size):
 	return transition_activity
 
 def calculate_new_ideas(transition_activity, threshold):
+	"""
+	Given a time series of flux throughout the performance, returns
+	a time series of points where the flux has increased above the given
+	threshold.
+	"""
 	return transition_activity.ix[transition_activity.diff() > threshold]
 
 def is_new_idea_with_threshold(transitions, threshold):
 	"""
-	Returns True if current transitions suggest a "new_idea" event according to the current threshold.
+	Returns True if the flux of the most recent pair of transitions 
+	has increased above the given threshold. This suggests that a
+	"new idea" has occured in the ensemble.
 	"""
 	if not isinstance(transitions, pd.TimeSeries):
-		return None
+		return False
 	measure = transitions[-2:].diff().dropna()
-	# if (measure and measure[0] > threshold):
 	if ((not measure.empty) and measure[0] > threshold):
 		return True
 	else:
 		return False
 
-#
-# Shortcut for is_new_idea_with_threshold with built in threshold
-#
 def is_new_idea(transitions):
+	"""Shortcut for is_new_idea_with_threshold with built in threshold."""
 	if not isinstance(transitions, pd.TimeSeries):
-		return None
-	#new_idea_difference_threshold = 0.15
-	#new_idea_difference_threshold = 0.5 # 1-norm version (experimental)
-	# new_idea_difference_threshold = 0.3 # new 14/3/2014
-	new_idea_difference_threshold = NEW_IDEA_THRESHOLD # new 6/7/2014
-	if (is_new_idea_with_threshold(transitions,new_idea_difference_threshold)):
+		return False
+	if (is_new_idea_with_threshold(transitions,NEW_IDEA_THRESHOLD)):
 		return True
 	else:
 		return False
@@ -277,6 +290,7 @@ def current_transition_state(states_frame):
 	return state, spread, ratio
 
 def calculate_group_transitions_for_window(states_frame,window_size):
+	"""Calculates the (group) transition matrices for a given window size over the states_frame DataFrame."""
 	if(not isinstance(states_frame,pd.DataFrame) or states_frame.empty):
 		return None
 	transitions = create_transition_dataframe(states_frame).dropna()
@@ -337,4 +351,5 @@ def weighted_choice(weights):
 # TODO - fixup functionality for this method - should return different kinds of events (or something for no event).
 #
 def is_event(states_frame):
+	"""TODO: Use this function to return different kinds of events."""
 	return ("nothing","device_id",0)
