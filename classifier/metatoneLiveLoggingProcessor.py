@@ -31,9 +31,31 @@ VISUALISER_HOST = 'localhost'
 WEB_SERVER_MODE = False
 ##
 
+##
+DEVICE_NAMES = {
+	'2678456D-9AE7-4DCC-A561-688A4766C325':'charles', # old
+	'95585C5C-C1C1-4612-9836-BFC68B0DC36F':'charles',
+	'97F37307-2A95-4796-BAC9-935BF417AC42':'christina', # old
+	'6769FE40-5F64-455B-82D4-814E26986A99':'yvonne', # old
+	'2C4C4043-B7F7-4C22-B930-1472B1E18DBF':'yvonne',
+	'1D7BCDC1-5AAB-441B-9C92-C3F00B6FF930':'jonathan', #old
+	'D346C530-BBC9-4C1E-9714-F17654BCC3BC':'yvonne', # new names
+	'30CB5985-FC54-43FC-8B77-C8BE24AA443C':'charles', # new names
+	'E9F60D46-EE37-489A-AD91-4ABC99E2BC80':'jonathan', # new names
+	'00088B8E-D27C-4AE1-8102-5FE318589D3E':'jonathan',
+	'35F73141-D3D5-4F00-9A28-EC5449A1A73D':'christina', #new names
+	'8EEF3773-19CE-4F4D-99BB-2B5BC1CE460C':'christina', #14.07.10
+	'74C29BE8-6B34-4032-8E74-FCEC42DF3D5B':'christina',
+	'16742ED0-5061-4FC8-9BF6-6F23FF76D767':'charles_ipadair',
+	'0E98DD2F-94C2-45EE-BEC5-18718CA36D8B':'charles_ipadair',
+	'6EAD764A-E424-48EB-9672-03EF44679A5E':'iPad2-64-white'
+}
+##
+
 ## Global Variables
 osc_sources = {}
 active_names = []
+oscClient = OSC.OSCClient()
 
 ##
 ## Set up OSC server and Bonjour Service
@@ -51,11 +73,6 @@ except IndexError:
 		receive_address = ("107.170.207.234",port)
 	else:
 		receive_address = ("localhost",port)
-
-# old place for osc server
-
-# Setup OSC Client.
-oscClient = OSC.OSCClient()
 
 ##
 ## Register the Bonjour service
@@ -104,50 +121,26 @@ def ensure_dir(f):
     if not os.path.exists(d):
         os.makedirs(d)
 
+# COLUMNS = ['time','device_id','x_pos','y_pos','velocity']
+# GESTURE_CODES = {'N': 0,'FT': 1,'ST': 2,'FS': 3,'FSA': 4,
+# 	'VSS': 5,'BS': 6,'SS': 7,'C': 8,'?': 9}
+
+###########################
 ##
-## Set up Functions for Classifying Data
+## Classification Functions
 ##
-device_names = {
-	'2678456D-9AE7-4DCC-A561-688A4766C325':'charles', # old
-	'95585C5C-C1C1-4612-9836-BFC68B0DC36F':'charles',
-	'97F37307-2A95-4796-BAC9-935BF417AC42':'christina', # old
-	'6769FE40-5F64-455B-82D4-814E26986A99':'yvonne', # old
-	'2C4C4043-B7F7-4C22-B930-1472B1E18DBF':'yvonne',
-	'1D7BCDC1-5AAB-441B-9C92-C3F00B6FF930':'jonathan', #old
-	'D346C530-BBC9-4C1E-9714-F17654BCC3BC':'yvonne', # new names
-	'30CB5985-FC54-43FC-8B77-C8BE24AA443C':'charles', # new names
-	'E9F60D46-EE37-489A-AD91-4ABC99E2BC80':'jonathan', # new names
-	'00088B8E-D27C-4AE1-8102-5FE318589D3E':'jonathan',
-	'35F73141-D3D5-4F00-9A28-EC5449A1A73D':'christina', #new names
-	'8EEF3773-19CE-4F4D-99BB-2B5BC1CE460C':'christina', #14.07.10
-	'74C29BE8-6B34-4032-8E74-FCEC42DF3D5B':'christina',
-	'16742ED0-5061-4FC8-9BF6-6F23FF76D767':'charles_ipadair',
-	'0E98DD2F-94C2-45EE-BEC5-18718CA36D8B':'charles_ipadair',
-	'6EAD764A-E424-48EB-9672-03EF44679A5E':'iPad2-64-white'
-}
+###########################
 
-columns = ['time','device_id','x_pos','y_pos','velocity']
-feature_vector_columns = ['centroid_x','centroid_y','std_x','std_y','freq','movement_freq','touchdown_freq','velocity']
-
-## Int values for Gesture codes.
-gesture_codes = {
-	'N': 0,
-	'FT': 1,
-	'ST': 2,
-	'FS': 3,
-	'FSA': 4,
-	'VSS': 5,
-	'BS': 6,
-	'SS': 7,
-	'C': 8,
-	'?': 9}
-
-
+## Load the pickled classifier object
+def load_classifier():
+	global classifier
+	pickle_file = open(PICKLED_CLASSIFIER_FILE, "rb" )
+	classifier = pickle.load(pickle_file)
+	pickle_file.close()
 
 ## Function to calculate feature vectors 
-## (for a dataframe containing one 'device_id'
+## (for a dataframe containing one 'device_id')
 def feature_frame(frame):
-	## Protection against empty dataframes
 	if (frame.empty):
 		fframe = pd.DataFrame({
 			'freq':pd.Series(0,index=range(1)),
@@ -183,28 +176,19 @@ def feature_frame(frame):
 		'velocity':frame_vel})
 	return fframe.fillna(0)
 
-## Load the classifier
-pickle_file = open(PICKLED_CLASSIFIER_FILE, "rb" )
-classifier = pickle.load(pickle_file)
-pickle_file.close()
-
-
-
 def classify_touch_messages(messages):
+	FEATURE_VECTOR_COLUMNS = ['centroid_x','centroid_y','std_x','std_y','freq','movement_freq','touchdown_freq','velocity']
 	if not messages:
-		# return None
 		return classify_empty_touch_messages()
 	touch_frame = pd.DataFrame(messages,columns = ['time','device_id','x_pos','y_pos','velocity']) ## This line can fail with a ValueError exception
 	touch_frame = touch_frame.set_index('time')
 	delta = timedelta(seconds=-5)
 	time_now = datetime.now()
 	touch_frame = touch_frame.between_time((time_now + delta).time(), time_now.time())
-	
-	#names = touch_frame['device_id'].unique()
 	classes = {}
 	for n in active_names:
 		features = feature_frame(touch_frame.ix[touch_frame['device_id'] == n])
-		gesture = classifier.predict(features[feature_vector_columns][-1:])
+		gesture = classifier.predict(features[FEATURE_VECTOR_COLUMNS][-1:])
 		classes[n] = list(gesture)[0]
 	return classes
 
@@ -261,7 +245,6 @@ def log_gestures(classes, log):
 	classes = [classes[n] for n in classes.keys()]
 	classes.insert(0,time)
 	log.append(classes)
-	# log_message_new(message_list)
 
 def send_gestures(classes):
 	class_names = ['n','ft','st','fs','fsa','vss','bs','ss','c']
@@ -314,8 +297,8 @@ def remove_source(name):
 	if name in osc_sources: del osc_sources[name]
 
 def get_device_name(device_id):
-	if device_id in device_names:
-		return device_names[device_id]
+	if device_id in DEVICE_NAMES:
+		return DEVICE_NAMES[device_id]
 	else:
 		return device_id
 
@@ -327,7 +310,6 @@ def add_active_device(device_id):
 ##
 ## OSC Message Handling Functions
 ##
-
 def touch_handler(addr, tags, stuff, source):
 	add_source_to_list(get_device_name(stuff[0]),source)
 	add_active_device(stuff[0])
@@ -385,16 +367,16 @@ def trim_touch_messages():
 
 ##
 ##
-## End OSC Handlers.
+## Track Performance Function
 ##
 ##
-def main():
-	# print("Registered Callback-functions are :")
-	# for addr in s.getOSCAddressSpace():
-	#     print addr
+def classifyPerformance():
+	
 
-	# Start OSCServer
+
+def main():
 	startOscServer()
+	load_classifier()
 
 	## Old Logging
 	global live_messages
@@ -421,14 +403,10 @@ def main():
 		while 1 :
 			try:
 				time.sleep(1)
-				#TODO: make sure there's a sensible answer if touch_messages is an empty list.
 				try:
 					classes = classify_touch_messages(touch_messages)
 				except:
 					print("Couldn't classify messages.")
-
-				#print(classes)
-
 				try: 
 					if (classes):
 						send_gestures(classes)
@@ -454,7 +432,7 @@ def main():
 					send_message_to_sources(msg)
 				
 				if(transitions.is_new_idea(current_transitions)):
-					print("New Idea!\n")
+					print("New Idea Detected!")
 					msg = OSC.OSCMessage("/metatone/classifier/ensemble/event/new_idea")
 					msg.extend([name,"new_idea"])
 					send_message_to_sources(msg)
@@ -467,7 +445,6 @@ def main():
 				raise
 	except KeyboardInterrupt:
 		close_server()
-		# close_log()
 		print("Exiting.")
 
 if __name__ == "__main__":
