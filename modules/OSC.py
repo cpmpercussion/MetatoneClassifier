@@ -1902,6 +1902,7 @@ class OSCServer(UDPServer, OSCAddressSpace):
 		self.info_prefix = "/info"
 		
 		self.socket.settimeout(self.socket_timeout)
+		self.timeout = self.socket_timeout
 		
 		self.running = False
 		self.client = None
@@ -1943,6 +1944,7 @@ class OSCServer(UDPServer, OSCAddressSpace):
 		"""Stops serving requests, closes server (socket), closes used client
 		"""
 		self.running = False
+		time.sleep(self.timeout)
 		self.client.close()
 		self.server_close()
 	

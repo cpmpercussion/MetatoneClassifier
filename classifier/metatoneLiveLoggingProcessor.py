@@ -52,10 +52,7 @@ except IndexError:
 	else:
 		receive_address = ("localhost",port)
 
-# OSC Server. there are three different types of server. 
-s = OSC.OSCServer(receive_address) # basic
-##s = OSC.ThreadingOSCServer(receive_address) # threading
-##s = OSC.ForkingOSCServer(receive_address) # forking
+# old place for osc server
 
 # Setup OSC Client.
 oscClient = OSC.OSCClient()
@@ -65,10 +62,10 @@ oscClient = OSC.OSCClient()
 ##
 def register_callback(sdRef, flags, errorCode, name, regtype, domain):
 	if errorCode == pybonjour.kDNSServiceErr_NoError:
-		print 'Registered service:'
-		print '  name    =', name
-		print '  regtype =', regtype
-		print '  domain  =', domain
+		print('Registered service:')
+		print('  name    =', name)
+		print('  regtype =', regtype)
+		print('  domain  =', domain)
 
 sdRef = pybonjour.DNSServiceRegister(name = name,
 									 regtype = "_osclogger._udp.",
@@ -78,14 +75,29 @@ sdRef = pybonjour.DNSServiceRegister(name = name,
 def startOscServer():
 	print("\nStarting OSCServer. Use ctrl-C to quit.")
 	print("IP Address is: " + receive_address[0])
+	# OSC Server. there are three different types of server. 
+	global s 
+	s = OSC.OSCServer(receive_address) # basic
+	##s = OSC.ThreadingOSCServer(receive_address) # threading
+	##s = OSC.ForkingOSCServer(receive_address) # forking
 	global st 
-	st = threading.Thread(target = s.serve_forever)
+	st = threading.Thread(target = s.serve_forever, name="OSC-Server-Thread")
 	st.start()
 
+	# Add all the handlers.
+	s.addMsgHandler("/metatone/touch", touch_handler)
+	s.addMsgHandler("/metatone/touch/ended", touch_ended_handler)
+	s.addMsgHandler("/metatone/switch", switch_handler)
+	s.addMsgHandler("/metatone/online", onlineoffline_handler)
+	s.addMsgHandler("/metatone/offline", onlineoffline_handler)
+	s.addMsgHandler("/metatone/acceleration", accel_handler)
+	s.addMsgHandler("/metatone/app",metatone_app_handler)
+
 def close_server():
+	print("\nClosing OSC Server and Bonjour Service.")
 	sdRef.close()
 	s.close()
-	st.join()
+	st.join(1)
 
 def ensure_dir(f):
     d = os.path.dirname(f)
@@ -208,7 +220,7 @@ def pretty_print_classes(classes):
 	pretty_classes = {}
 	for n in names:
 		pretty_classes[n] = class_names[classes[n]]
-	print pretty_classes
+	print(pretty_classes)
 
 def make_gesture_frame(gesture_log):
 	if not gesture_log:
@@ -301,8 +313,6 @@ def remove_source(name):
 	global osc_sources
 	if name in osc_sources: del osc_sources[name]
 
-
-
 def get_device_name(device_id):
 	if device_id in device_names:
 		return device_names[device_id]
@@ -379,13 +389,6 @@ def trim_touch_messages():
 ##
 ##
 def main():
-	s.addMsgHandler("/metatone/touch", touch_handler)
-	s.addMsgHandler("/metatone/touch/ended", touch_ended_handler)
-	s.addMsgHandler("/metatone/switch", switch_handler)
-	s.addMsgHandler("/metatone/online", onlineoffline_handler)
-	s.addMsgHandler("/metatone/offline", onlineoffline_handler)
-	s.addMsgHandler("/metatone/acceleration", accel_handler)
-	s.addMsgHandler("/metatone/app",metatone_app_handler)
 	# print("Registered Callback-functions are :")
 	# for addr in s.getOSCAddressSpace():
 	#     print addr
@@ -451,7 +454,7 @@ def main():
 					send_message_to_sources(msg)
 				
 				if(transitions.is_new_idea(current_transitions)):
-					print "New Idea!\n"
+					print("New Idea!\n")
 					msg = OSC.OSCMessage("/metatone/classifier/ensemble/event/new_idea")
 					msg.extend([name,"new_idea"])
 					send_message_to_sources(msg)
@@ -463,10 +466,9 @@ def main():
 				print("Couldn't perform analysis - exception")
 				raise
 	except KeyboardInterrupt:
-		print "\nClosing OSCServer."
 		close_server()
 		# close_log()
-		print "Closed."
+		print("Exiting.")
 
 if __name__ == "__main__":
 	main()
