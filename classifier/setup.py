@@ -9,16 +9,15 @@ from setuptools import setup
 
 APP = ['metatoneLiveLoggingProcessor.py']
 DATA_FILES = ['2013-07-01-TrainingData-classifier.p']
-# INCLUDES = ['sklearn','sklearn.utils','sklearn.ensemble','sklearn.utils.lgamma'],
 OPTIONS = {'argv_emulation': True,
- 'iconfile': '/Users/charles/Dropbox/Metatone/touch-point-performance-analysis/MetatoneClassifier/metatone.icns',
+ 'iconfile': 'metatone.icns',
  'includes':'sklearn.utils.lgamma',
  'plist': {'CFBundleName': 'MetatoneClassifier',
- 	'CFBundleShortVersionString':'0.1.0', # must be in X.X.X format
+ 	'CFBundleShortVersionString':'0.1.0',
  	'CFBundleVersion': '0.1.0',
- 	'CFBundleIdentifier':'au.com.charlesmartin.MetatoneClassifier', #optional
- 	'NSHumanReadableCopyright': '© 2014 Charles Martin', #optional
- 	'CFBundleDevelopmentRegion': 'English', #optional - English is default
+ 	'CFBundleIdentifier':'au.com.charlesmartin.MetatoneClassifier',
+ 	'NSHumanReadableCopyright': 'Copyright 2014 Charles Martin',
+ 	'CFBundleDevelopmentRegion': 'English',
  	}
  }
 
