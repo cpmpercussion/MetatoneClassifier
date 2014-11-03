@@ -13,7 +13,7 @@ import time,sched
 import pickle
 import logging
 import transitions
-
+import os
 
 ##
 METATONE_RECEIVING_PORT = 51200
@@ -86,6 +86,11 @@ def close_server():
 	sdRef.close()
 	s.close()
 	st.join()
+
+def ensure_dir(f):
+    d = os.path.dirname(f)
+    if not os.path.exists(d):
+        os.makedirs(d)
 
 ##
 ## Set up Functions for Classifying Data
@@ -373,7 +378,6 @@ def trim_touch_messages():
 ## End OSC Handlers.
 ##
 ##
-
 def main():
 	s.addMsgHandler("/metatone/touch", touch_handler)
 	s.addMsgHandler("/metatone/touch/ended", touch_ended_handler)
@@ -397,6 +401,8 @@ def main():
 	global logging_file
 
 	## Better Logging
+	if not os.path.exists('logs'):
+		os.makedirs('logs')
 	global logger
 	logging_filename = datetime.now().isoformat().replace(":","-")[:19] + "-MetatoneOSCLog.log"
 	logging.basicConfig(filename="logs/"+logging_filename,level=logging.DEBUG,format='%(message)s')
