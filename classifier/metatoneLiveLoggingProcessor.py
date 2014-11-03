@@ -48,7 +48,8 @@ DEVICE_NAMES = {
 	'74C29BE8-6B34-4032-8E74-FCEC42DF3D5B':'christina',
 	'16742ED0-5061-4FC8-9BF6-6F23FF76D767':'charles_ipadair',
 	'0E98DD2F-94C2-45EE-BEC5-18718CA36D8B':'charles_ipadair',
-	'6EAD764A-E424-48EB-9672-03EF44679A5E':'iPad2-64-white'
+	'6EAD764A-E424-48EB-9672-03EF44679A5E':'iPad2-64-white',
+	'670EC230-5C3E-4759-B70F-5FDBCE14189B':'charles-iphone5'
 }
 ##
 
@@ -111,6 +112,9 @@ def startOscServer():
 	s.addMsgHandler("/metatone/app",metatone_app_handler)
 
 def close_server():
+	global s
+	global st
+	global sdRef
 	print("\nClosing OSC Server and Bonjour Service.")
 	sdRef.close()
 	s.close()
@@ -371,7 +375,42 @@ def trim_touch_messages():
 ##
 ##
 def classifyPerformance():
+	global touch_messages
+	global classified_gestures
+
+	try:
+		classes = classify_touch_messages(touch_messages)
+	except:
+		print("Couldn't classify messages.")
+	try: 
+		if (classes):
+			send_gestures(classes)
+			log_gestures(classes,classified_gestures)
+			pretty_print_classes(classes)
+		gestures = make_gesture_frame(classified_gestures).fillna(0)
+	except:
+		print("Couldn't update gestures.")
+		raise
 	
+	try:
+		latest_gestures = transitions.trim_gesture_frame(gestures)
+		current_transitions = transitions.calculate_transition_activity(latest_gestures)
+		state = transitions.current_transition_state(latest_gestures)
+	except:
+		print ("Couldn't perform transition calculations.")
+		raise
+
+	if (state):
+		print(state)
+		msg = OSC.OSCMessage("/metatone/classifier/ensemble/state")
+		msg.extend([state[0],state[1],state[2]])
+		send_message_to_sources(msg)
+	
+	if(transitions.is_new_idea(current_transitions)):
+		print("New Idea Detected!")
+		msg = OSC.OSCMessage("/metatone/classifier/ensemble/event/new_idea")
+		msg.extend([name,"new_idea"])
+		send_message_to_sources(msg)
 
 
 def main():
@@ -379,16 +418,17 @@ def main():
 	load_classifier()
 
 	## Old Logging
-	global live_messages
-	global touch_messages
-	global classified_gestures
-	global logging_filename
-	global logging_file
+	# global touch_messages
+	# global classified_gestures
 
-	## Better Logging
+	# global logging_file
+
+	## Start Logging
+	global logger
+	global logging_filename
+
 	if not os.path.exists('logs'):
 		os.makedirs('logs')
-	global logger
 	logging_filename = datetime.now().isoformat().replace(":","-")[:19] + "-MetatoneOSCLog.log"
 	logging.basicConfig(filename="logs/"+logging_filename,level=logging.DEBUG,format='%(message)s')
 	logging.info("Logging started - " + logging_filename)
@@ -399,44 +439,11 @@ def main():
 	## Classifies all touch data every 1 second
 	## Ctrl-C closes server, thread and exits.
 	##
-	try :
-		while 1 :
+	try:
+		while True:
 			try:
 				time.sleep(1)
-				try:
-					classes = classify_touch_messages(touch_messages)
-				except:
-					print("Couldn't classify messages.")
-				try: 
-					if (classes):
-						send_gestures(classes)
-						log_gestures(classes,classified_gestures)
-						pretty_print_classes(classes)
-					gestures = make_gesture_frame(classified_gestures).fillna(0)
-				except:
-					print("Couldn't update gestures.")
-					raise
-				
-				try:
-					latest_gestures = transitions.trim_gesture_frame(gestures)
-					current_transitions = transitions.calculate_transition_activity(latest_gestures)
-					state = transitions.current_transition_state(latest_gestures)
-				except:
-					print ("Couldn't perform transition calculations.")
-					raise
-
-				if (state):
-					print(state)
-					msg = OSC.OSCMessage("/metatone/classifier/ensemble/state")
-					msg.extend([state[0],state[1],state[2]])
-					send_message_to_sources(msg)
-				
-				if(transitions.is_new_idea(current_transitions)):
-					print("New Idea Detected!")
-					msg = OSC.OSCMessage("/metatone/classifier/ensemble/event/new_idea")
-					msg.extend([name,"new_idea"])
-					send_message_to_sources(msg)
-
+				classifyPerformance()
 				trim_touch_messages()
 			except KeyboardInterrupt:
 				raise
@@ -449,3 +456,37 @@ def main():
 
 if __name__ == "__main__":
 	main()
+
+# try:
+# 	classes = classify_touch_messages(touch_messages)
+# except:
+# 	print("Couldn't classify messages.")
+# try: 
+# 	if (classes):
+# 		send_gestures(classes)
+# 		log_gestures(classes,classified_gestures)
+# 		pretty_print_classes(classes)
+# 	gestures = make_gesture_frame(classified_gestures).fillna(0)
+# except:
+# 	print("Couldn't update gestures.")
+# 	raise
+
+# try:
+# 	latest_gestures = transitions.trim_gesture_frame(gestures)
+# 	current_transitions = transitions.calculate_transition_activity(latest_gestures)
+# 	state = transitions.current_transition_state(latest_gestures)
+# except:
+# 	print ("Couldn't perform transition calculations.")
+# 	raise
+
+# if (state):
+# 	print(state)
+# 	msg = OSC.OSCMessage("/metatone/classifier/ensemble/state")
+# 	msg.extend([state[0],state[1],state[2]])
+# 	send_message_to_sources(msg)
+
+# if(transitions.is_new_idea(current_transitions)):
+# 	print("New Idea Detected!")
+# 	msg = OSC.OSCMessage("/metatone/classifier/ensemble/event/new_idea")
+# 	msg.extend([name,"new_idea"])
+# 	send_message_to_sources(msg)
