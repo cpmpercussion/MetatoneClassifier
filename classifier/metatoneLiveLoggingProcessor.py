@@ -1,3 +1,13 @@
+#!/usr/bin/python
+"""
+MetatoneClassifier Module
+
+Copyright 2014 Charles Martin
+
+http://metatone.net
+http://charlesmartin.com.au
+"""
+
 import select
 import sys
 import pybonjour
@@ -14,6 +24,10 @@ import pickle
 import logging
 import transitions
 import os
+
+##
+SERVER_NAME = "MetatoneLiveProc"
+SERVER_PORT = 9000
 
 ##
 METATONE_RECEIVING_PORT = 51200
@@ -53,43 +67,49 @@ DEVICE_NAMES = {
 }
 ##
 
-
-
 ##
-## Set up OSC server and Bonjour Service
+## Server Functions.
 ##
-ip = ([ip for ip in socket.gethostbyname_ex(socket.gethostname())[2] if not ip.startswith("127.")][:1])
-#ip = ([ip for ip in socket.gethostbyname_ex(socket.gethostname())[2] if not ip.startswith("127.")][1:])
-
-name    = "MetatoneLiveProc"
-port    = 9000
-#receive_address = "10.0.1.2"
-try:
-	receive_address = (ip[0], port)
-except IndexError:
-	if (WEB_SERVER_MODE):
-		receive_address = ("107.170.207.234",port)
-	else:
-		receive_address = ("localhost",port)
-
-##
-## Register the Bonjour service
-##
-def register_callback(sdRef, flags, errorCode, name, regtype, domain):
+def bonjour_callback(sdRef, flags, errorCode, name, regtype, domain):
 	if errorCode == pybonjour.kDNSServiceErr_NoError:
 		print('Registered service:')
 		print('  name    =', name)
 		print('  regtype =', regtype)
 		print('  domain  =', domain)
 
-sdRef = pybonjour.DNSServiceRegister(name = name,
+def findReceiveAddress():
+	"""
+	Figures out the local IP address and port that the OSCServer should use and
+	starts the Bonjour service.
+	"""
+	global name
+	global port
+	global receive_address
+	global sdRef
+	ip = ([ip for ip in socket.gethostbyname_ex(socket.gethostname())[2] if not ip.startswith("127.")][:1])
+	#ip = ([ip for ip in socket.gethostbyname_ex(socket.gethostname())[2] if not ip.startswith("127.")][1:])
+	name    = SERVER_NAME
+	port    = SERVER_PORT
+	#receive_address = "10.0.1.2"
+	try:
+		receive_address = (ip[0], port)
+	except IndexError:
+		if (WEB_SERVER_MODE):
+			receive_address = ("107.170.207.234",port)
+		else:
+			receive_address = ("localhost",port)
+	print("Server Address: " + str(receive_address))
+	print("Starting Bonjour Service.")
+	sdRef = pybonjour.DNSServiceRegister(name = name,
 									 regtype = "_osclogger._udp.",
 									 port = port,
-									 callBack = register_callback)
+									 callBack = bonjour_callback)
 
 def startOscServer():
-	print("\nStarting OSCServer. Use ctrl-C to quit.")
-	print("IP Address is: " + receive_address[0])
+	"""
+	Starts the OSCServer serving on a new thread and adds msg handlers.
+	"""
+	print("Starting OSCServer. Use ctrl-C to quit.")
 	# OSC Server. there are three different types of server. 
 	global s 
 	s = OSC.OSCServer(receive_address) # basic
@@ -98,7 +118,6 @@ def startOscServer():
 	global st 
 	st = threading.Thread(target = s.serve_forever, name="OSC-Server-Thread")
 	st.start()
-
 	# Add all the handlers.
 	s.addMsgHandler("/metatone/touch", touch_handler)
 	s.addMsgHandler("/metatone/touch/ended", touch_ended_handler)
@@ -109,6 +128,9 @@ def startOscServer():
 	s.addMsgHandler("/metatone/app",metatone_app_handler)
 
 def close_server():
+	"""
+	Closes the OSCServer, server thread and Bonjour service reference.
+	"""
 	global s
 	global st
 	global sdRef
@@ -118,9 +140,13 @@ def close_server():
 	st.join(1)
 
 def ensure_dir(f):
-    d = os.path.dirname(f)
-    if not os.path.exists(d):
-        os.makedirs(d)
+	"""
+	Checks if a directory exists in the local directory,
+	if it doesn't, creates it.
+	"""
+	d = os.path.dirname(f)
+	if not os.path.exists(d):
+		os.makedirs(d)
 
 ###########################
 ##
@@ -128,16 +154,21 @@ def ensure_dir(f):
 ##
 ###########################
 
-## Load the pickled classifier object
 def load_classifier():
+	"""
+	Loads the pickled RandomForestClassifier object into 
+	a global variable.
+	"""
 	global classifier
 	pickle_file = open(PICKLED_CLASSIFIER_FILE, "rb" )
 	classifier = pickle.load(pickle_file)
 	pickle_file.close()
 
-## Function to calculate feature vectors 
-## (for a dataframe containing one 'device_id')
 def feature_frame(frame):
+	"""
+	Calculates feature vectors for a dataframe of touch
+	messages containing one device_id.
+	"""
 	if (frame.empty):
 		fframe = pd.DataFrame({
 			'freq':pd.Series(0,index=range(1)),
@@ -174,6 +205,11 @@ def feature_frame(frame):
 	return fframe.fillna(0)
 
 def classify_touch_messages(messages):
+	"""
+	Given a list of touch messages, generates a gesture class
+	for each active device for the preceding 5 seconds. 
+	Returned as a dictionary.
+	"""
 	FEATURE_VECTOR_COLUMNS = ['centroid_x','centroid_y','std_x','std_y','freq','movement_freq','touchdown_freq','velocity']
 	if not messages:
 		return classify_empty_touch_messages()
@@ -190,12 +226,19 @@ def classify_touch_messages(messages):
 	return classes
 
 def classify_empty_touch_messages():
+	"""
+	Returns a valid classes dict with 0 in each value.
+	Useful when there are no messages but active devices.
+	"""
 	classes = {}
 	for n in active_names:
 		classes[n] = 0
 	return classes
 
 def pretty_print_classes(classes):
+	"""
+	Prints classes to the terminal in a sort of pretty way.
+	"""
 	names = list(classes)
 	class_names = ['n','ft','st','fs','fsa','vss','bs','ss','c']
 	pretty_classes = {}
@@ -204,6 +247,10 @@ def pretty_print_classes(classes):
 	print(pretty_classes)
 
 def make_gesture_frame(gesture_log):
+	"""
+	Takes a log of gestures and returns a time series 
+	with columns for each active device.
+	"""
 	if not gesture_log:
 		return pd.DataFrame(columns = ['time'])
 	gesture_columns = ['time']
@@ -243,6 +290,15 @@ def log_gestures(classes, log):
 	classes.insert(0,time)
 	log.append(classes)
 
+def trim_touch_messages():
+	"""
+	Trims the global touch_messages list to the last five seconds of activity.
+	"""
+	global touch_messages
+	current_time = datetime.now()
+	delta = timedelta(seconds=-5)
+	touch_messages = [x for x in touch_messages if (x[0] > datetime.now() + delta)]
+
 def send_gestures(classes):
 	"""
 	Send gesture classes to the relevant active devices.
@@ -263,6 +319,9 @@ def send_gestures(classes):
 				remove_source(n)
 
 def send_message_to_sources(msg):
+	"""
+	Sends a message to all active devices.
+	"""
 	for n in osc_sources.keys():
 		try:
 			oscClient.sendto(msg,osc_sources[n],timeout=10.0)
@@ -278,6 +337,9 @@ def send_message_to_sources(msg):
 	log_messages(log_line)
 
 def send_touch_to_visualiser(touch_data):
+	"""
+	Sends touch data to the standard visualiser address.
+	"""
 	msg = OSC.OSCMessage("/metatone/touch")
 	msg.extend(touch_data)
 	try: 
@@ -307,7 +369,7 @@ def add_active_device(device_id):
 	if device_name not in active_names:
 		active_names.append(device_name)
 
-##
+##############################################
 ## OSC Message Handling Functions
 ##
 def touch_handler(addr, tags, stuff, source):
@@ -357,21 +419,9 @@ def metatone_app_handler(addr,tags,stuff,source):
 	if (tags == "sss"):
 		message = [datetime.now().isoformat(),"metatone",get_device_name(stuff[0]),stuff[1],stuff[2]]
 		log_messages(message)
+##
+##############################################
 
-def trim_touch_messages():
-	"""
-	Trims the global touch_messages list to the last five seconds of activity.
-	"""
-	global touch_messages
-	current_time = datetime.now()
-	delta = timedelta(seconds=-5)
-	touch_messages = [x for x in touch_messages if (x[0] > datetime.now() + delta)]
-
-##
-##
-## Track Performance Function
-##
-##
 def classifyPerformance():
 	"""
 	Classifies the current performance state.
@@ -438,6 +488,7 @@ def main():
 	"""
 	Main Loop function used for terminal mode.
 	"""
+	findReceiveAddress()
 	startOscServer()
 	load_classifier()
 	startLog()
