@@ -98,6 +98,34 @@ def plot_gesture_score_and_transitions(plot_title,events,gestures,metatone,onlin
     plt.savefig(plot_title.replace(":","_") + '.pdf', dpi=150, format="pdf")
     plt.close()
 
+def plot_gesture_score(plot_title,events,gestures,metatone,online,touches,transitions_frame):
+    transitions_to_plot = transitions_frame.apply(lambda s: [transition_states[s[0]],s[1],s[2]], axis=1)
+    new_ideas = events.index
+
+    #Gesture Score:
+    idx = gestures.index
+    ax = plt.figure(figsize=(35,10),frameon=False,tight_layout=True).add_subplot(111)
+    ax.xaxis.set_major_locator(dates.SecondLocator(bysecond=[0,30]))
+    ax.xaxis.set_major_formatter(dates.DateFormatter("%H:%M:%S"))
+    ax.xaxis.set_minor_locator(dates.SecondLocator(bysecond=[0,10,20,30,40,50]))
+    ax.xaxis.grid(True,which="minor")
+    ax.yaxis.grid()
+    plt.title(plot_title)
+    plt.ylabel("gesture")
+    plt.xlabel("time")
+    plt.ylim(-0.5,8.5)
+    plt.yticks(np.arange(9),['n','ft','st','fs','fsa','vss','bs','ss','c'])
+    for n in gestures.columns:
+        plt.plot_date(idx.to_pydatetime(),gestures[n],'-',label=n)
+    plt.legend(loc='upper right')
+
+    ## Plot Lines for each event.
+    for n in range(len(new_ideas)):
+        x_val = new_ideas[n].to_pydatetime()
+        ax.axvline(x=x_val, color='r', alpha=0.7, linestyle='--')
+    plt.savefig(plot_title.replace(":","_") + '.pdf', dpi=150, format="pdf")
+    plt.close()
+
 
 def plot_score_posthoc_flux(gestures_frame,window,threshold):
     winlen = str(window) + "s"
@@ -162,7 +190,7 @@ if __name__ == "__main__":
     performance_name = input_filename.replace(".log","")[-34:]
 
     performance_time = time.strptime(performance_name[:19],'%Y-%m-%dT%H-%M-%S')
-    plot_title = "Metatone " + time.strftime('%y-%m-%d %H:%M',performance_time)
+    plot_title = "Performance " + time.strftime('%y-%m-%d %H:%M',performance_time)
 
     print("Plot Title: " + plot_title)
 
@@ -181,7 +209,8 @@ if __name__ == "__main__":
     transitions_frame = pd.read_csv(transitions_path, index_col='time', parse_dates=True)
 
     ## Do the plotting
-    plot_gesture_score_and_transitions(plot_title,events,gestures,metatone,online,touches,transitions_frame)
-    plot_score_posthoc_flux(gestures.fillna(0),5,0.25)
+    # plot_gesture_score_and_transitions(plot_title,events,gestures,metatone,online,touches,transitions_frame)
+    plot_gesture_score(plot_title,events,gestures,metatone,online,touches,transitions_frame)
+    # plot_score_posthoc_flux(gestures.fillna(0),5,0.25)
     print("Done! Plotted: " + plot_title)
 
