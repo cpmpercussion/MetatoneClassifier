@@ -53,10 +53,7 @@ DEVICE_NAMES = {
 }
 ##
 
-## Global Variables
-osc_sources = {}
-active_names = []
-oscClient = OSC.OSCClient()
+
 
 ##
 ## Set up OSC server and Bonjour Service
@@ -124,10 +121,6 @@ def ensure_dir(f):
     d = os.path.dirname(f)
     if not os.path.exists(d):
         os.makedirs(d)
-
-# COLUMNS = ['time','device_id','x_pos','y_pos','velocity']
-# GESTURE_CODES = {'N': 0,'FT': 1,'ST': 2,'FS': 3,'FSA': 4,
-# 	'VSS': 5,'BS': 6,'SS': 7,'C': 8,'?': 9}
 
 ###########################
 ##
@@ -221,19 +214,19 @@ def make_gesture_frame(gesture_log):
 ##
 ## Logging data functions
 ##
-live_messages = []
-touch_messages = []
-classified_gestures = []
 
-def log_messages(message,log):
-	global logging
+def log_messages(message):
+	"""
+	Log the message line to system log.
+	"""
 	logging.info(str(message).replace("[","").replace("]","").replace("'",""))
 
-def log_message_new(message_list):
-	global logging
-	logging.info(str(message_list).replace("[","").replace("]","").replace("'",""))
-
 def log_gestures(classes, log):
+	"""
+	Given a dict of classes, adds them to the system log
+	as well as the global list of gestures used for performance
+	tracking.
+	"""
 	if not classes:
 		return
 	time = datetime.now()
@@ -243,7 +236,7 @@ def log_gestures(classes, log):
 	for key in classes.keys():
 		message_log_line.append(key)
 		message_log_line.append(classes[key])
-	log_messages(message_log_line,live_messages)
+	log_messages(message_log_line)
 	
 	## Now add to the gesture log.
 	classes = [classes[n] for n in classes.keys()]
@@ -251,6 +244,9 @@ def log_gestures(classes, log):
 	log.append(classes)
 
 def send_gestures(classes):
+	"""
+	Send gesture classes to the relevant active devices.
+	"""
 	class_names = ['n','ft','st','fs','fsa','vss','bs','ss','c']
 	for n in osc_sources.keys():
 		if n in classes.keys():
@@ -279,7 +275,7 @@ def send_message_to_sources(msg):
 			remove_source(n)
 	log_line = [datetime.now().isoformat()]
 	log_line.extend(msg)
-	log_messages(log_line,live_messages)
+	log_messages(log_line)
 
 def send_touch_to_visualiser(touch_data):
 	msg = OSC.OSCMessage("/metatone/touch")
@@ -320,7 +316,7 @@ def touch_handler(addr, tags, stuff, source):
 	if (tags == "sfff"):
 		time = datetime.now()
 		message = [time.isoformat(),"touch",get_device_name(stuff[0]),stuff[1],stuff[2],stuff[3]]
-		log_messages(message,live_messages)
+		log_messages(message)
 		touch_messages.append([time,get_device_name(stuff[0]),stuff[1],stuff[2],stuff[3]])
 		## Repeat Message to visualiser:
 		if (VISUALISER_MODE_ON): 
@@ -331,14 +327,14 @@ def touch_ended_handler(addr,tags,stuff,source):
 	add_active_device(stuff[0])
 	if (tags == "s"):
 		message = [datetime.now().isoformat(),"touch/ended",get_device_name(stuff[0])]
-		log_messages(message,live_messages)
+		log_messages(message)
 
 def switch_handler(addr,tags,stuff,source):
 	add_source_to_list(get_device_name(stuff[0]),source)
 	add_active_device(stuff[0])
 	if (tags == "sss"):
 		message = [datetime.now().isoformat(),"switch",get_device_name(stuff[0]),stuff[1],stuff[2]]
-		log_messages(message,live_messages)
+		log_messages(message)
 		
 def onlineoffline_handler(addr,tags,stuff,source):
 	add_source_to_list(get_device_name(stuff[0]),source)
@@ -346,7 +342,7 @@ def onlineoffline_handler(addr,tags,stuff,source):
 	if (tags == "ss"):
 		message = [datetime.now().isoformat(),addr,get_device_name(stuff[0]),stuff[1]]
 		print(get_device_name(stuff[0]) + " is online with "+stuff[1]+".")
-		log_messages(message,live_messages)
+		log_messages(message)
 		
 def accel_handler(addr,tags,stuff,source):
 	add_source_to_list(get_device_name(stuff[0]),source)
@@ -360,10 +356,12 @@ def metatone_app_handler(addr,tags,stuff,source):
 	add_active_device(stuff[0])
 	if (tags == "sss"):
 		message = [datetime.now().isoformat(),"metatone",get_device_name(stuff[0]),stuff[1],stuff[2]]
-		log_messages(message,live_messages)
+		log_messages(message)
 
 def trim_touch_messages():
-	# Only keeps the last five seconds of touch messages.
+	"""
+	Trims the global touch_messages list to the last five seconds of activity.
+	"""
 	global touch_messages
 	current_time = datetime.now()
 	delta = timedelta(seconds=-5)
@@ -375,6 +373,11 @@ def trim_touch_messages():
 ##
 ##
 def classifyPerformance():
+	"""
+	Classifies the current performance state.
+	Sends messages regarding current gestures, new ideas and other state.
+	Designed to be used in a loop.
+	"""
 	global touch_messages
 	global classified_gestures
 
@@ -412,27 +415,32 @@ def classifyPerformance():
 		msg.extend([name,"new_idea"])
 		send_message_to_sources(msg)
 
-
-def main():
-	startOscServer()
-	load_classifier()
-
-	## Old Logging
-	# global touch_messages
-	# global classified_gestures
-
-	# global logging_file
-
-	## Start Logging
-	global logger
-	global logging_filename
-
+def startLog():
+	"""
+	Start a new log with the filename set to the current time.
+	Checks that we have a log directory and creates it if necessary.
+	"""
 	if not os.path.exists('logs'):
 		os.makedirs('logs')
 	logging_filename = datetime.now().isoformat().replace(":","-")[:19] + "-MetatoneOSCLog.log"
 	logging.basicConfig(filename="logs/"+logging_filename,level=logging.DEBUG,format='%(message)s')
 	logging.info("Logging started - " + logging_filename)
 	print("Classifier Server Started - logging to: " + logging_filename)
+
+## Global Variables
+osc_sources = {}
+active_names = []
+oscClient = OSC.OSCClient()
+touch_messages = []
+classified_gestures = []
+
+def main():
+	"""
+	Main Loop function used for terminal mode.
+	"""
+	startOscServer()
+	load_classifier()
+	startLog()
 
 	##
 	## Run Loop
@@ -490,3 +498,7 @@ if __name__ == "__main__":
 # 	msg = OSC.OSCMessage("/metatone/classifier/ensemble/event/new_idea")
 # 	msg.extend([name,"new_idea"])
 # 	send_message_to_sources(msg)
+
+# COLUMNS = ['time','device_id','x_pos','y_pos','velocity']
+# GESTURE_CODES = {'N': 0,'FT': 1,'ST': 2,'FS': 3,'FSA': 4,
+# 	'VSS': 5,'BS': 6,'SS': 7,'C': 8,'?': 9}
