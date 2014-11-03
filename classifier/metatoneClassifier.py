@@ -1,11 +1,21 @@
 #!/usr/bin/python
 """
-MetatoneClassifier Module
+metatoneClassifier Module
 
 Copyright 2014 Charles Martin
 
 http://metatone.net
 http://charlesmartin.com.au
+
+This file can be executed by itself (python metatoneClassifier.py) or used as a module 
+by another python process.
+
+If using as a module, call the main() function to initiate the normal run loop.
+
+TODO:
+- system for sending composition information to the connected iPads.
+- system for holding messages that should be sent to each iPad that connects?
+- better system for naming devices.
 """
 
 import select
