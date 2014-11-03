@@ -1,3 +1,6 @@
 */.DS_Store
 *.pyc
 *~
+classifier/build
+classifier/dist
+classifier/logs
