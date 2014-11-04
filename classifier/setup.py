@@ -7,9 +7,10 @@ Usage:
 
 from setuptools import setup
 
-APP = ['metatoneLiveLoggingProcessor.py']
-DATA_FILES = ['2013-07-01-TrainingData-classifier.p']
-OPTIONS = {'argv_emulation': True,
+APP = ['MetatoneClassifierController.py']
+DATA_FILES = ['2013-07-01-TrainingData-classifier.p','MetatoneClassifierWindow.xib']
+OPTIONS = {
+ 'argv_emulation': True,
  'iconfile': 'metatone.icns',
  'includes':'sklearn.utils.lgamma',
  'plist': {'CFBundleName': 'MetatoneClassifier',
