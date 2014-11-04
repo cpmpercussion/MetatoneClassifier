@@ -9,25 +9,32 @@ class MetatoneClassifierController(NSWindowController):
     performanceStateTextField = objc.IBOutlet()
     classifyingStatusLabel = objc.IBOutlet()
     classifyingSpinner = objc.IBOutlet()
+    lastClassificationTimeLabel = objc.IBOutlet()
 
     def windowDidLoad(self):
         NSWindowController.windowDidLoad(self)
         print("Window Loaded")
-        self.lastGestureClasses = "1 2 3 4"
-        self.lastPerformanceState = "bla bla bla"
-        self.lastPerformanceTime = "None."
+        self.lastGestureClasses = "No performance started yet."
+        self.lastPerformanceState = "No performance started yet."
+        self.lastPerformanceTime = ""
+        self.classifyingSpinner.stopAnimation_(self)
+        self.classifyingStatusLabel.setStringValue_("Not Classifying.")
 
     @objc.IBAction
     def startPerformance_(self,sender):
-        print("Starting Threaded Classification!")
+        print("Starting Classification!")
         self.classificationThread = threading.Thread(target=self.classifyForever,name="Classification-Thread")
         self.classificationThread.start()
+        self.classifyingSpinner.startAnimation_(self)
+        self.classifyingStatusLabel.setStringValue_("Classifying...")
 
     @objc.IBAction
     def stopPerformance_(self,sender):
         print("Stopping Classification.")
         self.stop_classifying()
         self.classificationThread.join(2)
+        self.classifyingStatusLabel.setStringValue_("Not Classifying.")
+        self.classifyingSpinner.stopAnimation_(self)
 
     def updateDisplay(self):
         self.ensembleTextField.setStringValue_(self.lastGestureClasses)
