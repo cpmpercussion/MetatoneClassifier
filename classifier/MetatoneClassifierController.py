@@ -19,6 +19,7 @@ class MetatoneClassifierController(NSWindowController):
         self.lastPerformanceTime = ""
         self.classifyingSpinner.stopAnimation_(self)
         self.classifyingStatusLabel.setStringValue_("Not Classifying.")
+        self.lastClassificationTimeLabel.setStringValue_("")
 
     @objc.IBAction
     def startPerformance_(self,sender):
@@ -39,6 +40,7 @@ class MetatoneClassifierController(NSWindowController):
     def updateDisplay(self):
         self.ensembleTextField.setStringValue_(self.lastGestureClasses)
         self.performanceStateTextField.setStringValue_(self.lastPerformanceState)
+        self.lastClassificationTimeLabel.setStringValue_(self.lastPerformanceTime)
 
     def classifyForever(self):
         self.classifying = True
