@@ -6,6 +6,7 @@
     <objects>
         <customObject id="-2" userLabel="File's Owner" customClass="MetatoneClassifierController">
             <connections>
+                <outlet property="classifierWindow" destination="QvC-M9-y7g" id="IJf-r3-G93"/>
                 <outlet property="classifyingSpinner" destination="gMC-HQ-IAT" id="MQm-9G-6Nq"/>
                 <outlet property="classifyingStatusLabel" destination="YIQ-Dj-GFD" id="1U1-eI-dJB"/>
                 <outlet property="ensembleTextField" destination="TpE-PR-7Gf" id="s3B-u0-xts"/>
@@ -19,7 +20,7 @@
             <windowStyleMask key="styleMask" titled="YES" closable="YES" miniaturizable="YES" resizable="YES"/>
             <windowPositionMask key="initialPositionMask" leftStrut="YES" rightStrut="YES" topStrut="YES" bottomStrut="YES"/>
             <rect key="contentRect" x="196" y="240" width="523" height="327"/>
-            <rect key="screenRect" x="0.0" y="0.0" width="1920" height="1080"/>
+            <rect key="screenRect" x="0.0" y="0.0" width="1680" height="1027"/>
             <view key="contentView" id="EiT-Mj-1SZ">
                 <rect key="frame" x="0.0" y="0.0" width="523" height="327"/>
                 <autoresizingMask key="autoresizingMask"/>

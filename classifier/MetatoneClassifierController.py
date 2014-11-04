@@ -10,10 +10,12 @@ class MetatoneClassifierController(NSWindowController):
     classifyingStatusLabel = objc.IBOutlet()
     classifyingSpinner = objc.IBOutlet()
     lastClassificationTimeLabel = objc.IBOutlet()
+    classifierWindow = objc.IBOutlet()
 
     def windowDidLoad(self):
         NSWindowController.windowDidLoad(self)
         print("Window Loaded")
+        self.classifierWindow.setTitle_("Metatone Classifier")
         self.lastGestureClasses = "No performance started yet."
         self.lastPerformanceState = "No performance started yet."
         self.lastPerformanceTime = ""
@@ -55,7 +57,7 @@ class MetatoneClassifierController(NSWindowController):
         self.classifying = False
 
     def updatePerformanceState(self):
-        self.lastPerformanceTime = str(datetime.now())
+        self.lastPerformanceTime = datetime.now().strftime("%H:%M:%S")
         self.lastGestureClasses = ""
         self.lastPerformanceState = ""
         classes = self.currentPerformanceState[0]
