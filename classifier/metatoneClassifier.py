@@ -119,7 +119,7 @@ def startOscServer():
 	"""
 	Starts the OSCServer serving on a new thread and adds msg handlers.
 	"""
-	print("Starting OSCServer. Use ctrl-C to quit.")
+	print("Starting OSCServer.")
 	# OSC Server. there are three different types of server. 
 	global s 
 	s = OSC.OSCServer(receive_address) # basic
@@ -445,11 +445,12 @@ def classifyPerformance():
 		classes = classify_touch_messages(touch_messages)
 	except:
 		print("Couldn't classify messages.")
+		classes = False
 	try: 
 		if (classes):
 			send_gestures(classes)
 			log_gestures(classes,classified_gestures)
-			pretty_print_classes(classes)
+			# pretty_print_classes(classes)
 		gestures = make_gesture_frame(classified_gestures).fillna(0)
 	except:
 		print("Couldn't update gestures.")
@@ -461,19 +462,68 @@ def classifyPerformance():
 		state = transitions.current_transition_state(latest_gestures)
 	except:
 		print ("Couldn't perform transition calculations.")
+		state = False
 		raise
 
 	if (state):
-		print(state)
+		# print(state)
 		msg = OSC.OSCMessage("/metatone/classifier/ensemble/state")
 		msg.extend([state[0],state[1],state[2]])
 		send_message_to_sources(msg)
 	
-	if(transitions.is_new_idea(current_transitions)):
-		print("New Idea Detected!")
+	newidea = transitions.is_new_idea(current_transitions)
+	if (newidea):
+		# print("New Idea Detected!")
 		msg = OSC.OSCMessage("/metatone/classifier/ensemble/event/new_idea")
 		msg.extend([name,"new_idea"])
 		send_message_to_sources(msg)
+
+	return (classes,state,newidea)
+
+def printPerformanceState(stateTuple):
+	"""
+	Given the performance state tuple returned by classifyPerformance(),
+	this function prints it out nicely on the screen.
+	"""
+	print("# # # # # # # # # # # #")
+	print("Performance State: " + str(datetime.now()))
+	classes = stateTuple[0]
+	state = stateTuple[1]
+	newidea = stateTuple[2]
+	if (classes):
+		pretty_print_classes(classes)
+	if (state):
+		print(state)
+	if (newidea):
+		print("New Idea detected.")
+	print("# # # # # # # # # # # #")
+
+
+def classifyForever():
+	"""
+	Starts a classification process that repeats every second.
+	This blocks the thread.
+	"""
+	global classifyingForever
+	classifyingForever = True
+	while classifyingForever:
+		try:
+			time.sleep(1)
+			currentState = classifyPerformance()
+			printPerformanceState(currentState)
+			trim_touch_messages()
+		except:
+			print("Couldn't perform analysis - exception")
+			raise
+
+def stopClassifying():
+	"""
+	Stops the classification process and also shuts down the server.
+	"""
+	global classifyingForever
+	classifyingForever = False
+	time.sleep(1)
+	close_server()
 
 def startLog():
 	"""
@@ -512,7 +562,9 @@ def main():
 		while True:
 			try:
 				time.sleep(1)
-				classifyPerformance()
+				# classifyPerformance()
+				currentState = classifyPerformance()
+				printPerformanceState(currentState)
 				trim_touch_messages()
 			except KeyboardInterrupt:
 				raise
