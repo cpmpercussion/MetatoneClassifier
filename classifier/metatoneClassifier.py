@@ -562,18 +562,18 @@ def main():
 		while True:
 			try:
 				time.sleep(1)
-				# classifyPerformance()
 				currentState = classifyPerformance()
 				printPerformanceState(currentState)
 				trim_touch_messages()
 			except KeyboardInterrupt:
+				print("Received Ctrl-C - Closing down.")
 				raise
 			except:
 				print("Couldn't perform analysis - exception")
 				raise
 	except KeyboardInterrupt:
 		close_server()
-		print("Exiting.")
+		print("Closed down. Bye!")
 
 if __name__ == "__main__":
 	main()

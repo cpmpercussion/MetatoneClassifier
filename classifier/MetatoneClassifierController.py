@@ -2,16 +2,20 @@ from Cocoa import *
 from Foundation import NSObject
 import metatoneClassifier
 import threading,time
+from datetime import datetime
 
 class MetatoneClassifierController(NSWindowController):
     ensembleTextField = objc.IBOutlet()
     performanceStateTextField = objc.IBOutlet()
+    classifyingStatusLabel = objc.IBOutlet()
+    classifyingSpinner = objc.IBOutlet()
 
     def windowDidLoad(self):
         NSWindowController.windowDidLoad(self)
         print("Window Loaded")
         self.lastGestureClasses = "1 2 3 4"
         self.lastPerformanceState = "bla bla bla"
+        self.lastPerformanceTime = "None."
 
     @objc.IBAction
     def startPerformance_(self,sender):
@@ -32,32 +36,42 @@ class MetatoneClassifierController(NSWindowController):
     def classifyForever(self):
         self.classifying = True
         while (self.classifying):
-            try:
-                time.sleep(1)
-                metatoneClassifier.classifyPerformance()
-                metatoneClassifier.trim_touch_messages()
-            except:
-                print("Couldn't Perform Classification - Exception.")
-            # do the thing
+            time.sleep(1)
+            self.currentPerformanceState = metatoneClassifier.classifyPerformance()
+            metatoneClassifier.trim_touch_messages()
+            self.updatePerformanceState()
+            self.updateDisplay()
 
     def stop_classifying(self):
         self.classifying = False
 
+    def updatePerformanceState(self):
+        self.lastPerformanceTime = str(datetime.now())
+        self.lastGestureClasses = ""
+        self.lastPerformanceState = ""
+        classes = self.currentPerformanceState[0]
+        state = self.currentPerformanceState[1]
+        newidea = self.currentPerformanceState[2]
+        if (classes):
+            self.lastGestureClasses = str(classes)
+            # pretty_print_classes(classes)
+        if (state):
+            self.lastPerformanceState = str(state)
+        if (newidea):
+            self.lastPerformanceState += "\nNew Idea detected."
 
 if __name__ == "__main__":
     app = NSApplication.sharedApplication()
     
     viewController = MetatoneClassifierController.alloc().initWithWindowNibName_("MetatoneClassifierWindow")
-    print("Setting up the classifier")
+    print("Loading Metatone Classifier.")
     metatoneClassifier.findReceiveAddress()
     metatoneClassifier.startOscServer()
     metatoneClassifier.load_classifier()
     metatoneClassifier.startLog()
-
-
+    print("Metatone Classifier Ready.")
 
     viewController.showWindow_(viewController)
-    print("Window Should be showing.")
     viewController.updateDisplay()
 
     # Bring app to top
