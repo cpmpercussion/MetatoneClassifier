@@ -12,6 +12,20 @@ Then I would install some Python packages:
     
     pip install pybonjour pandas scikit-learn
 
+## Building
+
+For debug:
+
+    cd MetatoneClassifier/classifier
+    python setup.app py2app -A
+    dist/MetatoneClassifier.app/Contents/MacOS/MetatoneClassifier
+
+For running:
+
+    cd MetatoneClassifier/classifier
+    python setup.app py2app
+    open dist/MetatoneClassifier.app
+
 ## Performing.
 
     cd MetatoneClassifier
