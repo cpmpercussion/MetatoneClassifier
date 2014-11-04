@@ -1,0 +1,13 @@
+import metatoneClassifier
+import threading
+
+metatoneClassifier.findReceiveAddress()
+metatoneClassifier.startOscServer()
+metatoneClassifier.load_classifier()
+metatoneClassifier.startLog()
+
+
+
+t = threading.Thread(target=metatoneClassifier.classifyForever,name="Classification-Thread")
+t.start()
+metatoneClassifier.stopClassifying()
