@@ -252,9 +252,12 @@ def pretty_print_classes(classes):
 	names = list(classes)
 	class_names = ['n','ft','st','fs','fsa','vss','bs','ss','c']
 	pretty_classes = {}
+	result = ""
 	for n in names:
 		pretty_classes[n] = class_names[classes[n]]
-	print(pretty_classes)
+		result +=  n + " : " + class_names[classes[n]] + "\n"
+	# return pretty_classes
+	return result
 
 def make_gesture_frame(gesture_log):
 	"""
@@ -450,7 +453,6 @@ def classifyPerformance():
 		if (classes):
 			send_gestures(classes)
 			log_gestures(classes,classified_gestures)
-			# pretty_print_classes(classes)
 		gestures = make_gesture_frame(classified_gestures).fillna(0)
 	except:
 		print("Couldn't update gestures.")
@@ -491,7 +493,7 @@ def printPerformanceState(stateTuple):
 	state = stateTuple[1]
 	newidea = stateTuple[2]
 	if (classes):
-		pretty_print_classes(classes)
+		print(pretty_print_classes(classes))
 	if (state):
 		print(state)
 	if (newidea):

@@ -7,7 +7,6 @@
         <customObject id="-2" userLabel="File's Owner" customClass="MetatoneClassifierController">
             <connections>
                 <outlet property="classifierWindow" destination="QvC-M9-y7g" id="IJf-r3-G93"/>
-                <outlet property="classifyingSpinner" destination="gMC-HQ-IAT" id="MQm-9G-6Nq"/>
                 <outlet property="classifyingStatusLabel" destination="YIQ-Dj-GFD" id="1U1-eI-dJB"/>
                 <outlet property="ensembleTextField" destination="TpE-PR-7Gf" id="s3B-u0-xts"/>
                 <outlet property="lastClassificationTimeLabel" destination="G4y-Em-pTZ" id="6ee-ug-Kbw"/>
@@ -93,11 +92,11 @@
                             <action selector="terminate:" target="-1" id="acQ-HG-QEk"/>
                         </connections>
                     </button>
-                    <progressIndicator horizontalHuggingPriority="750" verticalHuggingPriority="750" maxValue="100" bezeled="NO" indeterminate="YES" controlSize="small" style="spinning" translatesAutoresizingMaskIntoConstraints="NO" id="gMC-HQ-IAT">
-                        <rect key="frame" x="487" y="291" width="16" height="16"/>
-                    </progressIndicator>
                     <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="YIQ-Dj-GFD">
-                        <rect key="frame" x="410" y="290" width="71" height="17"/>
+                        <rect key="frame" x="381" y="290" width="124" height="17"/>
+                        <constraints>
+                            <constraint firstAttribute="width" constant="120" id="QkJ-X3-trt"/>
+                        </constraints>
                         <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" alignment="right" title="Classifying" id="uY4-yw-gfN">
                             <font key="font" metaFont="system"/>
                             <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -120,21 +119,19 @@
                     <constraint firstItem="TpE-PR-7Gf" firstAttribute="leading" secondItem="EiT-Mj-1SZ" secondAttribute="leading" constant="20" symbolic="YES" id="7yG-qE-PkY"/>
                     <constraint firstItem="8G9-J5-Qw8" firstAttribute="leading" secondItem="5X9-Db-po4" secondAttribute="trailing" constant="12" symbolic="YES" id="AZy-du-Rgq"/>
                     <constraint firstItem="YIQ-Dj-GFD" firstAttribute="top" secondItem="EiT-Mj-1SZ" secondAttribute="top" constant="20" symbolic="YES" id="GvS-fP-Gsr"/>
-                    <constraint firstAttribute="trailing" secondItem="gMC-HQ-IAT" secondAttribute="trailing" constant="20" symbolic="YES" id="OH5-FS-hmb"/>
                     <constraint firstItem="724-WG-8Qr" firstAttribute="top" secondItem="WwA-s3-sd1" secondAttribute="bottom" constant="8" symbolic="YES" id="Opu-dX-5Wp"/>
                     <constraint firstItem="5X9-Db-po4" firstAttribute="leading" secondItem="EiT-Mj-1SZ" secondAttribute="leading" constant="20" symbolic="YES" id="Sbq-2n-mGc"/>
                     <constraint firstItem="P1J-LS-D2D" firstAttribute="leading" secondItem="EiT-Mj-1SZ" secondAttribute="leading" constant="20" symbolic="YES" id="Sdf-DI-Jnr"/>
+                    <constraint firstAttribute="trailing" secondItem="YIQ-Dj-GFD" secondAttribute="trailing" constant="20" symbolic="YES" id="T8I-5B-h88"/>
                     <constraint firstAttribute="bottom" secondItem="5X9-Db-po4" secondAttribute="bottom" constant="20" symbolic="YES" id="VOO-Wx-XGL"/>
                     <constraint firstItem="WwA-s3-sd1" firstAttribute="top" secondItem="TpE-PR-7Gf" secondAttribute="bottom" constant="8" symbolic="YES" id="Wfr-iD-PBL"/>
                     <constraint firstItem="G4y-Em-pTZ" firstAttribute="leading" secondItem="wHG-qF-r86" secondAttribute="trailing" constant="8" symbolic="YES" id="X9C-Ku-rfg"/>
                     <constraint firstAttribute="trailing" secondItem="TpE-PR-7Gf" secondAttribute="trailing" constant="20" symbolic="YES" id="Xgg-1A-TT0"/>
-                    <constraint firstItem="gMC-HQ-IAT" firstAttribute="top" secondItem="EiT-Mj-1SZ" secondAttribute="top" constant="20" symbolic="YES" id="YGb-KU-Bri"/>
                     <constraint firstItem="wHG-qF-r86" firstAttribute="centerY" secondItem="G4y-Em-pTZ" secondAttribute="centerY" id="ePt-lX-3jw"/>
                     <constraint firstItem="P1J-LS-D2D" firstAttribute="top" secondItem="EiT-Mj-1SZ" secondAttribute="top" constant="20" symbolic="YES" id="iqz-p2-wZ0"/>
                     <constraint firstAttribute="trailing" secondItem="724-WG-8Qr" secondAttribute="trailing" constant="20" symbolic="YES" id="kFe-OU-kQ7"/>
                     <constraint firstAttribute="bottom" secondItem="wHG-qF-r86" secondAttribute="bottom" constant="20" symbolic="YES" id="la6-ba-Ems"/>
                     <constraint firstItem="wHG-qF-r86" firstAttribute="leading" secondItem="8G9-J5-Qw8" secondAttribute="trailing" constant="12" symbolic="YES" id="tAU-Fe-P4K"/>
-                    <constraint firstItem="gMC-HQ-IAT" firstAttribute="leading" secondItem="YIQ-Dj-GFD" secondAttribute="trailing" constant="8" symbolic="YES" id="u9u-Bl-zdB"/>
                     <constraint firstAttribute="bottom" secondItem="8G9-J5-Qw8" secondAttribute="bottom" constant="20" symbolic="YES" id="vCR-nR-UHD"/>
                     <constraint firstItem="TpE-PR-7Gf" firstAttribute="top" secondItem="YIQ-Dj-GFD" secondAttribute="bottom" constant="8" symbolic="YES" id="wuC-qN-TRh"/>
                 </constraints>

@@ -64,8 +64,7 @@ class MetatoneClassifierController(NSWindowController):
         state = self.currentPerformanceState[1]
         newidea = self.currentPerformanceState[2]
         if (classes):
-            self.lastGestureClasses = str(classes)
-            # pretty_print_classes(classes)
+            self.lastGestureClasses = metatoneClassifier.pretty_print_classes(classes)
         if (state):
             self.lastPerformanceState = str(state)
         if (newidea):
