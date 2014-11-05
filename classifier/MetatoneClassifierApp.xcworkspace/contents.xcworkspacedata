@@ -5,6 +5,9 @@
       location = "group:MetatoneClassifierWindow.xib">
    </FileRef>
    <FileRef
+      location = "group:MainMenu.xib">
+   </FileRef>
+   <FileRef
       location = "group:MetatoneClassifierController.py">
    </FileRef>
 </Workspace>

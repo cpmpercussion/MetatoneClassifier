@@ -11,6 +11,7 @@
                 <outlet property="ensembleTextField" destination="MVO-WY-2tK" id="aeZ-De-STq"/>
                 <outlet property="lastClassificationTimeLabel" destination="bg6-Xz-9fT" id="hBu-3J-z5e"/>
                 <outlet property="performanceStateTextField" destination="o6E-7i-n5O" id="ewm-FL-AoZ"/>
+                <outlet property="startStopPerformanceButton" destination="EfZ-Tm-8Nc" id="LCF-Zy-hQh"/>
             </connections>
         </customObject>
         <customObject id="-1" userLabel="First Responder" customClass="FirstResponder"/>
@@ -657,7 +658,7 @@
                         <items>
                             <menuItem title="Metatone Classifier Help" keyEquivalent="?" id="FKE-Sm-Kum">
                                 <connections>
-                                    <action selector="showHelp:" target="-1" id="y7X-2Q-9no"/>
+                                    <action selector="openHelpUrl:" target="-2" id="NE8-74-71e"/>
                                 </connections>
                             </menuItem>
                         </items>
@@ -698,7 +699,7 @@
                             <font key="font" metaFont="system"/>
                         </buttonCell>
                         <connections>
-                            <action selector="startPerformance:" target="-2" id="AZm-wt-Eeb"/>
+                            <action selector="startStopPerformanceButtonPressed:" target="-2" id="LQG-H4-qkG"/>
                         </connections>
                     </button>
                     <textField verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="MVO-WY-2tK">
@@ -723,16 +724,6 @@
                             <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
                         </textFieldCell>
                     </textField>
-                    <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="sBJ-61-QUo">
-                        <rect key="frame" x="167" y="13" width="152" height="32"/>
-                        <buttonCell key="cell" type="push" title="Stop Performance" bezelStyle="rounded" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="Wkh-lv-Wa6">
-                            <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
-                            <font key="font" metaFont="system"/>
-                        </buttonCell>
-                        <connections>
-                            <action selector="stopPerformance:" target="-2" id="oBT-VS-VYC"/>
-                        </connections>
-                    </button>
                     <textField horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="WrA-Yu-2iX">
                         <rect key="frame" x="709" y="290" width="124" height="17"/>
                         <constraints>
@@ -761,14 +752,11 @@
                     <constraint firstAttribute="bottom" secondItem="bg6-Xz-9fT" secondAttribute="bottom" constant="20" symbolic="YES" id="59r-Sw-gqW"/>
                     <constraint firstAttribute="bottom" secondItem="EfZ-Tm-8Nc" secondAttribute="bottom" constant="20" symbolic="YES" id="Ca8-c3-6ec"/>
                     <constraint firstItem="CDY-uE-xwi" firstAttribute="leading" secondItem="Qr6-eS-jBt" secondAttribute="leading" constant="20" symbolic="YES" id="EEe-Yx-pjy"/>
-                    <constraint firstAttribute="bottom" secondItem="sBJ-61-QUo" secondAttribute="bottom" constant="20" symbolic="YES" id="HA2-Js-92W"/>
                     <constraint firstItem="Eq6-6i-87R" firstAttribute="top" secondItem="MVO-WY-2tK" secondAttribute="bottom" constant="8" symbolic="YES" id="KND-Vo-Lyw"/>
                     <constraint firstItem="EfZ-Tm-8Nc" firstAttribute="leading" secondItem="Qr6-eS-jBt" secondAttribute="leading" constant="20" symbolic="YES" id="OzG-gW-mO4"/>
                     <constraint firstAttribute="trailing" secondItem="bg6-Xz-9fT" secondAttribute="trailing" constant="20" symbolic="YES" id="QGm-JY-Zg6"/>
                     <constraint firstItem="WrA-Yu-2iX" firstAttribute="top" secondItem="Qr6-eS-jBt" secondAttribute="top" constant="20" symbolic="YES" id="QTx-YC-jw8"/>
-                    <constraint firstItem="sBJ-61-QUo" firstAttribute="top" secondItem="o6E-7i-n5O" secondAttribute="bottom" constant="8" symbolic="YES" id="QfO-oH-HCX"/>
                     <constraint firstItem="o6E-7i-n5O" firstAttribute="top" secondItem="Eq6-6i-87R" secondAttribute="bottom" constant="8" symbolic="YES" id="Umm-IU-CKM"/>
-                    <constraint firstItem="sBJ-61-QUo" firstAttribute="leading" secondItem="EfZ-Tm-8Nc" secondAttribute="trailing" constant="12" symbolic="YES" id="YRJ-oM-fnV"/>
                     <constraint firstItem="CDY-uE-xwi" firstAttribute="top" secondItem="Qr6-eS-jBt" secondAttribute="top" constant="20" symbolic="YES" id="ZvH-77-f0l"/>
                     <constraint firstItem="Eq6-6i-87R" firstAttribute="leading" secondItem="Qr6-eS-jBt" secondAttribute="leading" constant="20" symbolic="YES" id="cxx-rt-eiZ"/>
                     <constraint firstAttribute="trailing" secondItem="o6E-7i-n5O" secondAttribute="trailing" constant="20" symbolic="YES" id="gZx-Wx-RDv"/>

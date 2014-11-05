@@ -1,5 +1,6 @@
 from Cocoa import *
 from Foundation import NSObject
+from AppKit import *
 import metatoneClassifier
 import threading,time
 from datetime import datetime
@@ -8,36 +9,43 @@ class MetatoneClassifierController(NSWindowController):
     ensembleTextField = objc.IBOutlet()
     performanceStateTextField = objc.IBOutlet()
     classifyingStatusLabel = objc.IBOutlet()
-    classifyingSpinner = objc.IBOutlet()
     lastClassificationTimeLabel = objc.IBOutlet()
     classifierWindow = objc.IBOutlet()
+    startStopPerformanceButton = objc.IBOutlet()
 
     def windowDidLoad(self):
         NSWindowController.windowDidLoad(self)
-        print("Window Loaded")
         self.classifierWindow.setTitle_("Metatone Classifier")
         self.lastGestureClasses = "No performance started yet."
         self.lastPerformanceState = "No performance started yet."
         self.lastPerformanceTime = ""
-        self.classifyingSpinner.stopAnimation_(self)
         self.classifyingStatusLabel.setStringValue_("Not Classifying.")
         self.lastClassificationTimeLabel.setStringValue_("")
+        self.startStopPerformanceButton.setTitle_("Start Performance!")
+        self.classifying = False
 
     @objc.IBAction
-    def startPerformance_(self,sender):
+    def startStopPerformanceButtonPressed_(self,sender):
+        if not self.classifying:
+            self.startPerformance()
+        else:
+            self.stopPerformance()
+
+    def startPerformance(self):
         print("Starting Classification!")
-        self.classificationThread = threading.Thread(target=self.classifyForever,name="Classification-Thread")
-        self.classificationThread.start()
-        self.classifyingSpinner.startAnimation_(self)
+        if not self.classifying:
+            self.classificationThread = threading.Thread(target=self.classifyForever,name="Classification-Thread")
+            self.classificationThread.start()
         self.classifyingStatusLabel.setStringValue_("Classifying...")
-
-    @objc.IBAction
-    def stopPerformance_(self,sender):
+        self.startStopPerformanceButton.setTitle_("Stop Performance")
+ 
+    def stopPerformance(self):
         print("Stopping Classification.")
-        self.stop_classifying()
-        self.classificationThread.join(2)
+        if self.classifying:
+            self.classifying = False
+            self.classificationThread.join(2)
         self.classifyingStatusLabel.setStringValue_("Not Classifying.")
-        self.classifyingSpinner.stopAnimation_(self)
+        self.startStopPerformanceButton.setTitle_("Start Performance")
 
     def updateDisplay(self):
         self.ensembleTextField.setStringValue_(self.lastGestureClasses)
@@ -53,9 +61,6 @@ class MetatoneClassifierController(NSWindowController):
             self.updatePerformanceState()
             self.updateDisplay()
 
-    def stop_classifying(self):
-        self.classifying = False
-
     def updatePerformanceState(self):
         self.lastPerformanceTime = datetime.now().strftime("%H:%M:%S")
         self.lastGestureClasses = ""
@@ -66,14 +71,19 @@ class MetatoneClassifierController(NSWindowController):
         if (classes):
             self.lastGestureClasses = metatoneClassifier.pretty_print_classes(classes)
         if (state):
-            self.lastPerformanceState = str(state)
+            self.lastPerformanceState = metatoneClassifier.pretty_print_state(state)
         if (newidea):
-            self.lastPerformanceState += "\nNew Idea detected."
+            self.lastPerformanceState += "\nNew Idea Detected!"
+
+    @objc.IBAction
+    def openHelpUrl_(self,sender):
+        NSWorkspace.sharedWorkspace().openURL_(NSURL.alloc().initWithString_("http://metatone.net/metatoneclassifier"))
 
 if __name__ == "__main__":
     app = NSApplication.sharedApplication()
     
-    viewController = MetatoneClassifierController.alloc().initWithWindowNibName_("MetatoneClassifierWindow")
+    # viewController = MetatoneClassifierController.alloc().initWithWindowNibName_("MetatoneClassifierWindow")
+    viewController = MetatoneClassifierController.alloc().initWithWindowNibName_("MainMenu")
     print("Loading Metatone Classifier.")
     metatoneClassifier.findReceiveAddress()
     metatoneClassifier.startOscServer()
