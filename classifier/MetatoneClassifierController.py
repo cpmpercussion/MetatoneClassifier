@@ -42,7 +42,7 @@ class MetatoneClassifierController(NSWindowController):
 
     def startPerformance(self):
         print("Starting Classification!")
-        metatoneClassifier.startLog()
+        # metatoneClassifier.startLog()
         if not self.classifying:
             self.classificationThread = threading.Thread(target=self.classifyForever,name="Classification-Thread")
             self.classificationThread.start()
