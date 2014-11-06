@@ -247,7 +247,8 @@ def classify_empty_touch_messages():
 
 def pretty_print_classes(classes):
 	"""
-	Prints classes to the terminal in a sort of pretty way.
+	Returns a string of each active device matched to a human
+	readable gesture state.
 	"""
 	names = list(classes)
 	class_names = ['n','ft','st','fs','fsa','vss','bs','ss','c']
@@ -257,6 +258,16 @@ def pretty_print_classes(classes):
 		pretty_classes[n] = class_names[classes[n]]
 		result +=  n + " : " + class_names[classes[n]] + "\n"
 	# return pretty_classes
+	return result
+
+def pretty_print_state(state):
+	"""
+	Returns a string of each part of the performance state
+	labelled with its meaning.
+	"""
+	result = "Transition Type: " + state[0] + "\n"
+	result += "Spread: " + str(state[1]) + "\n"
+	result += "Ratio: " + str(state[2])
 	return result
 
 def make_gesture_frame(gesture_log):
@@ -361,23 +372,45 @@ def send_touch_to_visualiser(touch_data):
 		msg = ""
 
 def add_source_to_list(name,source):
-	## Addressing a dictionary.
+	"""
+	Called whenever an OSC messaged is received.
+	If a source is not listed, it's added to the dictionary,
+	otherwise - nothing happens.
+	"""
 	global osc_sources
 	source_address = (source[0],METATONE_RECEIVING_PORT)
 	if (name not in osc_sources.keys()):
 		osc_sources[name] = source_address
 
+def add_active_app(name,app):
+	"""
+	Adds the current app whenever an online message is received.
+	"""
+	global active_apps
+	active_apps[name] = app
+
 def remove_source(name):
+	"""
+	Removes a device from the osc_sources dictionary. 
+	Called after failing to contact the source.
+	"""
 	global osc_sources
 	if name in osc_sources: del osc_sources[name]
 
 def get_device_name(device_id):
+	"""
+	Returns the device's name if known.
+	This functionality needs work! Names shouldn't be hardcoded.
+	"""
 	if device_id in DEVICE_NAMES:
 		return DEVICE_NAMES[device_id]
 	else:
 		return device_id
 
 def add_active_device(device_id):
+	"""
+	Adds a device_name to the list if it isn't already on it.
+	"""
 	device_name = get_device_name(device_id)
 	if device_name not in active_names:
 		active_names.append(device_name)
@@ -417,6 +450,7 @@ def onlineoffline_handler(addr,tags,stuff,source):
 	if (tags == "ss"):
 		message = [datetime.now().isoformat(),addr,get_device_name(stuff[0]),stuff[1]]
 		print(get_device_name(stuff[0]) + " is online with "+stuff[1]+".")
+		add_active_app(get_device_name(stuff[0]),stuff[1])
 		log_messages(message)
 		
 def accel_handler(addr,tags,stuff,source):
@@ -495,7 +529,7 @@ def printPerformanceState(stateTuple):
 	if (classes):
 		print(pretty_print_classes(classes))
 	if (state):
-		print(state)
+		print(pretty_print_state(state))
 	if (newidea):
 		print("New Idea detected.")
 	print("# # # # # # # # # # # #")
@@ -542,9 +576,11 @@ def startLog():
 ## Global Variables
 osc_sources = {}
 active_names = []
+active_apps = {}
 oscClient = OSC.OSCClient()
 touch_messages = []
 classified_gestures = []
+receive_address = ("localhost",SERVER_PORT)
 
 def main():
 	"""
@@ -560,6 +596,11 @@ def main():
 	## Classifies all touch data every 1 second
 	## Ctrl-C closes server, thread and exits.
 	##
+	# try:
+	# 	classifyForever()
+	# except KeyboardInterrupt:
+
+	## todo - use classify forever instead.
 	try:
 		while True:
 			try:

@@ -4,8 +4,12 @@ from AppKit import *
 import metatoneClassifier
 import threading,time
 from datetime import datetime
+import os
+import shutil
 
 class MetatoneClassifierController(NSWindowController):
+    serverStatusLabel = objc.IBOutlet()
+    activeDevicesLabel = objc.IBOutlet()
     ensembleTextField = objc.IBOutlet()
     performanceStateTextField = objc.IBOutlet()
     classifyingStatusLabel = objc.IBOutlet()
@@ -23,6 +27,11 @@ class MetatoneClassifierController(NSWindowController):
         self.lastClassificationTimeLabel.setStringValue_("")
         self.startStopPerformanceButton.setTitle_("Start Performance!")
         self.classifying = False
+        self.serverStatusLabel.setStringValue_("OSC Server Running. IP: " + str(metatoneClassifier.receive_address[0]) 
+            + " Port: " + str(metatoneClassifier.receive_address[1]))
+        self.currentActiveDevices = "None."
+        self.activeDevicesLabel.setStringValue_("None.")
+
 
     @objc.IBAction
     def startStopPerformanceButtonPressed_(self,sender):
@@ -33,6 +42,7 @@ class MetatoneClassifierController(NSWindowController):
 
     def startPerformance(self):
         print("Starting Classification!")
+        metatoneClassifier.startLog()
         if not self.classifying:
             self.classificationThread = threading.Thread(target=self.classifyForever,name="Classification-Thread")
             self.classificationThread.start()
@@ -51,6 +61,23 @@ class MetatoneClassifierController(NSWindowController):
         self.ensembleTextField.setStringValue_(self.lastGestureClasses)
         self.performanceStateTextField.setStringValue_(self.lastPerformanceState)
         self.lastClassificationTimeLabel.setStringValue_(self.lastPerformanceTime)
+        self.currentActiveDevices = ""
+        for name in metatoneClassifier.active_names:
+            self.currentActiveDevices += name + ": "
+            app = ""
+            try:
+                app = metatoneClassifier.active_apps[name]
+            except:
+                app = ""
+            address = ("",0)
+            try:
+                address = metatoneClassifier.osc_sources[name]
+            except:
+                address = ("",0)
+            self.currentActiveDevices += app + " "
+            self.currentActiveDevices += str(address)
+            self.currentActiveDevices += "\n" 
+        self.activeDevicesLabel.setStringValue_(self.currentActiveDevices)
 
     def classifyForever(self):
         self.classifying = True
@@ -74,6 +101,15 @@ class MetatoneClassifierController(NSWindowController):
             self.lastPerformanceState = metatoneClassifier.pretty_print_state(state)
         if (newidea):
             self.lastPerformanceState += "\nNew Idea Detected!"
+
+    @objc.IBAction
+    def exportLogFiles_(self,sender):
+        movedir = "/Users/charles/Desktop/"
+        logsList = [n for n in os.listdir("logs") if n.endswith(".log")]
+        for n in logsList:
+            shutil.move("logs/" + n,movedir)
+            shutil.move()
+        metatoneClassifier.startLog()
 
     @objc.IBAction
     def openHelpUrl_(self,sender):
