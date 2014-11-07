@@ -420,6 +420,7 @@ def add_active_device(device_id):
 ##############################################
 ## OSC Message Handling Functions
 ##
+
 def touch_handler(addr, tags, stuff, source):
 	add_source_to_list(get_device_name(stuff[0]),source)
 	add_active_device(stuff[0])
@@ -468,6 +469,7 @@ def metatone_app_handler(addr,tags,stuff,source):
 	if (tags == "sss"):
 		message = [datetime.now().isoformat(),"metatone",get_device_name(stuff[0]),stuff[1],stuff[2]]
 		log_messages(message)
+
 ##
 ##############################################
 
@@ -587,17 +589,14 @@ receive_address = ("localhost",SERVER_PORT)
 def main():
 	"""
 	Main Loop function used for terminal mode.
+	Runs the clasifyForever function until it receives Ctrl-C
+	at which point the program exits.
 	"""
 	findReceiveAddress()
 	startOscServer()
 	load_classifier()
 	startLog()
 
-	##
-	## Run Loop
-	## Classifies all touch data every 1 second
-	## Ctrl-C closes server, thread and exits.
-	##
 	try:
 		classifyForever()
 	except KeyboardInterrupt:
@@ -605,27 +604,26 @@ def main():
 		stopClassifying()
 		print("Closed down. Bye!")
 
-
-	# ## todo - use classify forever instead.
-	# try:
-	# 	while True:
-	# 		try:
-	# 			time.sleep(1)
-	# 			currentState = classifyPerformance()
-	# 			printPerformanceState(currentState)
-	# 			trim_touch_messages()
-	# 		except KeyboardInterrupt:
-	# 			print("Received Ctrl-C - Closing down.")
-	# 			raise
-	# 		except:
-	# 			print("Couldn't perform analysis - exception")
-	# 			raise
-	# except KeyboardInterrupt:
-	# 	close_server()
-	# 	print("Closed down. Bye!")
-
 if __name__ == "__main__":
 	main()
+
+# ## todo - use classify forever instead.
+# try:
+# 	while True:
+# 		try:
+# 			time.sleep(1)
+# 			currentState = classifyPerformance()
+# 			printPerformanceState(currentState)
+# 			trim_touch_messages()
+# 		except KeyboardInterrupt:
+# 			print("Received Ctrl-C - Closing down.")
+# 			raise
+# 		except:
+# 			print("Couldn't perform analysis - exception")
+# 			raise
+# except KeyboardInterrupt:
+# 	close_server()
+# 	print("Closed down. Bye!")
 
 # try:
 # 	classes = classify_touch_messages(touch_messages)
