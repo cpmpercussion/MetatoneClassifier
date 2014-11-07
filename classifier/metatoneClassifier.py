@@ -98,6 +98,8 @@ def findReceiveAddress():
 	global sdRef
 	ip = ([ip for ip in socket.gethostbyname_ex(socket.gethostname())[2] if not ip.startswith("127.")][:1])
 	#ip = ([ip for ip in socket.gethostbyname_ex(socket.gethostname())[2] if not ip.startswith("127.")][1:])
+	# ip = socket.getaddrinfo(socket.gethostname(),9000)[:1][0][4]
+
 	name    = SERVER_NAME
 	port    = SERVER_PORT
 	#receive_address = "10.0.1.2"
@@ -596,27 +598,31 @@ def main():
 	## Classifies all touch data every 1 second
 	## Ctrl-C closes server, thread and exits.
 	##
-	# try:
-	# 	classifyForever()
-	# except KeyboardInterrupt:
-
-	## todo - use classify forever instead.
 	try:
-		while True:
-			try:
-				time.sleep(1)
-				currentState = classifyPerformance()
-				printPerformanceState(currentState)
-				trim_touch_messages()
-			except KeyboardInterrupt:
-				print("Received Ctrl-C - Closing down.")
-				raise
-			except:
-				print("Couldn't perform analysis - exception")
-				raise
+		classifyForever()
 	except KeyboardInterrupt:
-		close_server()
+		print("Received Ctrl-C - Closing down.")
+		stopClassifying()
 		print("Closed down. Bye!")
+
+
+	# ## todo - use classify forever instead.
+	# try:
+	# 	while True:
+	# 		try:
+	# 			time.sleep(1)
+	# 			currentState = classifyPerformance()
+	# 			printPerformanceState(currentState)
+	# 			trim_touch_messages()
+	# 		except KeyboardInterrupt:
+	# 			print("Received Ctrl-C - Closing down.")
+	# 			raise
+	# 		except:
+	# 			print("Couldn't perform analysis - exception")
+	# 			raise
+	# except KeyboardInterrupt:
+	# 	close_server()
+	# 	print("Closed down. Bye!")
 
 if __name__ == "__main__":
 	main()
