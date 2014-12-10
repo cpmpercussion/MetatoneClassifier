@@ -138,6 +138,8 @@ def startOscServer():
 	s.addMsgHandler("/metatone/offline", onlineoffline_handler)
 	s.addMsgHandler("/metatone/acceleration", accel_handler)
 	s.addMsgHandler("/metatone/app",metatone_app_handler)
+	s.addMsgHandler("/metatone/targetgesture", target_gesture_handler)
+
 
 def close_server():
 	"""
@@ -470,6 +472,10 @@ def metatone_app_handler(addr,tags,stuff,source):
 		message = [datetime.now().isoformat(),"metatone",get_device_name(stuff[0]),stuff[1],stuff[2]]
 		log_messages(message)
 
+def target_gesture_handler(addr,tags,stuff,source):
+	message = [datetime.now().isoformat(),addr,stuff[0]]
+	# print("Capturing Target Gesture: " + str(stuff[0]))
+	log_messages(message)
 ##
 ##############################################
 
