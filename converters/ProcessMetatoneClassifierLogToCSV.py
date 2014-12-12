@@ -31,6 +31,10 @@ transitions_filename = input_filename.replace(".log","") + '-transitions.csv'
 events_filename = input_filename.replace(".log","") + '-events.csv'
 metatone_filename = input_filename.replace(".log","") + '-metatone.csv'
 online_filename = input_filename.replace(".log","") + '-online.csv'
+gesture_target_filename = input_filename.replace(".log","") + '-gesturetargets.csv'
+
+# only open the gesture_target_file if there are gesture target messages present.
+FOUND_TARGET_GESTURES = False
 
 raw_file = open(input_filename, 'r')
 touch_file = open(touch_filename,'w')
@@ -81,6 +85,16 @@ for line in raw_file:
                 gesture_column_names.append(gestures[2*n])
         out_data = [line_gestures[n] for n in gesture_column_names]
         all_gesture_lines.append(out_data)
+
+    if "/metatone/targetgesture" in line:
+        if not FOUND_TARGET_GESTURES: 
+            print("Found target gestures, opening target gesture file.")
+            gesture_target_file = open(gesture_target_filename,'w')
+            gesture_target_file.write('time,target\n')
+            FOUND_TARGET_GESTURES = True
+        # open_gesture_target_file()
+        line = line.replace("/metatone/targetgesture,","")
+        gesture_target_file.write(line)
 
 # write the gesture file:
 # write the header.
