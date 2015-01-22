@@ -2,9 +2,7 @@
 #dataset = '2013-07-01-TrainingData.csv'
 dataset = '2013-07-01-TrainingData1s.csv'
 
-
 feature_vectors = pd.read_csv(dataset, index_col=0, parse_dates=True)
-
 
 ## Testing Classification
 samples = 10 #number of divisions in data
