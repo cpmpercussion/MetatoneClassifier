@@ -102,19 +102,20 @@ feature_vectors = generate_rolling_feature_frame(touches,name)
 
 feature_vectors = feature_vectors[FEATURE_VECTOR_COLUMNS].join(gesture_targets)
 
+
+# cut out feature vectors already labelled as bad.
 feature_vectors = feature_vectors[feature_vectors.target != 100]
-feature_vectors = feature_vectors[feature_vectors.centroid_x == -1]
 
-feature_vectors[feature_vectors.centroid_x == -1]
-feature_vectors.ix[feature_vectors.target == 100 and feature_vectors.target == 0 and feature_vectors.centroid_x == -1]
+# need to - 1. eliminate vectors where target is 100 (labelled as bad)
+# 2. fix up vectors with no recorded touches (centroid_x == -1) and force them
+# to be mapped to target 0 (i.e. nothing)
+feature_vectors.ix[feature_vectors.centroid_x == -1,'target'] = 0
 
-for n in range(feature_vectors.index.size):
-	if feature_vectors.target.ix[n] != 0 and feature_vectors.centroid_x.ix[n] == -1:
-		print("wee")
-		feature_vectors.target.ix[n] = 100
+feature_vectors['target'].plot()
 
+# test1 = feature_vectors[feature_vectors.centroid_x == -1]
+# test2 = feature_vectors[feature_vectors.centroid_x == -1]
 
+# now what's the next thing to do?
 
-
-df = pd.DataFrame({'AAA' : [4,5,6,7], 'BBB' : [10,20,30,40], 'CCC' : [100,50,-30,-50]})
-df[~((df.AAA <= 6) & (df.index.isin([0,2,4])))]
+# 1. output to CSV.
