@@ -13,13 +13,8 @@ target_gestures_filename = base_filename + "-gesturetargets.csv"
 gesture_targets = pd.read_csv(target_gestures_filename, index_col="time",parse_dates=True)
 touches = pd.read_csv(touches_filename,index_col="time",parse_dates=True)
 
-
-
 ## Calculate Feature Vectors
 FEATURE_VECTOR_COLUMNS = ['centroid_x','centroid_y','std_x','std_y','freq','movement_freq','touchdown_freq','velocity']
-
-
-
 
 def generate_rolling_feature_frame(messages,name):
 	features = feature_frame(messages)
@@ -27,6 +22,7 @@ def generate_rolling_feature_frame(messages,name):
 	features = features.apply(feature_vector_from_row_time,axis=1,frame=messages,name=name)
 	return features
 
+@profile
 def feature_vector_from_row_time(row,frame,name):
 	"""
 	Takes a row from a dataframe of empty feature vectors.
@@ -111,11 +107,7 @@ feature_vectors = feature_vectors[feature_vectors.target != 100]
 # to be mapped to target 0 (i.e. nothing)
 feature_vectors.ix[feature_vectors.centroid_x == -1,'target'] = 0
 
-feature_vectors['target'].plot()
+# feature_vectors['target'].plot()
 
-# test1 = feature_vectors[feature_vectors.centroid_x == -1]
-# test2 = feature_vectors[feature_vectors.centroid_x == -1]
-
-# now what's the next thing to do?
-
-# 1. output to CSV.
+# output to CSV.
+feature_vectors.to_csv(base_filename+"-FeatureVectors.csv")
