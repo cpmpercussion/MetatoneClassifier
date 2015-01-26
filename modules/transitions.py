@@ -231,13 +231,15 @@ def print_transition_plots(transitions):
 ##
 # User Functions:
 ##
-
 def calculate_transition_activity(states_frame):
-	"""Returns a time-series of flux using the default window to divide the given states_frame."""
+	"""
+	Shortcut for calculate_transition_activity_for_window with default window size.
+	"""
 	if(not isinstance(states_frame,pd.DataFrame) or states_frame.empty):
 		return None
 	return calculate_transition_activity_for_window(states_frame,TRANSITIONS_WINDOW)
 
+@profile
 def calculate_transition_activity_for_window(states_frame,window_size):
 	"""Returns a time-series of flux using the window_size (string) to divide the given states_frame."""
 	if(not isinstance(states_frame,pd.DataFrame) or states_frame.empty):
@@ -245,41 +247,52 @@ def calculate_transition_activity_for_window(states_frame,window_size):
 	group_transitions = calculate_group_transitions_for_window(states_frame,window_size)
 	if (isinstance(group_transitions,type(None))):
 		return None
-	transition_activity = group_transitions.dropna().apply(diag_measure_1_norm) # changed to 1-norm version.
-	transition_activity.name = 'transition_activity'
-	return transition_activity
+	return calculate_flux_series(group_transitions)
+	# transition_activity = group_transitions.dropna().apply(diag_measure_1_norm) # changed to 1-norm version.
+	# transition_activity.name = 'transition_activity'
+	# return transition_activity
 
-def calculate_new_ideas(transition_activity, threshold):
+def calculate_flux_series(transition_matrices):
+	"""
+	Returns a time-series of flux from a series of transition matrices
+	"""
+	flux_series = transition_matrices.dropna().apply(diag_measure_1_norm)
+	flux_series.name = 'flux_activity'
+	return flux_series
+
+
+def calculate_new_ideas(flux_series, threshold):
 	"""
 	Given a time series of flux throughout the performance, returns
 	a time series of points where the flux has increased above the given
 	threshold.
 	"""
-	return transition_activity.ix[transition_activity.diff() > threshold]
+	return flux_series.ix[flux_series.diff() > threshold]
 
-def is_new_idea_with_threshold(transitions, threshold):
+def is_new_idea_with_threshold(flux_series, threshold):
 	"""
 	Returns True if the flux of the most recent pair of transitions 
 	has increased above the given threshold. This suggests that a
 	"new idea" has occured in the ensemble.
 	"""
-	if not isinstance(transitions, pd.TimeSeries):
+	if not isinstance(flux_series, pd.TimeSeries):
 		return False
-	measure = transitions[-2:].diff().dropna()
+	measure = flux_series[-2:].diff().dropna()
 	if ((not measure.empty) and measure[0] > threshold):
 		return True
 	else:
 		return False
 
-def is_new_idea(transitions):
+def is_new_idea(flux_series):
 	"""Shortcut for is_new_idea_with_threshold with built in threshold."""
-	if not isinstance(transitions, pd.TimeSeries):
+	if not isinstance(flux_series, pd.TimeSeries):
 		return False
-	if (is_new_idea_with_threshold(transitions,NEW_IDEA_THRESHOLD)):
+	if (is_new_idea_with_threshold(flux_series,NEW_IDEA_THRESHOLD)):
 		return True
 	else:
 		return False
 
+@profile
 def current_transition_state(states_frame):
 	"""Returns the Current Transition State (string), spread (float), and ratio(float)"""
 	# Returns the current transition state as a string
@@ -289,6 +302,7 @@ def current_transition_state(states_frame):
 	state, spread, ratio = transition_state_measure(transitions[-1])
 	return state, spread, ratio
 
+@profile
 def calculate_group_transitions_for_window(states_frame,window_size):
 	"""Calculates the (group) transition matrices for a given window size over the states_frame DataFrame."""
 	if(not isinstance(states_frame,pd.DataFrame) or states_frame.empty):
