@@ -72,7 +72,7 @@ def evaluateClassifier(classifier,feature_vectors):
         X_train, X_test, y_train, y_test = vectors[train], vectors[test], targets[train], targets[test]
         classifier.fit(X_train,y_train)
         s = classifier.score(X_test,y_test)
-        print("Score: " + str(s))
+        #print("Score: " + str(s))
         scores = np.append(scores,s)
         # print(str(len(train)) + " " + str(len(test)))
 
@@ -91,20 +91,36 @@ data20141212_cpm = '2014-12-12T12-05-53-GestureTargetLog-CPM-FeatureVectors.csv'
 
 data = [data20130701_5s,data20130701_1s,data20141212_cpm]
 data_scores = []
-output = pd.DataFrame(index=pd.Series(range(10)))
+tests = []
+output = pd.DataFrame(index=pd.Series(range(100)))
 
-for f in data:
-    print("Evaluating: " + f)
-    classifier = RandomForestClassifier(n_estimators=100, max_features=3)
-    feature_vectors = pd.read_csv(f,index_col=0,parse_dates=True)
-    feature_vectors = feature_vectors.rename(columns={'target':'gesture'})
-    scores = evaluateClassifier(classifier, feature_vectors)
-    data_scores.append(scores)
-    output = output.join(pd.DataFrame({f:scores}))
+for n in range(10):
+    test = pd.DataFrame(index=pd.Series(range(10)))
+    for f in data:
+        print("Evaluating: " + f)
+        classifier = RandomForestClassifier(n_estimators=100, max_features=3)
+        feature_vectors = pd.read_csv(f,index_col=0,parse_dates=True)
+        feature_vectors = feature_vectors.rename(columns={'target':'gesture'})
+        scores = evaluateClassifier(classifier, feature_vectors)
+        data_scores.append(scores)
+        test = test.join(pd.DataFrame({f:scores}))
+    tests.append(test)
+
+
+
+output = pd.concat(tests,ignore_index=True)
+output.columns = ['train2013-5s','train2013-1s','train2014-1s']
 
 from scipy.stats import f_oneway
 from scipy.stats import ttest_ind
-f_oneway(data_scores[0],data_scores[1],data_scores[2])
-ttest_ind(data_scores[0],data_scores[1])
-ttest_ind(data_scores[1],data_scores[2])
-ttest_ind(data_scores[0],data_scores[2])
+
+print("Stats evaluations:")
+aov = f_oneway(data_scores[0],data_scores[1],data_scores[2])
+print("ANOVA: F:" + str(aov[0]) + " p:" + str(aov[1]))
+print("Paired t-tests:")
+t1 = ttest_ind(data_scores[0],data_scores[1])
+t2 = ttest_ind(data_scores[1],data_scores[2])
+t3 = ttest_ind(data_scores[0],data_scores[2])
+print("0-1 " + str(t1))
+print("1-2 " + str(t2))
+print("0-2 " + str(t3))
