@@ -42,7 +42,8 @@ SERVER_PORT = 9000
 ##
 METATONE_RECEIVING_PORT = 51200
 #NEW_IDEA_THRESHOLD = 0.3
-PICKLED_CLASSIFIER_FILE = '2013-07-01-TrainingData-classifier.p'
+# PICKLED_CLASSIFIER_FILE = '2013-07-01-TrainingData-classifier.p'
+PICKLED_CLASSIFIER_FILE = '2014-12-12T12-05-53-GestureTargetLog-CPM-FeatureVectors-classifier.p'
 ##
 
 ##
@@ -479,6 +480,7 @@ def target_gesture_handler(addr,tags,stuff,source):
 ##
 ##############################################
 
+@profile
 def classifyPerformance():
 	"""
 	Classifies the current performance state.
