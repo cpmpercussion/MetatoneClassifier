@@ -94,6 +94,7 @@ def array_transitions(chain):
 		prev = s
 	return np.sum(output,axis=0)
 
+@profile
 def create_transition_dataframe(states):
 	output = pd.DataFrame(index = states.index, columns = states.columns)
 	for col in states:
@@ -131,7 +132,7 @@ def diag_measure2(mat):
 		print m/d
 	return m/d
 	
-def diag_measure_1_norm(mat):
+def flux_measure(mat):
 	"""
 	Measure of a transition matrix's flux. Given a numpy matrix M with diagonal D, 
 	returns the ||M||_1 - ||D||_1 / ||M||_1
@@ -158,6 +159,7 @@ def vector_spread(vec):
 	spread = np.fabs(spread)
 	return spread
 
+@profile
 def transition_state_measure(mat):
 	"""
 	Chooses the vector with the most data in the matrix and 
@@ -239,24 +241,27 @@ def calculate_transition_activity(states_frame):
 		return None
 	return calculate_transition_activity_for_window(states_frame,TRANSITIONS_WINDOW)
 
-@profile
+
 def calculate_transition_activity_for_window(states_frame,window_size):
-	"""Returns a time-series of flux using the window_size (string) to divide the given states_frame."""
+	"""
+	Returns a time-series of flux using the window_size (string) to divide 
+	the given states_frame.
+	(this function should be retired)
+	"""
 	if(not isinstance(states_frame,pd.DataFrame) or states_frame.empty):
 		return None
 	group_transitions = calculate_group_transitions_for_window(states_frame,window_size)
 	if (isinstance(group_transitions,type(None))):
 		return None
 	return calculate_flux_series(group_transitions)
-	# transition_activity = group_transitions.dropna().apply(diag_measure_1_norm) # changed to 1-norm version.
-	# transition_activity.name = 'transition_activity'
-	# return transition_activity
 
 def calculate_flux_series(transition_matrices):
 	"""
 	Returns a time-series of flux from a series of transition matrices
 	"""
-	flux_series = transition_matrices.dropna().apply(diag_measure_1_norm)
+	if (isinstance(transition_matrices,type(None))):
+		return None
+	flux_series = transition_matrices.dropna().apply(flux_measure)
 	flux_series.name = 'flux_activity'
 	return flux_series
 
@@ -292,19 +297,26 @@ def is_new_idea(flux_series):
 	else:
 		return False
 
-@profile
+
 def current_transition_state(states_frame):
-	"""Returns the Current Transition State (string), spread (float), and ratio(float)"""
-	# Returns the current transition state as a string
+	"""
+	Returns the Current Transition State (string), spread (float), and ratio(float)
+	Calculates a new series of transition matrices each time!
+	(should be retired)
+	"""
 	transitions = calculate_group_transitions_for_window(states_frame,'15s')
 	if(not isinstance(transitions,pd.TimeSeries)):
 		return None
 	state, spread, ratio = transition_state_measure(transitions[-1])
 	return state, spread, ratio
 
+
 @profile
 def calculate_group_transitions_for_window(states_frame,window_size):
-	"""Calculates the (group) transition matrices for a given window size over the states_frame DataFrame."""
+	"""
+	Calculates the (group) transition matrices for a given window size 
+	over the states_frame DataFrame.
+	"""
 	if(not isinstance(states_frame,pd.DataFrame) or states_frame.empty):
 		return None
 	transitions = create_transition_dataframe(states_frame).dropna()

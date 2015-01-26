@@ -179,6 +179,7 @@ def load_classifier():
 	classifier = pickle.load(pickle_file)
 	pickle_file.close()
 
+@profile
 def feature_frame(frame):
 	"""
 	Calculates feature vectors for a dataframe of touch
@@ -219,6 +220,7 @@ def feature_frame(frame):
 		'velocity':frame_vel})
 	return fframe.fillna(0)
 
+@profile
 def classify_touch_messages(messages):
 	"""
 	Given a list of touch messages, generates a gesture class
@@ -506,8 +508,15 @@ def classifyPerformance():
 	
 	try:
 		latest_gestures = transitions.trim_gesture_frame(gestures)
-		current_transitions = transitions.calculate_transition_activity(latest_gestures)
-		state = transitions.current_transition_state(latest_gestures)
+		transition_matrices = transitions.calculate_group_transitions_for_window(latest_gestures,'15s')
+		flux_series = transitions.calculate_flux_series(transition_matrices)
+		# current_transitions = transitions.calculate_transition_activity(latest_gestures)
+		# state = transitions.current_transition_state(latest_gestures)
+		print(type(transition_matrices))
+		if (isinstance(transition_matrices,pd.TimeSeries)):
+			state = transitions.transition_state_measure(transition_matrices[-1])
+		else:
+			state = False
 	except:
 		print ("Couldn't perform transition calculations.")
 		state = False
@@ -519,7 +528,7 @@ def classifyPerformance():
 		msg.extend([state[0],state[1],state[2]])
 		send_message_to_sources(msg)
 	
-	newidea = transitions.is_new_idea(current_transitions)
+	newidea = transitions.is_new_idea(flux_series)
 	if (newidea):
 		# print("New Idea Detected!")
 		msg = OSC.OSCMessage("/metatone/classifier/ensemble/event/new_idea")
