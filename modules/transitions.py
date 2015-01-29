@@ -94,7 +94,7 @@ def array_transitions(chain):
 		prev = s
 	return np.sum(output,axis=0)
 
-@profile
+# @profile
 def create_transition_dataframe(states):
 	output = pd.DataFrame(index = states.index, columns = states.columns)
 	for col in states:
@@ -159,7 +159,7 @@ def vector_spread(vec):
 	spread = np.fabs(spread)
 	return spread
 
-@profile
+# @profile
 def transition_state_measure(mat):
 	"""
 	Chooses the vector with the most data in the matrix and 
@@ -311,7 +311,7 @@ def current_transition_state(states_frame):
 	return state, spread, ratio
 
 
-@profile
+# @profile
 def calculate_group_transitions_for_window(states_frame,window_size):
 	"""
 	Calculates the (group) transition matrices for a given window size 
