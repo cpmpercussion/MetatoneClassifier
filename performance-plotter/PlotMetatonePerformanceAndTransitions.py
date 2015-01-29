@@ -110,14 +110,14 @@ def plot_gesture_score(plot_title,events,gestures,metatone,online,touches,transi
     ax.xaxis.set_minor_locator(dates.SecondLocator(bysecond=[0,10,20,30,40,50]))
     ax.xaxis.grid(True,which="minor")
     ax.yaxis.grid()
-    plt.title(plot_title)
-    plt.ylabel("gesture")
-    plt.xlabel("time")
+    # plt.title(plot_title)
+    # plt.ylabel("gesture")
+    # plt.xlabel("time")
     plt.ylim(-0.5,8.5)
     plt.yticks(np.arange(9),['n','ft','st','fs','fsa','vss','bs','ss','c'])
     for n in gestures.columns:
         plt.plot_date(idx.to_pydatetime(),gestures[n],'-',label=n)
-    plt.legend(loc='upper right')
+    # plt.legend(loc='upper right')
 
     ## Plot Lines for each event.
     for n in range(len(new_ideas)):
