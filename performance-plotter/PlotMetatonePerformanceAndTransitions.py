@@ -104,11 +104,16 @@ def plot_gesture_score(plot_title,events,gestures,metatone,online,touches,transi
 
     #Gesture Score:
     idx = gestures.index
-    ax = plt.figure(figsize=(35,10),frameon=False,tight_layout=True).add_subplot(111)
-    ax.xaxis.set_major_locator(dates.SecondLocator(bysecond=[0,30]))
-    ax.xaxis.set_major_formatter(dates.DateFormatter("%H:%M:%S"))
-    ax.xaxis.set_minor_locator(dates.SecondLocator(bysecond=[0,10,20,30,40,50]))
-    ax.xaxis.grid(True,which="minor")
+    # ax = plt.figure(figsize=(35,10),frameon=False,tight_layout=True).add_subplot(111)
+    ax = plt.figure(figsize=(14,4),frameon=False,tight_layout=True).add_subplot(111)
+
+    # ax.xaxis.set_major_locator(dates.SecondLocator(bysecond=[0,30]))
+    ax.xaxis.set_major_locator(dates.SecondLocator(interval=60))
+    ax.xaxis.set_major_formatter(dates.DateFormatter("%H:%M"))
+
+    # ax.xaxis.set_major_formatter(dates.DateFormatter("%H:%M:%S"))
+    # ax.xaxis.set_minor_locator(dates.SecondLocator(bysecond=[0,10,20,30,40,50]))
+    # ax.xaxis.grid(True,which="minor")
     ax.yaxis.grid()
     # plt.title(plot_title)
     # plt.ylabel("gesture")
