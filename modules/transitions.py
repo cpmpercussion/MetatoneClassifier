@@ -74,12 +74,15 @@ def one_step_transition(e1,e2):
         """
 	matrix = np.zeros([NUMBER_GROUPS,NUMBER_GROUPS])
 	matrix[gesture_groups[e2]][gesture_groups[e1]] = matrix[gesture_groups[e2]][gesture_groups[e1]] + 1
+	#matrix = np.zeros([NUMBER_GESTURES,NUMBER_GESTURES]) # Full gesture matrix
+	#matrix[e2][e1] = matrix[e2][e1] + 1 # Full gesture matrix
 	return matrix
 
 def empty_transition_matrix():
         """
         Returns an empty transition matrix.
         """
+        # return np.zeros([NUMBER_GESTURES,NUMBER_GESTURES]) # Full gesture matrix
         return np.zeros([NUMBER_GROUPS,NUMBER_GROUPS])
 
 def multi_step_transition(chain):
@@ -107,8 +110,10 @@ def create_transition_dataframe(states):
 		for s in states[col].index:
 			curr = s
 			if (prev != -1):
-                                from_state = states[col][prev]
-                                to_state = states[col][curr]
+                                #from_state = states[col][prev]
+                                from_state = states.at[prev,col]
+                                #to_state = states[col][curr]
+                                to_state = states.at[curr,col]
                                 matrix = one_step_transition(from_state,to_state)
 				matrices.append(matrix)
 			prev = s
@@ -123,6 +128,12 @@ def transition_sum(tran_arr):
         """
 	out = np.sum(tran_arr,axis=0).tolist()
 	return out
+
+## TODO: function to reduce from full gesture matrix to groups
+
+## TODO: change one_step_transitions to (default) produce full gesture matrices.
+
+
 
 #####################
 #
@@ -144,7 +155,17 @@ def flux_measure(mat):
 	measure = (m - d) / m # Flux.
 	return measure
 
+## TODO - Entropy measure
 
+## TODO - Unity measure
+
+
+
+#####################
+#
+# Ensemble State Calculations --- probably time to retire these.
+#
+#####################
 
 def vector_ratio(mat,vec):
 	"""Ratio of Vector to Matrix using the 1-Norm."""
@@ -212,6 +233,12 @@ def dict_vecs_special_case_state(vecs):
 		state ='convergence'
 	return state
 
+#####################
+#
+# Plotting Transition events --- time to retire this!
+#
+#####################
+
 def print_transition_plots(transitions):
 	"""Saves a PDF of a heatmap plot of each transition matrix in the given list: transitions."""
 	for n in range(len(transitions)):
@@ -223,30 +250,12 @@ def print_transition_plots(transitions):
 		plt.savefig(title.replace(":","_") + '.pdf', dpi=150, format="pdf")
 		plt.close()
 
-##
-# User Functions:
-##
-def calculate_transition_activity(states_frame):
-	"""
-	Shortcut for calculate_transition_activity_for_window with default window size.
-	"""
-	if(not isinstance(states_frame,pd.DataFrame) or states_frame.empty):
-		return None
-	return calculate_transition_activity_for_window(states_frame,TRANSITIONS_WINDOW)
 
-
-def calculate_transition_activity_for_window(states_frame,window_size):
-	"""
-	Returns a time-series of flux using the window_size (string) to divide 
-	the given states_frame.
-	(this function should be retired)
-	"""
-	if(not isinstance(states_frame,pd.DataFrame) or states_frame.empty):
-		return None
-	group_transitions = calculate_group_transitions_for_window(states_frame,window_size)
-	if (isinstance(group_transitions,type(None))):
-		return None
-	return calculate_flux_series(group_transitions)
+#####################
+#
+# User functions - used in classifier and other processing scripts
+#
+#####################
 
 def calculate_flux_series(transition_matrices):
 	"""
@@ -257,7 +266,6 @@ def calculate_flux_series(transition_matrices):
 	flux_series = transition_matrices.dropna().apply(flux_measure)
 	flux_series.name = 'flux_activity'
 	return flux_series
-
 
 def calculate_new_ideas(flux_series, threshold):
 	"""
@@ -290,21 +298,6 @@ def is_new_idea(flux_series):
 	else:
 		return False
 
-
-def current_transition_state(states_frame):
-	"""
-	Returns the Current Transition State (string), spread (float), and ratio(float)
-	Calculates a new series of transition matrices each time!
-	(should be retired)
-	"""
-	transitions = calculate_group_transitions_for_window(states_frame,'15s')
-	if(not isinstance(transitions,pd.TimeSeries)):
-		return None
-	state, spread, ratio = transition_state_measure(transitions[-1])
-	return state, spread, ratio
-
-
-# @profile
 def calculate_group_transitions_for_window(states_frame,window_size):
 	"""
 	Calculates the (group) transition matrices for a given window size 
