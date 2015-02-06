@@ -510,9 +510,6 @@ def classifyPerformance():
 		latest_gestures = transitions.trim_gesture_frame(gestures)
 		transition_matrices = transitions.calculate_group_transitions_for_window(latest_gestures,'15s')
 		flux_series = transitions.calculate_flux_series(transition_matrices)
-		# current_transitions = transitions.calculate_transition_activity(latest_gestures)
-		# state = transitions.current_transition_state(latest_gestures)
-		print(type(transition_matrices))
 		if (isinstance(transition_matrices,pd.TimeSeries)):
 			state = transitions.transition_state_measure(transition_matrices[-1])
 		else:
@@ -566,6 +563,7 @@ def classifyForever():
 	while classifyingForever:
 		try:
 			time.sleep(1)
+                        # TODO: subtract the time taken to do the classification from the sleep time.
 			currentState = classifyPerformance()
 			printPerformanceState(currentState)
 			trim_touch_messages()
