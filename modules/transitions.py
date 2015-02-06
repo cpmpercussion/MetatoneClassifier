@@ -83,23 +83,6 @@ def multi_step_transition(chain):
                 matrix[gesture_groups[e2]][gesture_groups[e1]] = matrix[gesture_groups[e2]][gesture_groups[e1]] + 1
         return matrix
 
-def create_transition_dataframe_old_method(states):
-        """
-        No longer used.
-        """
-	output = pd.DataFrame(index = states.index, columns = states.columns)
-	for col in states:
-		prev = -1
-		for s in states[col].index:
-			curr = s
-			if (prev != -1):
-                                from_state = states[col][prev]
-                                to_state = states[col][curr]
-                                matrix = one_step_transition(from_state,to_state)
-				output[col][s] = matrix
-			prev = s
-	return output
-
 def create_transition_dataframe(states):
         """
         Given a the gesture states of a single player, calculates a dataframe of one-step transition matrices.
