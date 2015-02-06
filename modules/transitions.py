@@ -62,6 +62,12 @@ gesture_groups = {
 	8 : 4,
 	9 : 4}
 
+#####################
+#
+# Creating Transition Matrices
+#
+#####################
+
 def one_step_transition(e1,e2):
 	"""
         Calculates a transition matrix between two states.
@@ -69,6 +75,12 @@ def one_step_transition(e1,e2):
 	matrix = np.zeros([NUMBER_GROUPS,NUMBER_GROUPS])
 	matrix[gesture_groups[e2]][gesture_groups[e1]] = matrix[gesture_groups[e2]][gesture_groups[e1]] + 1
 	return matrix
+
+def empty_transition_matrix():
+        """
+        Returns an empty transition matrix.
+        """
+        return np.zeros([NUMBER_GROUPS,NUMBER_GROUPS])
 
 def multi_step_transition(chain):
         """
@@ -90,7 +102,7 @@ def create_transition_dataframe(states):
         """
         dictionary_output = {}
         for col in states:
-                matrices = [np.nan]
+                matrices = [empty_transition_matrix()]
 		prev = -1
 		for s in states[col].index:
 			curr = s
@@ -104,31 +116,19 @@ def create_transition_dataframe(states):
 	df = pd.DataFrame(index = states.index, data = dictionary_output)
         return df
 
-def diag_measure(mat):
-	"""Given a numpy matrix mat, returns the 2-norm of the matrix divided by 
-	the two norm of the diagonal provided the diagonal is not the zero vector.
-	(In this case returns the 2-norm of the matrix.)"""
-	mat = np.array(mat)
-	d = np.linalg.norm(mat.diagonal()) 
-	m = np.linalg.norm(mat)
-	if d == 0:
-		d = 1
-	return m/d
+def transition_sum(tran_arr):
+	"""
+        Sums an array of transition matrices.
+        Used for resampling during performances as well as creating a whole-performance transition matrix.
+        """
+	out = np.sum(tran_arr,axis=0).tolist()
+	return out
 
-def diag_measure2(mat):
-	"""
-	Given a numpy matrix mat, returns the 2-norm of the matrix divided by 
-	the two norm of the diagonal provided the diagonal is not the zero vector.
-	(In this case returns the 2-norm of the matrix divided by 2.)
-	"""
-	# 1.3 is a good split for "New events"
-	mat = np.array(mat)
-	d = np.linalg.norm(mat.diagonal()) 
-	m = np.linalg.norm(mat)
-	if d == 0:
-		d = 0.5
-		print m/d
-	return m/d
+#####################
+#
+# Matrix Measures
+#
+#####################
 	
 def flux_measure(mat):
 	"""
@@ -145,6 +145,7 @@ def flux_measure(mat):
 	return measure
 
 
+
 def vector_ratio(mat,vec):
 	"""Ratio of Vector to Matrix using the 1-Norm."""
 	return np.linalg.norm(vec,1) / sum(sum(abs(mat)))
@@ -157,7 +158,6 @@ def vector_spread(vec):
 	spread = np.fabs(spread)
 	return spread
 
-# @profile
 def transition_state_measure(mat):
 	"""
 	Chooses the vector with the most data in the matrix and 
@@ -211,14 +211,6 @@ def dict_vecs_special_case_state(vecs):
 	elif (len(singles) == 1 and 'divergence' in singles):
 		state ='convergence'
 	return state
-
-def transition_sum(tran_arr):
-	"""
-        Sums an array of transition matrices.
-        Used for resampling during performances as well as creating a whole-performance transition matrix.
-        """
-	out = np.sum(tran_arr,axis=0).tolist()
-	return out
 
 def print_transition_plots(transitions):
 	"""Saves a PDF of a heatmap plot of each transition matrix in the given list: transitions."""
