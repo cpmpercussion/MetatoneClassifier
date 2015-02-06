@@ -16,6 +16,8 @@ columns = np.random.randint(0,9,(35,30))
 data = pd.DataFrame(index = rng, data = columns)
 
 
+
+
 # transition_matrices = transitions.calculate_group_transitions_for_window(data,'15s')
 
 
