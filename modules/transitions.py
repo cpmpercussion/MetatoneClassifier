@@ -62,36 +62,6 @@ gesture_groups = {
 	8 : 4,
 	9 : 4}
 
-# Is this function unused?
-def transition_matrix(chains):
-	states_n = NUMBER_GROUPS
-	output = []
-	for col in chains:
-		transitions = np.zeros([states_n,states_n])
-		curr_chain = chains[col].tolist()
-		curr_chain = map(int,curr_chain)
-		prev = -1
-		for s in curr_chain:
-			curr = s
-			if (prev != -1):
-				transitions[gesture_groups[curr]][gesture_groups[prev]] = transitions[gesture_groups[curr]][gesture_groups[prev]] + 1
-			prev = s
-		output.append(transitions)
-	return output
-
-# Is this function unused?
-def array_transitions(chain):
-	output = []
-	prev = -1
-	for s in chain:
-		curr = s
-		if (prev != -1):
-			output.append(one_step_transition(prev,curr))
-		prev = s
-	return np.sum(output,axis=0)
-
-
-
 def one_step_transition(e1,e2):
 	"""
         Calculates a transition matrix between two states.
