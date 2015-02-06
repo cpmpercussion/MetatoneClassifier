@@ -179,7 +179,7 @@ def load_classifier():
 	classifier = pickle.load(pickle_file)
 	pickle_file.close()
 
-@profile
+#@profile
 def feature_frame(frame):
 	"""
 	Calculates feature vectors for a dataframe of touch
@@ -220,7 +220,7 @@ def feature_frame(frame):
 		'velocity':frame_vel})
 	return fframe.fillna(0)
 
-@profile
+#@profile
 def classify_touch_messages(messages):
 	"""
 	Given a list of touch messages, generates a gesture class
@@ -482,7 +482,7 @@ def target_gesture_handler(addr,tags,stuff,source):
 ##
 ##############################################
 
-@profile
+#@profile
 def classifyPerformance():
 	"""
 	Classifies the current performance state.
