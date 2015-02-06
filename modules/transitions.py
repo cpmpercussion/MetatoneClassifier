@@ -96,16 +96,26 @@ def one_step_transition(e1,e2):
 	"""
         Calculates a transition matrix between two states.
         """
-	states_n = NUMBER_GROUPS
-	transition = np.zeros([states_n,states_n])
-	transition[gesture_groups[e2]][gesture_groups[e1]] = transition[gesture_groups[e2]][gesture_groups[e1]] + 1
-	return transition
+	matrix = np.zeros([NUMBER_GROUPS,NUMBER_GROUPS])
+	matrix[gesture_groups[e2]][gesture_groups[e1]] = matrix[gesture_groups[e2]][gesture_groups[e1]] + 1
+	return matrix
 
-# @profile
-def create_transition_dataframe(states):
+def multi_step_transition(chain):
         """
-        Given a the gesture states of a single player, calculates a dataframe of one-step transition matrices.
-        Used in the calculate_group_transitions_for_window function which is used in the classifyPerformance loop.
+        Calculates the transition matrix of a whole list of states.
+        """
+        matrix = np.zeros([NUMBER_GROUPS,NUMBER_GROUPS])
+        if len(chain) < 2:
+                return matrix
+        for i in xrange(1, len(chain)):
+                e2 = chain[i]
+                e1 = chain[i-1]
+                matrix[gesture_groups[e2]][gesture_groups[e1]] = matrix[gesture_groups[e2]][gesture_groups[e1]] + 1
+        return matrix
+
+def create_transition_dataframe_old_method(states):
+        """
+        No longer used.
         """
 	output = pd.DataFrame(index = states.index, columns = states.columns)
 	for col in states:
@@ -113,11 +123,37 @@ def create_transition_dataframe(states):
 		for s in states[col].index:
 			curr = s
 			if (prev != -1):
-                                # most expensive line in the program!
-                                # can this be optimised?
-				output[col][s] = one_step_transition(states[col][prev],states[col][curr])
+                                from_state = states[col][prev]
+                                to_state = states[col][curr]
+                                matrix = one_step_transition(from_state,to_state)
+				output[col][s] = matrix
 			prev = s
 	return output
+
+def create_transition_dataframe(states):
+        """
+        Given a the gesture states of a single player, calculates a dataframe of one-step transition matrices.
+        Used in the calculate_group_transitions_for_window function which is used in the classifyPerformance loop.
+        """
+        output = np.zeros_like(states)
+	#output = pd.DataFrame(index = states.index, columns = states.columns)
+	#index = states.index
+        #columns = states.columns
+        dictionary_output = {}
+        for col in states:
+                matrices = [np.nan]
+		prev = -1
+		for s in states[col].index:
+			curr = s
+			if (prev != -1):
+                                from_state = states[col][prev]
+                                to_state = states[col][curr]
+                                matrix = one_step_transition(from_state,to_state)
+				matrices.append(matrix)
+			prev = s
+                dictionary_output[col] = matrices
+	df = pd.DataFrame(index = states.index, data = dictionary_output)
+        return df
 
 def diag_measure(mat):
 	"""Given a numpy matrix mat, returns the 2-norm of the matrix divided by 
