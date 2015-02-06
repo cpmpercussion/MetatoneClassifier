@@ -16,7 +16,7 @@ from datetime import timedelta
 from datetime import datetime
 import random
 
-NUMBER_STATES = 5
+
 
 ##
 ## Settings up to July 2014 - as used in the 17/3 concert
@@ -37,6 +37,7 @@ TRANSITIONS_WINDOW = '15s'
 ##
 
 ## Int values for Gesture codes.
+NUMBER_GESTURES = 9
 gesture_codes = {
 	'N': 0,
 	'FT': 1,
@@ -46,9 +47,9 @@ gesture_codes = {
 	'VSS': 5,
 	'BS': 6,
 	'SS': 7,
-	'C': 8,
-	'?': 9}
+	'C': 8}
 
+NUMBER_GROUPS = 5
 gesture_groups = {
 	0 : 0,
 	1 : 1,
@@ -61,8 +62,9 @@ gesture_groups = {
 	8 : 4,
 	9 : 4}
 
+# Is this function unused?
 def transition_matrix(chains):
-	states_n = NUMBER_STATES
+	states_n = NUMBER_GROUPS
 	output = []
 	for col in chains:
 		transitions = np.zeros([states_n,states_n])
@@ -77,13 +79,7 @@ def transition_matrix(chains):
 		output.append(transitions)
 	return output
 
-def one_step_transition(e1,e2):
-	"""Calculates the transition between two states."""
-	states_n = NUMBER_STATES
-	transition = np.zeros([states_n,states_n])
-	transition[gesture_groups[e2]][gesture_groups[e1]] = transition[gesture_groups[e2]][gesture_groups[e1]] + 1
-	return transition
-
+# Is this function unused?
 def array_transitions(chain):
 	output = []
 	prev = -1
@@ -94,14 +90,31 @@ def array_transitions(chain):
 		prev = s
 	return np.sum(output,axis=0)
 
+
+
+def one_step_transition(e1,e2):
+	"""
+        Calculates a transition matrix between two states.
+        """
+	states_n = NUMBER_GROUPS
+	transition = np.zeros([states_n,states_n])
+	transition[gesture_groups[e2]][gesture_groups[e1]] = transition[gesture_groups[e2]][gesture_groups[e1]] + 1
+	return transition
+
 # @profile
 def create_transition_dataframe(states):
+        """
+        Given a the gesture states of a single player, calculates a dataframe of one-step transition matrices.
+        Used in the calculate_group_transitions_for_window function which is used in the classifyPerformance loop.
+        """
 	output = pd.DataFrame(index = states.index, columns = states.columns)
 	for col in states:
 		prev = -1
 		for s in states[col].index:
 			curr = s
 			if (prev != -1):
+                                # most expensive line in the program!
+                                # can this be optimised?
 				output[col][s] = one_step_transition(states[col][prev],states[col][curr])
 			prev = s
 	return output
@@ -215,7 +228,10 @@ def dict_vecs_special_case_state(vecs):
 	return state
 
 def transition_sum(tran_arr):
-	"""Sums an array of transition matrices."""
+	"""
+        Sums an array of transition matrices.
+        Used for resampling during performances as well as creating a whole-performance transition matrix.
+        """
 	out = np.sum(tran_arr,axis=0).tolist()
 	return out
 
