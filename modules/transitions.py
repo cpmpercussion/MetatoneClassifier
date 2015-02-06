@@ -72,7 +72,7 @@ def one_step_transition(e1,e2):
 
 def multi_step_transition(chain):
         """
-        Calculates the transition matrix of a whole list of states.
+        Calculates the transition matrix of a whole sequence of states.
         """
         matrix = np.zeros([NUMBER_GROUPS,NUMBER_GROUPS])
         if len(chain) < 2:
@@ -105,10 +105,6 @@ def create_transition_dataframe(states):
         Given a the gesture states of a single player, calculates a dataframe of one-step transition matrices.
         Used in the calculate_group_transitions_for_window function which is used in the classifyPerformance loop.
         """
-        output = np.zeros_like(states)
-	#output = pd.DataFrame(index = states.index, columns = states.columns)
-	#index = states.index
-        #columns = states.columns
         dictionary_output = {}
         for col in states:
                 matrices = [np.nan]
