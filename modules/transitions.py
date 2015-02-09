@@ -73,18 +73,18 @@ def one_step_transition(e1,e2):
 	"""
         Calculates a transition matrix between two states.
         """
-	matrix = np.zeros([NUMBER_GROUPS,NUMBER_GROUPS])
-	matrix[gesture_groups[e2]][gesture_groups[e1]] = matrix[gesture_groups[e2]][gesture_groups[e1]] + 1
-	#matrix = np.zeros([NUMBER_GESTURES,NUMBER_GESTURES]) # Full gesture matrix
-	#matrix[e2][e1] = matrix[e2][e1] + 1 # Full gesture matrix
+	#matrix = np.zeros([NUMBER_GROUPS,NUMBER_GROUPS])
+	#matrix[gesture_groups[e2]][gesture_groups[e1]] = matrix[gesture_groups[e2]][gesture_groups[e1]] + 1
+	matrix = np.zeros([NUMBER_GESTURES,NUMBER_GESTURES]) # Full gesture matrix
+	matrix[e2][e1] = matrix[e2][e1] + 1 # Full gesture matrix
 	return matrix
 
 def empty_transition_matrix():
         """
         Returns an empty transition matrix.
         """
-        # return np.zeros([NUMBER_GESTURES,NUMBER_GESTURES]) # Full gesture matrix
-        return np.zeros([NUMBER_GROUPS,NUMBER_GROUPS])
+        return np.zeros([NUMBER_GESTURES,NUMBER_GESTURES]) # Full gesture matrix
+        #return np.zeros([NUMBER_GROUPS,NUMBER_GROUPS])
 
 def multi_step_transition(chain):
         """
@@ -134,6 +134,14 @@ def transition_matrix_to_stochastic_matrix(trans_matrix):
 	""" Convert a transition matrix with entries >1 to a stochastic matrix where rows sum to 1. """
 	result = map((lambda x: map((lambda n: n/sum(x)),x)), trans_matrix)
 	return result
+
+
+def reduce_matrix_to_groups(mat):
+        """
+        Converts a 9x9 matrix of all gesture transitions to the simpler gesture groups.
+        """
+        
+        
 
 ## TODO: function to reduce from full gesture matrix to groups
 
