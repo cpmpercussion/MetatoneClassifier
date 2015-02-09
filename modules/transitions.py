@@ -7,6 +7,7 @@ Calculates and manipulates transition matrices.
 
 import pandas as pd
 import numpy as np
+from scipy.stats import entropy
 import itertools as it
 import matplotlib.pyplot as plt
 import matplotlib.dates as dates
@@ -155,7 +156,19 @@ def flux_measure(mat):
 	measure = (m - d) / m # Flux.
 	return measure
 
-## TODO - Entropy measure
+def entropy_measure(mat):
+        """
+        Measures a transition matrix's entropy in the information theoretic sense.
+        H(P) = -\sum_{i,j}p_{ij}\log_2(p_{ij})
+        Uses scipy.stats.entropy
+        """
+        return entropy(np.reshape(x,len(mat)**2), base=2)
+
+def unity_measure(mat):
+        """
+        Should do something along the lines of the transition matrix state functions.
+        """
+        return 0
 
 ## TODO - Unity measure
 
