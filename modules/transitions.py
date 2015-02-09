@@ -130,6 +130,11 @@ def transition_sum(tran_arr):
 	out = np.sum(tran_arr,axis=0).tolist()
 	return out
 
+def transition_matrix_to_stochastic_matrix(trans_matrix):
+	""" Convert a transition matrix with entries >1 to a stochastic matrix where rows sum to 1. """
+	result = map((lambda x: map((lambda n: n/sum(x)),x)), trans_matrix)
+	return result
+
 ## TODO: function to reduce from full gesture matrix to groups
 
 ## TODO: change one_step_transitions to (default) produce full gesture matrices.
@@ -162,7 +167,7 @@ def entropy_measure(mat):
         H(P) = -\sum_{i,j}p_{ij}\log_2(p_{ij})
         Uses scipy.stats.entropy
         """
-        return entropy(np.reshape(x,len(mat)**2), base=2)
+        return entropy(np.reshape(mat,len(mat)**2), base=2)
 
 def unity_measure(mat):
         """
@@ -359,10 +364,7 @@ def trim_gesture_frame(gestures):
 ## GenerativeAgent Stuff
 ##
 
-def transition_matrix_to_stochastic_matrix(trans_matrix):
-	""" Convert a transition matrix with entries >1 to a stochastic matrix where rows sum to 1. """
-	result = map((lambda x: map((lambda n: n/sum(x)),x)), trans_matrix)
-	return result
+
 
 def weighted_choice(weights):
 	""" Returns a random index from a list weighted by the list's entries."""
