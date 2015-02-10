@@ -23,18 +23,38 @@ latest_matrix = transition_matrices[-1]
 entropy = transitions.entropy_measure(latest_matrix)
 flux = transitions.flux_measure(latest_matrix)
 
-print("Latest Matrix")
+print("\nLatest Matrix\n")
 print(latest_matrix)
-print("Flux: " + str(flux))
-print("Entropy: " + str(entropy))
+print("\nFlux: " + str(flux))
+print("\nEntropy: " + str(entropy))
 
 stochastic_matrix = transitions.transition_matrix_to_stochastic_matrix(latest_matrix)
 entropy = transitions.entropy_measure(stochastic_matrix)
 flux = transitions.flux_measure(stochastic_matrix)
 
-print("Reduced to stochastic:")
+print("\nReduced to stochastic:\n")
 print(stochastic_matrix)
 print("Flux: " + str(flux))
 print("Entropy: " + str(entropy))
+
+latest_matrix = transitions.reduce_matrix_to_groups(latest_matrix) # Reduce to Group Transitions.
+
+entropy = transitions.entropy_measure(latest_matrix)
+flux = transitions.flux_measure(latest_matrix)
+
+print("\nLatest Matrix\n")
+print(latest_matrix)
+print("\nFlux: " + str(flux))
+print("\nEntropy: " + str(entropy))
+
+stochastic_matrix = transitions.transition_matrix_to_stochastic_matrix(latest_matrix)
+entropy = transitions.entropy_measure(stochastic_matrix)
+flux = transitions.flux_measure(stochastic_matrix)
+
+print("\nReduced to stochastic:\n")
+print(stochastic_matrix)
+print("Flux: " + str(flux))
+print("Entropy: " + str(entropy))
+
 
 # group_transitions = group_transitions.resample(window_size,how=transition_sum)

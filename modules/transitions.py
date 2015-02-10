@@ -96,7 +96,8 @@ def multi_step_transition(chain):
         for i in xrange(1, len(chain)):
                 e2 = chain[i]
                 e1 = chain[i-1]
-                matrix[gesture_groups[e2]][gesture_groups[e1]] = matrix[gesture_groups[e2]][gesture_groups[e1]] + 1
+                # matrix[gesture_groups[e2]][gesture_groups[e1]] = matrix[gesture_groups[e2]][gesture_groups[e1]] + 1
+                matrix[e2][e1] += 1
         return matrix
 
 def create_transition_dataframe(states):
@@ -111,9 +112,7 @@ def create_transition_dataframe(states):
 		for s in states[col].index:
 			curr = s
 			if (prev != -1):
-                                #from_state = states[col][prev]
                                 from_state = states.at[prev,col]
-                                #to_state = states[col][curr]
                                 to_state = states.at[curr,col]
                                 matrix = one_step_transition(from_state,to_state)
 				matrices.append(matrix)
@@ -131,23 +130,21 @@ def transition_sum(tran_arr):
 	return out
 
 def transition_matrix_to_stochastic_matrix(trans_matrix):
-	""" Convert a transition matrix with entries >1 to a stochastic matrix where rows sum to 1. """
+	""" 
+        Convert a transition matrix with entries >1 to a stochastic matrix where rows sum to 1. 
+        """
 	result = map((lambda x: map((lambda n: n/sum(x)),x)), trans_matrix)
 	return result
-
 
 def reduce_matrix_to_groups(mat):
         """
         Converts a 9x9 matrix of all gesture transitions to the simpler gesture groups.
         """
-        
-        
-
-## TODO: function to reduce from full gesture matrix to groups
-
-## TODO: change one_step_transitions to (default) produce full gesture matrices.
-
-
+        group_matrix = np.zeros([NUMBER_GROUPS,NUMBER_GROUPS])
+        for i in range(NUMBER_GESTURES):
+                for j in range(NUMBER_GESTURES):
+                        group_matrix[gesture_groups[i]][gesture_groups[j]] += mat[i][j]
+        return group_matrix
 
 #####################
 #

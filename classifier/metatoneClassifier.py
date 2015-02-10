@@ -43,7 +43,8 @@ SERVER_PORT = 9000
 METATONE_RECEIVING_PORT = 51200
 #NEW_IDEA_THRESHOLD = 0.3
 # PICKLED_CLASSIFIER_FILE = '2013-07-01-TrainingData-classifier.p'
-PICKLED_CLASSIFIER_FILE = '2014-12-12T12-05-53-GestureTargetLog-CPM-FeatureVectors-classifier.p'
+#PICKLED_CLASSIFIER_FILE = '2014-12-12T12-05-53-GestureTargetLog-CPM-FeatureVectors-classifier.p'
+PICKLED_CLASSIFIER_FILE = 'classifier.p'
 ##
 
 ##
@@ -105,7 +106,7 @@ def findReceiveAddress():
 	port    = SERVER_PORT
 	#receive_address = "10.0.1.2"
 	try:
-		receive_address = (ip[0], port)
+		receive_address = (ip[2], port)
 	except IndexError:
 		if (WEB_SERVER_MODE):
 			receive_address = ("107.170.207.234",port)
