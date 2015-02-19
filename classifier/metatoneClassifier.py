@@ -39,6 +39,8 @@ import os
 ##
 SERVER_NAME = "MetatoneLiveProc"
 SERVER_PORT = 9000
+CLOUD_SERVER_IP = "107.170.207.234"
+
 
 ##
 METATONE_RECEIVING_PORT = 51200
@@ -56,7 +58,7 @@ VISUALISER_HOST = 'localhost'
 ##
 
 ##
-WEB_SERVER_MODE = False
+WEB_SERVER_MODE = True
 ##
 
 ##
@@ -111,7 +113,7 @@ def findReceiveAddress():
 		receive_address = (ip[2], port)
 	except IndexError:
 		if (WEB_SERVER_MODE):
-			receive_address = ("107.170.207.234",port)
+			receive_address = (CLOUD_SERVER_IP,SERVER_PORT)
 		else:
 			receive_address = ("localhost",port)
 	print("Server Address: " + str(receive_address))
