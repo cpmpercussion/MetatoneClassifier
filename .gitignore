@@ -4,3 +4,4 @@
 classifier/build
 classifier/dist
 classifier/logs
+classifier/classifier.p
