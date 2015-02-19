@@ -576,13 +576,17 @@ def classifyForever():
 	classifyingForever = True
 	while classifyingForever:
 		try:
-			time.sleep(1)
-                        # TODO: subtract the time taken to do the classification from the sleep time.
+			start_time = datetime.now()
+			delta = timedelta(seconds=1)
 			currentState = classifyPerformance()
 			printPerformanceState(currentState)
 			trim_touch_messages()
+			end_time = datetime.now()
+			delta_seconds = (end_time-start_time).total_seconds() # process as timedelta
+			print("### Classification took: " + str(delta_seconds) + "s. ###")
+			time.sleep(max(0,1-delta_seconds))
 		except:
-			print("Couldn't perform analysis - exception")
+			print("### Couldn't perform analysis - exception. ###")
 			raise
 
 def stopClassifying():
@@ -635,59 +639,3 @@ def main():
 
 if __name__ == "__main__":
 	main()
-
-# ## todo - use classify forever instead.
-# try:
-# 	while True:
-# 		try:
-# 			time.sleep(1)
-# 			currentState = classifyPerformance()
-# 			printPerformanceState(currentState)
-# 			trim_touch_messages()
-# 		except KeyboardInterrupt:
-# 			print("Received Ctrl-C - Closing down.")
-# 			raise
-# 		except:
-# 			print("Couldn't perform analysis - exception")
-# 			raise
-# except KeyboardInterrupt:
-# 	close_server()
-# 	print("Closed down. Bye!")
-
-# try:
-# 	classes = classify_touch_messages(touch_messages)
-# except:
-# 	print("Couldn't classify messages.")
-# try: 
-# 	if (classes):
-# 		send_gestures(classes)
-# 		log_gestures(classes,classified_gestures)
-# 		pretty_print_classes(classes)
-# 	gestures = make_gesture_frame(classified_gestures).fillna(0)
-# except:
-# 	print("Couldn't update gestures.")
-# 	raise
-
-# try:
-# 	latest_gestures = transitions.trim_gesture_frame(gestures)
-# 	current_transitions = transitions.calculate_transition_activity(latest_gestures)
-# 	state = transitions.current_transition_state(latest_gestures)
-# except:
-# 	print ("Couldn't perform transition calculations.")
-# 	raise
-
-# if (state):
-# 	print(state)
-# 	msg = OSC.OSCMessage("/metatone/classifier/ensemble/state")
-# 	msg.extend([state[0],state[1],state[2]])
-# 	send_message_to_sources(msg)
-
-# if(transitions.is_new_idea(current_transitions)):
-# 	print("New Idea Detected!")
-# 	msg = OSC.OSCMessage("/metatone/classifier/ensemble/event/new_idea")
-# 	msg.extend([name,"new_idea"])
-# 	send_message_to_sources(msg)
-
-# COLUMNS = ['time','device_id','x_pos','y_pos','velocity']
-# GESTURE_CODES = {'N': 0,'FT': 1,'ST': 2,'FS': 3,'FSA': 4,
-# 	'VSS': 5,'BS': 6,'SS': 7,'C': 8,'?': 9}
