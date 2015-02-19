@@ -33,6 +33,7 @@ import time,sched
 import pickle
 import logging
 import transitions
+import generate_classifier
 import os
 
 ##
@@ -45,6 +46,7 @@ METATONE_RECEIVING_PORT = 51200
 # PICKLED_CLASSIFIER_FILE = '2013-07-01-TrainingData-classifier.p'
 #PICKLED_CLASSIFIER_FILE = '2014-12-12T12-05-53-GestureTargetLog-CPM-FeatureVectors-classifier.p'
 PICKLED_CLASSIFIER_FILE = 'classifier.p'
+CLASSIFIER_TRAINING_FILE = "data/2014-12-12T12-05-53-GestureTargetLog-CPM-FeatureVectors.csv"
 ##
 
 ##
@@ -176,9 +178,20 @@ def load_classifier():
 	a global variable.
 	"""
 	global classifier
-	pickle_file = open(PICKLED_CLASSIFIER_FILE, "rb" )
-	classifier = pickle.load(pickle_file)
-	pickle_file.close()
+	print("### Loading Gesture Classifier.           ###")
+	try:
+		pickle_file = open(PICKLED_CLASSIFIER_FILE, "rb" )
+		classifier = pickle.load(pickle_file)
+		pickle_file.close()
+		print("### Classifier file successfully loaded.  ###")
+	except(IOError):
+		print("### IOError Loading Classifier.           ###")
+		print("### Saving new pickled classifier object. ###")
+		classifier = generate_classifier.pickleClassifier(generate_classifier.INPUT_FILE,generate_classifier.CLASSIFIER_NAME)
+	except:
+		print("### Exception Loading Classifier.         ###")
+		print("### Generating new classifier object.     ###")
+		classifier = generate_classifier.pickleClassifier(generate_classifier.INPUT_FILE,generate_classifier.CLASSIFIER_NAME)
 
 #@profile
 def feature_frame(frame):

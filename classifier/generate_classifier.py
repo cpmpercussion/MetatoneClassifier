@@ -37,7 +37,18 @@ feature_vector_columns = ['centroid_x','centroid_y','std_x','std_y','freq','move
 
 def pickleClassifier(input_csv,output_file):
     """
-    Trains a RandomForestClassifier and pickles the result
+    Trains a RandomForestClassifier and pickles (and returns) the result
+    """
+    classifier = trainClassifier(input_csv)
+    # save pickled classifier
+    pickle_file = open(output_file, "wb" )
+    pickle.dump(classifier, pickle_file)
+    pickle_file.close()
+    return classifier
+
+def trainClassifier(input_csv):
+    """
+    Trains a RandomForestClassifier and returns the result
     """
     feature_vectors = pd.read_csv(input_csv,index_col=0,parse_dates=True)
     feature_vectors = feature_vectors.rename(columns={'target':'gesture'})
@@ -47,14 +58,17 @@ def pickleClassifier(input_csv,output_file):
     # build classifier
     classifier = RandomForestClassifier(n_estimators=100, max_features=3)
     classifier = classifier.fit(train[feature_vector_columns],train['gesture'])
+    print('Classifier Trained. Testing...')
+    print('Feature importances:' + str(classifier.feature_importances_))
     # score classifier
-    mean_accuracy = classifier.score(test[feature_vector_columns],test['gesture'])
-    print('Mean Accuracy:' + str(mean_accuracy) + '\n')
-    # save pickled classifier
-    pickle_file = open(output_file, "wb" )
-    pickle.dump(classifier, pickle_file)
-    pickle_file.close()
+    if not test.empty:
+        mean_accuracy = classifier.score(test[feature_vector_columns],test['gesture'])
+        print('Mean Accuracy:' + str(mean_accuracy) + '\n')
+    else:
+        print("Can't test accuracy of classifier using whole dataset.")
+    return classifier
+
 
 if __name__ == "__main__":
     print("Creating Default Classifier File")
-    pickleClassifier(INPUT_FILE,CLASSIFIER_NAME)
+    classifier = pickleClassifier(INPUT_FILE,CLASSIFIER_NAME)
