@@ -68,6 +68,7 @@ def ProcessMetatoneMessageString(time,packet):
 	except:
 		print("Exception Parsing Message: uh oh- the message couldn\'t be parsed.")
         print u'GOT MESSAGE: {}'.format(packet)
+        print ('GOT MESSAGE: {}'.format(repr(message)))
         # print("Message: " + str(packet))
 
 
@@ -83,6 +84,7 @@ def ProcessMetatoneMessageString(time,packet):
 
 class ClassifierHandler(tornado.websocket.WebSocketHandler):
 	def open(self):
+        print("Client opened WebSocket")
 		connections.add(self)
 		logging.info(datetime.now().isoformat() + "Classifier Opened.")
 
@@ -90,10 +92,10 @@ class ClassifierHandler(tornado.websocket.WebSocketHandler):
 		time = datetime.now()
 		logging.info(time.isoformat() + " " + message)
 		ProcessMetatoneMessageString(time,message)
-		#print(message)
+		print(message)
 		
 	def on_close(self):
-		print "WebSocket closed"
+		print("Client closed WebSocket")
 		logging.info(datetime.now().isoformat() + " Classifier Closed.")
 
 	# waiters = set()
