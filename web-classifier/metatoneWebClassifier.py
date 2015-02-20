@@ -67,7 +67,8 @@ def ProcessMetatoneMessageString(time,packet):
 			print("Got an unknown message")
 	except:
 		print("Exception Parsing Message: uh oh- the message couldn\'t be parsed.")
-        print("Message: " + str(packet))
+        print u'GOT MESSAGE: {}'.format(packet)
+        # print("Message: " + str(packet))
 
 
 # # def classify():
