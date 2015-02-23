@@ -50,7 +50,6 @@ class NetworkManager:
 		##self.server = OSC.ThreadingOSCServer(receive_address) # threading
 		##self.server = OSC.ForkingOSCServer(receive_address) # forking
 		# Setup OSC Client.
-		
 
 		self.server.addMsgHandler("/metatone/touch", touch_handler)
 		self.server.addMsgHandler("/metatone/touch/ended", touch_ended_handler)
