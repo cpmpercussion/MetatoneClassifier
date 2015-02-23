@@ -1,4 +1,5 @@
 import logging
+# import metatoneClassifier
 import tornado.escape
 import tornado.ioloop
 import tornado.options
@@ -37,39 +38,44 @@ class MainHandler(tornado.web.RequestHandler):
 connections = set()
 clients = dict()
 
-def ProcessMetatoneMessageString(time,packet):
+def ProcessMetatoneMessageString(handler,time,packet):
     #something
     # ought to wrap this stuff in exception handling.
     message = OSC.decodeOSC(packet)
+    #print ('Decoded Message: {}'.format(repr(message)))
     try:
-        if "/metatone/touch/ended" in message.address:
+        if "/metatone/touch/ended" in message[0]:
             # touch ended
             print("Got a touch ended message.")
-        elif "/metatone/touch" in message.address:
-            # touch! Go ahead and parse and add to the messages.
+        elif "/metatone/touch" in message[0]:
             print("Got a touch message.")
-        elif "/metatone/switch" in message.address:
+            # touch!
+        elif "/metatone/switch" in message[0]:
             print("Got a switch message.")
             #switch
-        elif "/metatone/online" in message.address:
+        elif "/metatone/online" in message[0]:
             print("Got an online message.")
+            msg = OSC.OSCMessage("/metatone/classifier/hello")
+            packet = msg.getBinary()
+            handler.write_message(packet,binary=True)
+            handler.deviceID = message[2]
+            handler.app = message[3]
             # online! add to something.
-        elif "/metatone/offline" in message.address:
+        elif "/metatone/offline" in message[0]:
             print("Got an offline message.")
             # offline
-        elif "/metatone/acceleration" in message.address:
+        elif "/metatone/acceleration" in message[0]:
             print("Got an accel message.")
             # accel.
-        elif "/metatone/app" in message.address:
+        elif "/metatone/app" in message[0]:
             print("Got an app message.")
             # app message.
         else:
-            print("Got an unknown message")
-    except:
-        print("Exception Parsing Message: uh oh- the message couldn\'t be parsed.")
-        print u'GOT MESSAGE: {}'.format(packet)
-        print ('GOT MESSAGE: {}'.format(repr(message)))
-        # print("Message: " + str(packet))
+            print("Got an unknown message! Address was: " + message[0])
+            print u'Raw Message Data: {}'.format(packet)
+    except():
+        print("Message did not decode to a non-empty list.")
+        
 
 
 # # def classify():
@@ -83,20 +89,33 @@ def ProcessMetatoneMessageString(time,packet):
 # #             #send performance event to c
 
 class ClassifierHandler(tornado.websocket.WebSocketHandler):
+    deviceID = ''
+    app = ''
+
     def open(self):
         print("Client opened WebSocket")
         connections.add(self)
         logging.info(datetime.now().isoformat() + "Classifier Opened.")
+        print("Connections" + repr(connections))
 
     def on_message(self,message):
         time = datetime.now()
         logging.info(time.isoformat() + " " + message)
         ProcessMetatoneMessageString(time,message)
-        print(message)
+        # self.write_message(message)
+        #rint(message)
+        # print("Attempting to return foo bar message.")
+        msg = OSC.OSCMessage("/foo/bar")
+        # msg.extend(['string argument',1,2,3.14])
+        packet = msg.getBinary()
+        print(u'Sending Message: {}'.format(packet))
+        # # OSC.decodeOSC(packet)
+        self.write_message(packet,binary=True)
         
     def on_close(self):
         print("Client closed WebSocket")
         logging.info(datetime.now().isoformat() + " Classifier Closed.")
+        connections.remove(self)
 
     # waiters = set()
     # cache = []
