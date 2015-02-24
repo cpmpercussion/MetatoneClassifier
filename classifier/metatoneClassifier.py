@@ -58,7 +58,7 @@ VISUALISER_HOST = 'localhost'
 ##
 
 ##
-WEB_SERVER_MODE = True
+WEB_SERVER_MODE = False
 ##
 
 ##
@@ -83,9 +83,12 @@ DEVICE_NAMES = {
 }
 ##
 
-##
-## Server Functions.
-##
+######################################
+#
+# OSC UDP Server Functions. (Not used in webserver mode)
+#
+######################################
+
 def bonjour_callback(sdRef, flags, errorCode, name, regtype, domain):
 	if errorCode == pybonjour.kDNSServiceErr_NoError:
 		print('Registered service:')
@@ -110,11 +113,13 @@ def findReceiveAddress():
 	port    = SERVER_PORT
 	#receive_address = "10.0.1.2"
 	try:
-		receive_address = (ip[2], port)
+		receive_address = (ip[0], port)
 	except IndexError:
 		if (WEB_SERVER_MODE):
+			print("Could not find IP address automatically. Using CLOUD_SERVER_IP in WEB_SERVER_MODE.")
 			receive_address = (CLOUD_SERVER_IP,SERVER_PORT)
 		else:
+			print("Could not find IP address automatically. Using localhost instead.")
 			receive_address = ("localhost",port)
 	print("Server Address: " + str(receive_address))
 	print("Starting Bonjour Service.")
@@ -125,14 +130,12 @@ def findReceiveAddress():
 
 def startOscServer():
 	"""
-	Starts the OSCServer serving on a new thread and adds msg handlers.
+	Starts the OSCServer serving on a new thread and adds message handlers.
 	"""
 	print("Starting OSCServer.")
 	# OSC Server. there are three different types of server. 
 	global s 
 	s = OSC.OSCServer(receive_address) # basic
-	##s = OSC.ThreadingOSCServer(receive_address) # threading
-	##s = OSC.ForkingOSCServer(receive_address) # forking
 	global st 
 	st = threading.Thread(target = s.serve_forever, name="OSC-Server-Thread")
 	st.start()
@@ -145,7 +148,6 @@ def startOscServer():
 	s.addMsgHandler("/metatone/acceleration", accel_handler)
 	s.addMsgHandler("/metatone/app",metatone_app_handler)
 	s.addMsgHandler("/metatone/targetgesture", target_gesture_handler)
-
 
 def close_server():
 	"""
@@ -268,6 +270,24 @@ def classify_empty_touch_messages():
 		classes[n] = 0
 	return classes
 
+def make_gesture_frame(gesture_log):
+	"""
+	Takes a log of gestures and returns a time series 
+	with columns for each active device.
+	"""
+	if not gesture_log:
+		return pd.DataFrame(columns = ['time'])
+	gesture_columns = ['time']
+	gesture_columns.extend(active_names)
+	gesture_frame = pd.DataFrame(gesture_log, columns = gesture_columns).set_index('time')
+	return gesture_frame
+
+######################################
+#
+# Pretty-Printing Functions for terminal output.
+#
+######################################
+
 def pretty_print_classes(classes):
 	"""
 	Returns a string of each active device matched to a human
@@ -293,21 +313,11 @@ def pretty_print_state(state):
 	result += "Ratio: " + str(state[2])
 	return result
 
-def make_gesture_frame(gesture_log):
-	"""
-	Takes a log of gestures and returns a time series 
-	with columns for each active device.
-	"""
-	if not gesture_log:
-		return pd.DataFrame(columns = ['time'])
-	gesture_columns = ['time']
-	gesture_columns.extend(active_names)
-	gesture_frame = pd.DataFrame(gesture_log, columns = gesture_columns).set_index('time')
-	return gesture_frame
-
-##
-## Logging data functions
-##
+######################################
+#
+# Logging data functions
+#
+######################################
 
 def log_messages(message):
 	"""
@@ -346,6 +356,12 @@ def trim_touch_messages():
 	delta = timedelta(seconds=-5)
 	touch_messages = [x for x in touch_messages if (x[0] > datetime.now() + delta)]
 
+######################################
+#
+# OSC sending Functions.
+#
+######################################
+
 def send_gestures(classes):
 	"""
 	Send gesture classes to the relevant active devices.
@@ -364,6 +380,11 @@ def send_gestures(classes):
 			except socket.error:
 				print("Couldn't send gestures to " + n + ", bad address (removed).")
 				remove_source(n)
+	if WEB_SERVER_MODE:
+		class_strings = {}
+		for n in classes.keys():
+			class_strings[n] = class_names[classes[n]]
+		webserver_sendindividual_function("/metatone/classifier/gesture",class_strings)
 
 def send_message_to_sources(msg):
 	"""
@@ -379,9 +400,19 @@ def send_message_to_sources(msg):
 		except socket.error:
 			print("Couldn't send message to " + n + ", bad address (removed).")
 			remove_source(n)
+	if WEB_SERVER_MODE:
+		webserver_sendtoall_function(msg.address,msg.values())
 	log_line = [datetime.now().isoformat()]
 	log_line.extend(msg)
 	log_messages(log_line)
+
+def dummy_websocket_sender(address,arguments):
+	"""
+	Dummy function: when running in webserver mode, the server replaces this with functions
+	to send data to correct clients.
+	"""
+	return
+	# do nothing
 
 def send_touch_to_visualiser(touch_data):
 	"""
@@ -393,6 +424,12 @@ def send_touch_to_visualiser(touch_data):
 		oscClient.sendto(msg,(VISUALISER_HOST,VISUALISER_PORT))
 	except:
 		msg = ""
+
+######################################
+#
+# Functions for keeping track of Metatone Clients.
+#
+######################################
 
 def add_source_to_list(name,source):
 	"""
@@ -438,9 +475,11 @@ def add_active_device(device_id):
 	if device_name not in active_names:
 		active_names.append(device_name)
 
-##############################################
-## OSC Message Handling Functions
-##
+######################################
+#
+# OSC Message Handling Functions
+#
+######################################
 
 def touch_handler(addr, tags, stuff, source):
 	add_source_to_list(get_device_name(stuff[0]),source)
@@ -495,8 +534,12 @@ def target_gesture_handler(addr,tags,stuff,source):
 	message = [datetime.now().isoformat(),addr,stuff[0]]
 	# print("Capturing Target Gesture: " + str(stuff[0]))
 	log_messages(message)
-##
-##############################################
+
+######################################
+#
+# Classification Loop Functions
+#
+######################################
 
 #@profile
 def classifyPerformance():
@@ -605,12 +648,19 @@ def startLog():
 	Start a new log with the filename set to the current time.
 	Checks that we have a log directory and creates it if necessary.
 	"""
+	global logging_filename
 	if not os.path.exists('logs'):
 		os.makedirs('logs')
 	logging_filename = datetime.now().isoformat().replace(":","-")[:19] + "-MetatoneOSCLog.log"
 	logging.basicConfig(filename="logs/"+logging_filename,level=logging.DEBUG,format='%(message)s')
 	logging.info("Logging started - " + logging_filename)
 	print("Classifier Server Started - logging to: " + logging_filename)
+
+######################################
+#
+# Main Function for running as a terminal application.
+#
+######################################
 
 ## Global Variables
 osc_sources = {}
@@ -620,6 +670,8 @@ oscClient = OSC.OSCClient()
 touch_messages = []
 classified_gestures = []
 receive_address = ("localhost",SERVER_PORT)
+webserver_sendtoall_function = dummy_websocket_sender
+webserver_sendindividual_function = dummy_websocket_sender
 
 def main():
 	"""
