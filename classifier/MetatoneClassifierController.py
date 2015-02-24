@@ -48,7 +48,7 @@ class MetatoneClassifierController(NSWindowController):
             self.classificationThread.start()
         self.classifyingStatusLabel.setStringValue_("Classifying...")
         self.startStopPerformanceButton.setTitle_("Stop Performance")
- 
+
     def stopPerformance(self):
         print("Stopping Classification.")
         if self.classifying:
