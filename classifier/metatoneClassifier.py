@@ -63,23 +63,23 @@ WEB_SERVER_MODE = False
 
 ##
 DEVICE_NAMES = {
-	'2678456D-9AE7-4DCC-A561-688A4766C325':'charles', # old
-	'95585C5C-C1C1-4612-9836-BFC68B0DC36F':'charles',
-	'97F37307-2A95-4796-BAC9-935BF417AC42':'christina', # old
-	'6769FE40-5F64-455B-82D4-814E26986A99':'yvonne', # old
-	'2C4C4043-B7F7-4C22-B930-1472B1E18DBF':'yvonne',
-	'1D7BCDC1-5AAB-441B-9C92-C3F00B6FF930':'jonathan', #old
-	'D346C530-BBC9-4C1E-9714-F17654BCC3BC':'yvonne', # new names
-	'30CB5985-FC54-43FC-8B77-C8BE24AA443C':'charles', # new names
-	'E9F60D46-EE37-489A-AD91-4ABC99E2BC80':'jonathan', # new names
-	'00088B8E-D27C-4AE1-8102-5FE318589D3E':'jonathan',
-	'35F73141-D3D5-4F00-9A28-EC5449A1A73D':'christina', #new names
-	'8EEF3773-19CE-4F4D-99BB-2B5BC1CE460C':'christina', #14.07.10
-	'74C29BE8-6B34-4032-8E74-FCEC42DF3D5B':'christina',
-	'16742ED0-5061-4FC8-9BF6-6F23FF76D767':'charles_ipadair',
-	'0E98DD2F-94C2-45EE-BEC5-18718CA36D8B':'charles_ipadair',
-	'6EAD764A-E424-48EB-9672-03EF44679A5E':'iPad2-64-white',
-	'670EC230-5C3E-4759-B70F-5FDBCE14189B':'charles-iphone5'
+	# '2678456D-9AE7-4DCC-A561-688A4766C325':'charles', # old
+	# '95585C5C-C1C1-4612-9836-BFC68B0DC36F':'charles',
+	# '97F37307-2A95-4796-BAC9-935BF417AC42':'christina', # old
+	# '6769FE40-5F64-455B-82D4-814E26986A99':'yvonne', # old
+	# '2C4C4043-B7F7-4C22-B930-1472B1E18DBF':'yvonne',
+	# '1D7BCDC1-5AAB-441B-9C92-C3F00B6FF930':'jonathan', #old
+	# 'D346C530-BBC9-4C1E-9714-F17654BCC3BC':'yvonne', # new names
+	# '30CB5985-FC54-43FC-8B77-C8BE24AA443C':'charles', # new names
+	# 'E9F60D46-EE37-489A-AD91-4ABC99E2BC80':'jonathan', # new names
+	# '00088B8E-D27C-4AE1-8102-5FE318589D3E':'jonathan',
+	# '35F73141-D3D5-4F00-9A28-EC5449A1A73D':'christina', #new names
+	# '8EEF3773-19CE-4F4D-99BB-2B5BC1CE460C':'christina', #14.07.10
+	# '74C29BE8-6B34-4032-8E74-FCEC42DF3D5B':'christina',
+	# '16742ED0-5061-4FC8-9BF6-6F23FF76D767':'charles_ipadair',
+	# '0E98DD2F-94C2-45EE-BEC5-18718CA36D8B':'charles_ipadair',
+	# '6EAD764A-E424-48EB-9672-03EF44679A5E':'iPad2-64-white',
+	# '670EC230-5C3E-4759-B70F-5FDBCE14189B':'charles-iphone5'
 }
 ##
 
@@ -156,10 +156,17 @@ def close_server():
 	global s
 	global st
 	global sdRef
-	print("\nClosing OSC Server and Bonjour Service.")
-	sdRef.close()
-	s.close()
-	st.join(1)
+	print("\nClosing OSC Server systems...")
+	if 'sdRef' in globals() or 'sdRef' in locals():
+		print("Closing Bonjour Service.")
+		sdRef.close()
+	if 's' in globals() or 's' in locals():
+		print("Closing Server.")
+		s.close()
+	if 'st' in globals() or 'st' in locals():
+		print("Closing Server Thread.")
+		st.join(1)
+	print("Finished closing.")
 
 def ensure_dir(f):
 	"""

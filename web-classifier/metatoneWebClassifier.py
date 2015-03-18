@@ -9,6 +9,7 @@ import tornado.websocket
 import os.path
 import uuid
 import OSC
+import pybonjour
 from datetime import timedelta
 from datetime import datetime
 from tornado.options import define, options
@@ -16,6 +17,7 @@ from tornado.options import define, options
 define("port", default=8888, help="run on the given port", type=int)
 define("name", default='MetatoneWebProc', help="name for webserver application", type=str)
 
+METACLASSIFIER_SERVICE_TYPE = "_metatoneclassifier._tcp."
 FAKE_OSC_IP_ADDRESS = '127.0.0.1'
 FAKE_OSC_PORT = 9999
 FAKE_OSC_SOURCE = (FAKE_OSC_IP_ADDRESS,FAKE_OSC_PORT)
@@ -76,12 +78,19 @@ def processMetatoneMessageString(handler,time,packet):
 def sendOSCToAllClients(address,arguments):
     print("Sending OSC to All Clients: " + repr(address) + repr(arguments))
     for connection in connections:
-        connection.sendOSC(address,arguments)
+        try:
+            connection.sendOSC(address,arguments)
+        except:
+            print("Exception sending group message to: " + connection.deviceID)
 
 def sendOSCToIndividualClients(address,device_to_arg_dict):
-    print("Sending OSC to Individual Clients: " + repr(address) + repr(device_to_arg_dict))
+    print("Sending OSC to Individual Clients: " + repr(address) + ' ' + repr(device_to_arg_dict))
     for connection in connections:
-        connection.sendOSC(address,[connection.deviceID,device_to_arg_dict[connection.deviceID]])
+        if connection.deviceID in device_to_arg_dict.keys():
+            try:
+                connection.sendOSC(address,[connection.deviceID,device_to_arg_dict[connection.deviceID]])
+            except:
+                print("Exception sending individual message to: " + connection.deviceID)
 
 ##############################################
 
@@ -93,7 +102,7 @@ class MetatoneAppConnectionHandler(tornado.websocket.WebSocketHandler):
         print("Client opened WebSocket")
         connections.add(self)
         logging.info(datetime.now().isoformat() + " Connection Opened.")
-        print("Connections" + repr(connections))
+        print("Connections: " + repr(connections))
 
     def on_message(self,message):
         time = datetime.now()
@@ -115,12 +124,16 @@ class MetatoneAppConnectionHandler(tornado.websocket.WebSocketHandler):
 
 ##############################################
 
+def bonjour_callback(sdRef, flags, errorCode, name, regtype, domain):
+    if errorCode == pybonjour.kDNSServiceErr_NoError:
+        print('Registered service:')
+        print('  name    =', name)
+        print('  regtype =', regtype)
+        print('  domain  =', domain)
+
 def main():
-    # Logging
-    # global logger
+    global sdRef
     print("Loading Metatone Classifier.")
-    # metatoneClassifier.findReceiveAddress()
-    # metatoneClassifier.startOscServer()
     metatoneClassifier.load_classifier()
     metatoneClassifier.startLog()
     print("Metatone Classifier Ready.")
@@ -136,6 +149,12 @@ def main():
     metatoneClassifier.webserver_sendindividual_function = sendOSCToIndividualClients
 
     classificationThread = threading.Thread(target=metatoneClassifier.classifyForever,name="Classification-Thread")
+
+    print("Starting Bonjour Service.")
+    bonjourServiceRegister = pybonjour.DNSServiceRegister(name = options.name,
+                                     regtype = METACLASSIFIER_SERVICE_TYPE,
+                                     port = options.port,
+                                     callBack = bonjour_callback)
     
     try:
         classificationThread.start()
@@ -143,6 +162,7 @@ def main():
     except KeyboardInterrupt:
         print("Received Ctrl-C - Closing down.")
         metatoneClassifier.stopClassifying()
+        bonjourServiceRegister.close()
         print("Closed down. Bye!")
 
 
