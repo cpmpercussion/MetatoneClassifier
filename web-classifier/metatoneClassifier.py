@@ -467,7 +467,7 @@ def remove_source(name):
 	print("Sources: "+ repr(osc_sources))
 	print("Active Names: "+ repr(active_names))
 	if name in osc_sources: del osc_sources[name]
-	if name in active_names: active_names.remove(name)
+	# if name in active_names: active_names.remove(name) # can't do this until I fix gesture logging... needs to be dictionary not list. 
 
 def clear_all_sources():
 	global osc_sources
