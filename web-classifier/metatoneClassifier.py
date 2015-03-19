@@ -462,7 +462,20 @@ def remove_source(name):
 	Called after failing to contact the source.
 	"""
 	global osc_sources
+	global active_names
+	print("CLASSIFIER: Removing a source: " + name)
+	print("Sources: "+ repr(osc_sources))
+	print("Active Names: "+ repr(active_names))
 	if name in osc_sources: del osc_sources[name]
+	if name in active_names: active_names.remove(name)
+
+def clear_all_sources():
+	global osc_sources
+	global active_names
+	global active_apps
+	osc_sources = {}
+	active_names = []
+	active_apps = []
 
 def get_device_name(device_id):
 	"""
@@ -481,6 +494,8 @@ def add_active_device(device_id):
 	device_name = get_device_name(device_id)
 	if device_name not in active_names:
 		active_names.append(device_name)
+
+
 
 ######################################
 #

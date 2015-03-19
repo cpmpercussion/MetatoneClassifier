@@ -92,6 +92,14 @@ def sendOSCToIndividualClients(address,device_to_arg_dict):
             except:
                 print("Exception sending individual message to: " + connection.deviceID)
 
+def removeMetatoneAppFromClassifier(deviceID):
+    print("!!!! Removing App: " + repr(deviceID))
+    metatoneClassifier.remove_source(deviceID)
+
+def clearMetatoneAppsFromClassifier():
+    print("Clearing all apps from Classifier")
+    metatoneClassifier.clear_all_sources()
+
 ##############################################
 
 class MetatoneAppConnectionHandler(tornado.websocket.WebSocketHandler):
@@ -109,9 +117,11 @@ class MetatoneAppConnectionHandler(tornado.websocket.WebSocketHandler):
         processMetatoneMessageString(self,time,message)
             
     def on_close(self):
-        print("Client closed WebSocket")
-        logging.info(datetime.now().isoformat() + " Connection Closed.")
+        print("!!!! SERVER: Client closed WebSocket: " + self.deviceID)
+        removeMetatoneAppFromClassifier(self.deviceID)
+        logging.info(datetime.now().isoformat() + " Connection Closed, " + deviceID)
         connections.remove(self)
+        print("!!!! Removal done.")
 
     def sendOSC(self,address,arguments):
         msg = OSC.OSCMessage(address)
@@ -162,6 +172,7 @@ def main():
     except KeyboardInterrupt:
         print("Received Ctrl-C - Closing down.")
         metatoneClassifier.stopClassifying()
+        # clearMetatoneAppsFromClassifier()
         bonjourServiceRegister.close()
         print("Closed down. Bye!")
 
