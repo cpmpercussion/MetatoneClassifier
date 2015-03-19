@@ -163,7 +163,10 @@ def flux_measure(mat):
 	mat = np.array(mat)
 	d = np.linalg.norm(mat.diagonal(),1) # |d|_1 
 	m = sum(sum(abs(mat))) # |M|_1
-	measure = (m - d) / m # Flux.
+	if m == 0:
+		measure = 0 # Take care of case of empty matrix - returning 0 is wrong but more benign than NaN
+	else:
+		measure = (m - d) / m # Flux.
 	return measure
 
 def entropy_measure(mat):
@@ -192,11 +195,20 @@ def unity_measure(mat):
 
 def vector_ratio(mat,vec):
 	"""Ratio of Vector to Matrix using the 1-Norm."""
-	return np.linalg.norm(vec,1) / sum(sum(abs(mat)))
+	vec_size = np.linalg.norm(vec,1)
+	mat_size = sum(sum(abs(mat)))
+	if mat_size == 0:
+		return 1 # take care of zero denominator - zero isn't too bad.
+	else:
+		return vec_size / mat_size
 
 def vector_spread(vec):
 	"""Spread of data along a vector - 0 if all data in one entry, 1 if evenly spread."""
-	spread = np.linalg.norm(vec) / np.linalg.norm(vec,1)
+	vec_norm = np.linalg.norm(vec,1)
+	if vec_norm == 0:
+		spread = 1 # take care of zero denominator
+	else:
+		spread = np.linalg.norm(vec) / vec_norm
 	rootn =  np.sqrt(len(vec))
 	spread = rootn * (1.0 - spread) / (1 - rootn)
 	spread = np.fabs(spread)
