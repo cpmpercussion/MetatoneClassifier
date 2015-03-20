@@ -109,8 +109,8 @@ class MetatoneAppConnectionHandler(tornado.websocket.WebSocketHandler):
     def open(self):
         print("Client opened WebSocket")
         connections.add(self)
-        logging.info(datetime.now().isoformat() + " Connection Opened.")
-        print("Connections: " + repr(connections))
+        logging.info(datetime.now().isoformat() + " Connection Opened, " + deviceID)
+        # print("Connections: " + repr(connections))
 
     def on_message(self,message):
         time = datetime.now()
@@ -121,7 +121,7 @@ class MetatoneAppConnectionHandler(tornado.websocket.WebSocketHandler):
         removeMetatoneAppFromClassifier(self.deviceID)
         logging.info(datetime.now().isoformat() + " Connection Closed, " + deviceID)
         connections.remove(self)
-        print("!!!! Removal done.")
+        # print("!!!! Removal done.")
 
     def sendOSC(self,address,arguments):
         msg = OSC.OSCMessage(address)
