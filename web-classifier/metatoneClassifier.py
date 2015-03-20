@@ -332,11 +332,13 @@ def log_messages(message):
 	"""
 	logging.info(str(message).replace("[","").replace("]","").replace("'",""))
 
-def log_gestures(classes, log):
+def record_latest_gestures(classes, global_gesture_log):
 	"""
 	Given a dict of classes, adds them to the system log
 	as well as the global list of gestures used for performance
 	tracking.
+
+	Also ensures that the global gesture list does not exceed 10 minutes of gestures.
 	"""
 	if not classes:
 		return
@@ -350,9 +352,15 @@ def log_gestures(classes, log):
 	log_messages(message_log_line)
 	
 	## Now add to the gesture log.
+	## TODO: add the whole classes dict! Not just the list of gestures! how stupid!
 	classes = [classes[n] for n in classes.keys()]
 	classes.insert(0,time)
-	log.append(classes)
+	global_gesture_log.append(classes)
+
+	## Now trim the gesture list if necessary.
+	print("Length of global gesture log: " + str(len(global_gesture_log)))
+	if len(global_gesture_log) > 600:
+		global_gesture_log = global_gesture_log[1:]
 
 def trim_touch_messages():
 	"""
@@ -581,7 +589,7 @@ def classifyPerformance():
 	try: 
 		if (classes):
 			send_gestures(classes)
-			log_gestures(classes,classified_gestures)
+			record_latest_gestures(classes,classified_gestures)
 		gestures = make_gesture_frame(classified_gestures).fillna(0)
 	except:
 		print("Couldn't update gestures.")
