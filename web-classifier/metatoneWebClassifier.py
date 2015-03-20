@@ -76,15 +76,18 @@ def processMetatoneMessageString(handler,time,packet):
 
 
 def sendOSCToAllClients(address,arguments):
-    print("Sending OSC to All Clients: " + repr(address) + repr(arguments))
-    for connection in connections:
-        try:
-            connection.sendOSC(address,arguments)
-        except:
-            print("Exception sending group message to: " + connection.deviceID)
+    # print("Sending OSC to All Clients: " + repr(address) + repr(arguments))
+    try:
+        for connection in connections:
+            try:
+                connection.sendOSC(address,arguments)
+            except:
+                print("Exception sending group message to: " + connection.deviceID)
+    except:
+        print("Couldn't send group message. Probably clients still joining.")
 
 def sendOSCToIndividualClients(address,device_to_arg_dict):
-    print("Sending OSC to Individual Clients: " + repr(address) + ' ' + repr(device_to_arg_dict))
+    # print("Sending OSC to Individual Clients: " + repr(address) + ' ' + repr(device_to_arg_dict))
     for connection in connections:
         if connection.deviceID in device_to_arg_dict.keys():
             try:
@@ -109,7 +112,7 @@ class MetatoneAppConnectionHandler(tornado.websocket.WebSocketHandler):
     def open(self):
         print("Client opened WebSocket")
         connections.add(self)
-        logging.info(datetime.now().isoformat() + " Connection Opened, " + deviceID)
+        logging.info(datetime.now().isoformat() + " Connection Opened.")
         # print("Connections: " + repr(connections))
 
     def on_message(self,message):
@@ -121,7 +124,7 @@ class MetatoneAppConnectionHandler(tornado.websocket.WebSocketHandler):
         removeMetatoneAppFromClassifier(self.deviceID)
         logging.info(datetime.now().isoformat() + " Connection Closed, " + deviceID)
         connections.remove(self)
-        # print("!!!! Removal done.")
+        print("!!!! Removal done.")
 
     def sendOSC(self,address,arguments):
         msg = OSC.OSCMessage(address)
@@ -172,7 +175,7 @@ def main():
     except KeyboardInterrupt:
         print("Received Ctrl-C - Closing down.")
         metatoneClassifier.stopClassifying()
-        # clearMetatoneAppsFromClassifier()
+        clearMetatoneAppsFromClassifier()
         bonjourServiceRegister.close()
         print("Closed down. Bye!")
 
