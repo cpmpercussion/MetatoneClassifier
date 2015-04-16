@@ -35,12 +35,12 @@ import logging
 import transitions
 import generate_classifier
 import os
+import random
 
 ##
 SERVER_NAME = "MetatoneLiveProc"
 SERVER_PORT = 9000
 CLOUD_SERVER_IP = "107.170.207.234"
-
 
 ##
 METATONE_RECEIVING_PORT = 51200
@@ -49,6 +49,17 @@ METATONE_RECEIVING_PORT = 51200
 #PICKLED_CLASSIFIER_FILE = '2014-12-12T12-05-53-GestureTargetLog-CPM-FeatureVectors-classifier.p'
 PICKLED_CLASSIFIER_FILE = 'classifier.p'
 CLASSIFIER_TRAINING_FILE = "data/2014-12-12T12-05-53-GestureTargetLog-CPM-FeatureVectors.csv"
+##
+PERFORMANCE_TYPE_LOCAL = 0
+PERFORMANCE_TYPE_REMOTE = 1
+EXPERIMENT_TYPE_BOTH = 2
+EXPERIMENT_TYPE_NONE = 3
+EXPERIMENT_TYPE_BUTTON = 4
+EXPERIMENT_TYPE_SERVER = 5
+##
+PERFORMANCE_TYPE = 4 #this can be 0-5
+PERFORMANCE_COMPOSITION = 4 #this can be any random int.
+PERFORMANCE_EVENT_NAME = "MetatonePerformanceStart"
 ##
 
 ##
@@ -421,6 +432,54 @@ def send_message_to_sources(msg):
 	log_line.extend(msg)
 	log_messages(log_line)
 
+## TODO - make sure these are working.
+def send_performance_start_message(device_name):
+	"""
+	Function to send an individual performance start message to a source.
+	Should run when a source first connects.
+	"""
+	msg = OSC.OSCMessage("/metatone/performance/start")
+	msg.append(PERFORMANCE_EVENT_NAME)
+	msg.append(device_name)
+	msg.append(performance_type)
+	msg.append(performance_composition)
+	try:
+		oscClient.sendto(msg,osc_sources[device_name],timeout=10.0)
+	except OSC.OSCClientError as err:
+		print("Couldn't send performance start to " + device_name + ". OSCClientError")
+		print(msg)
+		print(err)
+	except socket.error:
+		print("Couldn't send performance start to " + device_name + ", bad address (removed).")
+		remove_source(n)
+	if WEB_SERVER_MODE:
+		webserver_sendtoall_function(msg.address,msg.values())
+		# TODO - fix this up, need a new sending function on the webserver side.
+	# send to webclient
+
+
+## TODO - make sure these are working.
+def send_performance_end_message(device_name):
+	"""
+	Function to send an indivudal performance end message to source.
+	"""
+	msg = OSC.OSCMessage("/metatone/performance/end")
+	msg.append(PERFORMANCE_EVENT_NAME)
+	msg.append(device_name)
+	try:
+		oscClient.sendto(msg,osc_sources[device_name],timeout=10.0)
+	except OSC.OSCClientError as err:
+		print("Couldn't send performance end to " + device_name + ". OSCClientError")
+		print(msg)
+		print(err)
+	except socket.error:
+		print("Couldn't send performance end to " + device_name + ", bad address (removed).")
+		remove_source(n)
+	if WEB_SERVER_MODE:
+		webserver_sendtoall_function(msg.address,msg.values())
+		# TODO - fix this up, need a new sending function on the webserver side.
+	# send to webclient
+
 def dummy_websocket_sender(address,arguments):
 	"""
 	Dummy function: when running in webserver mode, the server replaces this with functions
@@ -456,6 +515,7 @@ def add_source_to_list(name,source):
 	source_address = (source[0],METATONE_RECEIVING_PORT)
 	if (name not in osc_sources.keys()):
 		osc_sources[name] = source_address
+		# send new performance start message.
 
 def add_active_app(name,app):
 	"""
@@ -481,6 +541,9 @@ def clear_all_sources():
 	global osc_sources
 	global active_names
 	global active_apps
+	# send performance end messages.
+	for name in osc_sources.keys():
+		send_performance_end_message(name)
 	osc_sources = {}
 	active_names = []
 	active_apps = []
@@ -540,6 +603,7 @@ def switch_handler(addr,tags,stuff,source):
 def onlineoffline_handler(addr,tags,stuff,source):
 	add_source_to_list(get_device_name(stuff[0]),source)
 	add_active_device(stuff[0])
+	send_performance_start_message(get_device_name(stuff[0]))
 	if (tags == "ss"):
 		message = [datetime.now().isoformat(),addr,get_device_name(stuff[0]),stuff[1]]
 		print(get_device_name(stuff[0]) + " is online with "+stuff[1]+".")
@@ -671,6 +735,7 @@ def stopClassifying():
 	global classifyingForever
 	classifyingForever = False
 	time.sleep(1)
+	clear_all_sources()
 	close_server()
 
 def startLog():
@@ -702,6 +767,8 @@ classified_gestures = []
 receive_address = ("localhost",SERVER_PORT)
 webserver_sendtoall_function = dummy_websocket_sender
 webserver_sendindividual_function = dummy_websocket_sender
+performance_type = PERFORMANCE_TYPE_LOCAL
+performance_composition = random.randint(0,100)
 
 def main():
 	"""
