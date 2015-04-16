@@ -12,10 +12,21 @@ import OSC
 import pybonjour
 from datetime import timedelta
 from datetime import datetime
+import random
 from tornado.options import define, options
 
 define("port", default=8888, help="run on the given port", type=int)
 define("name", default='MetatoneWebProc', help="name for webserver application", type=str)
+define("type",default=0,help="Type of performance to start. 0 = Local, 1 = Remote, 2 = Both, 3 = None, 4 = Button, 5 = Server",type=int)
+
+##
+PERFORMANCE_TYPE_LOCAL = 0
+PERFORMANCE_TYPE_REMOTE = 1
+EXPERIMENT_TYPE_BOTH = 2
+EXPERIMENT_TYPE_NONE = 3
+EXPERIMENT_TYPE_BUTTON = 4
+EXPERIMENT_TYPE_SERVER = 5
+##
 
 METACLASSIFIER_SERVICE_TYPE = "_metatoneclassifier._tcp."
 FAKE_OSC_IP_ADDRESS = '127.0.0.1'
@@ -157,6 +168,8 @@ def main():
     app = Application()
     app.listen(options.port)
     metatoneClassifier.name = options.name
+    metatoneClassifier.performance_type = options.type
+    metatoneClassifier.performance_composition = random.randint(0,100)
     metatoneClassifier.WEB_SERVER_MODE = True
     metatoneClassifier.webserver_sendtoall_function = sendOSCToAllClients
     metatoneClassifier.webserver_sendindividual_function = sendOSCToIndividualClients
