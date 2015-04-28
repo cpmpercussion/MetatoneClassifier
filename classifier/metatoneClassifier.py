@@ -623,6 +623,10 @@ def metatone_app_handler(addr,tags,stuff,source):
 	if (tags == "sss"):
 		message = [datetime.now().isoformat(),"metatone",get_device_name(stuff[0]),stuff[1],stuff[2]]
 		log_messages(message)
+		if WEB_SERVER_MODE:
+			# Repeat message back to Metatone Devices.
+			webserver_sendtoall_function(addr,stuff)
+
 
 def target_gesture_handler(addr,tags,stuff,source):
 	message = [datetime.now().isoformat(),addr,stuff[0]]
