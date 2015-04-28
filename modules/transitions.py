@@ -63,6 +63,19 @@ gesture_groups = {
 	8 : 4,
 	9 : 4}
 
+# NUMBER_GROUPS = 10
+# gesture_groups = {
+# 	0 : 0,
+# 	1 : 1,
+# 	2 : 2,
+# 	3 : 3,
+# 	4 : 4,
+# 	5 : 5,
+# 	6 : 6,
+# 	7 : 7,
+# 	8 : 8,
+# 	9 : 9}
+
 #####################
 #
 # Creating Transition Matrices
@@ -73,18 +86,18 @@ def one_step_transition(e1,e2):
 	"""
         Calculates a transition matrix between two states.
         """
-	#matrix = np.zeros([NUMBER_GROUPS,NUMBER_GROUPS])
-	#matrix[gesture_groups[e2]][gesture_groups[e1]] = matrix[gesture_groups[e2]][gesture_groups[e1]] + 1
-	matrix = np.zeros([NUMBER_GESTURES,NUMBER_GESTURES]) # Full gesture matrix
-	matrix[e2][e1] = matrix[e2][e1] + 1 # Full gesture matrix
+	matrix = np.zeros([NUMBER_GROUPS,NUMBER_GROUPS]) # Reduced Gesture Groups.
+	matrix[gesture_groups[e2]][gesture_groups[e1]] = matrix[gesture_groups[e2]][gesture_groups[e1]] + 1 # Reduced Gesture Groups.
+	# matrix = np.zeros([NUMBER_GESTURES,NUMBER_GESTURES]) # Full gesture matrix
+	# matrix[e2][e1] = matrix[e2][e1] + 1 # Full gesture matrix
 	return matrix
 
 def empty_transition_matrix():
         """
         Returns an empty transition matrix.
         """
-        return np.zeros([NUMBER_GESTURES,NUMBER_GESTURES]) # Full gesture matrix
-        #return np.zeros([NUMBER_GROUPS,NUMBER_GROUPS])
+        # return np.zeros([NUMBER_GESTURES,NUMBER_GESTURES]) # Full gesture matrix
+        return np.zeros([NUMBER_GROUPS,NUMBER_GROUPS]) # Reduced Gesture Groups.
 
 def multi_step_transition(chain):
         """
@@ -96,8 +109,9 @@ def multi_step_transition(chain):
         for i in xrange(1, len(chain)):
                 e2 = chain[i]
                 e1 = chain[i-1]
-                # matrix[gesture_groups[e2]][gesture_groups[e1]] = matrix[gesture_groups[e2]][gesture_groups[e1]] + 1
-                matrix[e2][e1] += 1
+                # matrix[gesture_groups[e2]][gesture_groups[e1]] = matrix[gesture_groups[e2]][gesture_groups[e1]] + 1 # Reduced Gesture Groups. (old code)
+                matrix[gesture_groups[e2]][gesture_groups[e1]] += 1 # Reduced Gesture Groups.
+                # matrix[e2][e1] += 1 # Full gesture matrix
         return matrix
 
 def create_transition_dataframe(states):
