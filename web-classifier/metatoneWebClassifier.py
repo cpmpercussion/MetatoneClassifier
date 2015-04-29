@@ -163,6 +163,8 @@ def main():
     print("Metatone Classifier Ready.")
     logging.info("WebServer Logging started - " + metatoneClassifier.logging_filename)
     print ("Classifier WebServer Started - logging to: " + metatoneClassifier.logging_filename)
+    logging.info("WebServer Performance type is: " + str(options.type))
+    print("WebServer Performance Type is: " + str(options.type))
 
     tornado.options.parse_command_line()
     app = Application()

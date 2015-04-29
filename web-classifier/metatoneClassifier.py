@@ -623,6 +623,10 @@ def metatone_app_handler(addr,tags,stuff,source):
 	if (tags == "sss"):
 		message = [datetime.now().isoformat(),"metatone",get_device_name(stuff[0]),stuff[1],stuff[2]]
 		log_messages(message)
+		if WEB_SERVER_MODE:
+			# Repeat message back to Metatone Devices.
+			webserver_sendtoall_function(addr,stuff)
+
 
 def target_gesture_handler(addr,tags,stuff,source):
 	message = [datetime.now().isoformat(),addr,stuff[0]]
@@ -678,6 +682,15 @@ def classifyPerformance():
 		msg.extend([state[0],state[1],state[2]])
 		send_message_to_sources(msg)
 	
+	# Print Flux Increase:
+	# if isinstance(flux_series, pd.TimeSeries):
+	try:
+		print("Latest 2 Flux Were:" + str(flux_series[-2:]))
+		print("Flux Difference was:" + str(flux_series[-2:].diff().dropna()))
+	except:
+		print("Not enough flux readings.")
+	# measure = flux_series[-2:].diff().dropna()
+
 	newidea = transitions.is_new_idea(flux_series)
 	if (newidea):
 		# print("New Idea Detected!")
