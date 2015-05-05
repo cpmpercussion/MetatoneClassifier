@@ -4,6 +4,7 @@ import threading
 import tornado.escape
 import tornado.ioloop
 import tornado.options
+from tornado.options import define, options
 import tornado.web
 import tornado.websocket
 import os.path
@@ -13,7 +14,6 @@ import pybonjour
 from datetime import timedelta
 from datetime import datetime
 import random
-from tornado.options import define, options
 
 define("port", default=8888, help="run on the given port", type=int)
 define("name", default='MetatoneWebProc', help="name for webserver application", type=str)
@@ -26,6 +26,7 @@ EXPERIMENT_TYPE_BOTH = 2
 EXPERIMENT_TYPE_NONE = 3
 EXPERIMENT_TYPE_BUTTON = 4
 EXPERIMENT_TYPE_SERVER = 5
+PERFORMANCE_TYPE_NAMES = ["Performane-Local","Performance-Remote","Experiment-Both","Experiment-None","Experiment-Button","Experiment-Server"]
 ##
 
 METACLASSIFIER_SERVICE_TYPE = "_metatoneclassifier._tcp."
@@ -163,14 +164,14 @@ def main():
     print("Metatone Classifier Ready.")
     logging.info("WebServer Logging started - " + metatoneClassifier.logging_filename)
     print ("Classifier WebServer Started - logging to: " + metatoneClassifier.logging_filename)
-    logging.info("WebServer Performance type is: " + str(options.type))
-    print("WebServer Performance Type is: " + str(options.type))
 
     tornado.options.parse_command_line()
     app = Application()
     app.listen(options.port)
     metatoneClassifier.name = options.name
     metatoneClassifier.performance_type = options.type
+    logging.info("WebServer Performance type is: " + str(options.type) + ": " + PERFORMANCE_TYPE_NAMES[options.type])
+    print("WebServer Performance type is: " + str(options.type) + ": " + PERFORMANCE_TYPE_NAMES[options.type])
     metatoneClassifier.performance_composition = random.randint(0,100)
     metatoneClassifier.WEB_SERVER_MODE = True
     metatoneClassifier.webserver_sendtoall_function = sendOSCToAllClients
