@@ -51,7 +51,7 @@ gesture_codes = {
 	'C': 8}
 
 NUMBER_GROUPS = 5
-gesture_groups = {
+GESTURE_GROUPS = {
 	0 : 0,
 	1 : 1,
 	2 : 1,
@@ -64,7 +64,7 @@ gesture_groups = {
 	9 : 4}
 
 # NUMBER_GROUPS = 10
-# gesture_groups = {
+# GESTURE_GROUPS = {
 # 	0 : 0,
 # 	1 : 1,
 # 	2 : 2,
@@ -87,7 +87,7 @@ def one_step_transition(e1,e2):
         Calculates a transition matrix between two states.
         """
 	matrix = np.zeros([NUMBER_GROUPS,NUMBER_GROUPS]) # Reduced Gesture Groups.
-	matrix[gesture_groups[e2]][gesture_groups[e1]] = matrix[gesture_groups[e2]][gesture_groups[e1]] + 1 # Reduced Gesture Groups.
+	matrix[GESTURE_GROUPS[e2]][GESTURE_GROUPS[e1]] = matrix[GESTURE_GROUPS[e2]][GESTURE_GROUPS[e1]] + 1 # Reduced Gesture Groups.
 	# matrix = np.zeros([NUMBER_GESTURES,NUMBER_GESTURES]) # Full gesture matrix
 	# matrix[e2][e1] = matrix[e2][e1] + 1 # Full gesture matrix
 	return matrix
@@ -109,8 +109,8 @@ def multi_step_transition(chain):
         for i in xrange(1, len(chain)):
                 e2 = chain[i]
                 e1 = chain[i-1]
-                # matrix[gesture_groups[e2]][gesture_groups[e1]] = matrix[gesture_groups[e2]][gesture_groups[e1]] + 1 # Reduced Gesture Groups. (old code)
-                matrix[gesture_groups[e2]][gesture_groups[e1]] += 1 # Reduced Gesture Groups.
+                # matrix[GESTURE_GROUPS[e2]][GESTURE_GROUPS[e1]] = matrix[GESTURE_GROUPS[e2]][GESTURE_GROUPS[e1]] + 1 # Reduced Gesture Groups. (old code)
+                matrix[GESTURE_GROUPS[e2]][GESTURE_GROUPS[e1]] += 1 # Reduced Gesture Groups.
                 # matrix[e2][e1] += 1 # Full gesture matrix
         return matrix
 
@@ -157,7 +157,7 @@ def reduce_matrix_to_groups(mat):
         group_matrix = np.zeros([NUMBER_GROUPS,NUMBER_GROUPS])
         for i in range(NUMBER_GESTURES):
                 for j in range(NUMBER_GESTURES):
-                        group_matrix[gesture_groups[i]][gesture_groups[j]] += mat[i][j]
+                        group_matrix[GESTURE_GROUPS[i]][GESTURE_GROUPS[j]] += mat[i][j]
         return group_matrix
 
 #####################
