@@ -1,26 +1,30 @@
-# Metatone Touch Experiments.
+"""
+Metatone Touch Experiments.
+"""
 import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
 from sklearn.naive_bayes import GaussianNB
 
 ##### Function to calculate feature vectors 
 ## (for a dataframe containing one 'device_id'
 ##
 def feature_frame(frame):
+    """
+    Calculate the feature vectors for a dataframe of touches.
+    """
     window_size = '5s'
     
     
-    frame_freq = frame['device_id'].resample(window_size,how='count') 
+    frame_freq = frame['device_id'].resample(window_size, how='count') 
     frame_touchdowns = frame.ix[frame['velocity'] == 0]
-    frame_touchdowns = frame_touchdowns['velocity'].resample(window_size,how='count')
-    frame_vel = frame['velocity'].resample(window_size,how='mean')
-    frame_centroid = frame[['x_pos','y_pos']].resample(window_size,how='mean')
+    frame_touchdowns = frame_touchdowns['velocity'].resample(window_size, how='count')
+    frame_vel = frame['velocity'].resample(window_size, how='mean')
+    frame_centroid = frame[['x_pos', 'y_pos']].resample(window_size, how='mean')
     
     
-    fframe = pd.DataFrame({'freq':frame_freq,
-        'device_id':frame['device_id'].resample(window_size,how='first')
-            .fillna(method='ffill'),
+    fframe = pd.DataFrame({
+        'freq':frame_freq,
+        'device_id':frame['device_id'].resample(window_size, how='first').fillna(method='ffill'),
         'touchdown_freq':frame_touchdowns.fillna(0),
         'movement_freq':frame_freq.fillna(0),
         'centroid_x':frame_centroid['x_pos'].fillna(-1),
@@ -31,10 +35,10 @@ def feature_frame(frame):
 ##### Load some Data
 ##
 ##
-#processed_file = open('/Users/charles/Dropbox/Metatone/20130504/20130504-set2-proctouches.txt','r')
-processed_file = '/Users/charles/Dropbox/Metatone/20130504/MetatoneOSCLog-20130504-14h23-touches.csv'
+#PROCESSED_FILE = open('/Users/charles/Dropbox/Metatone/20130504/20130504-set2-proctouches.txt','r')
+PROCESSED_FILE = '/Users/charles/Dropbox/Metatone/20130504/MetatoneOSCLog-20130504-14h23-touches.csv'
 
-messages = pd.read_csv(processed_file, index_col="time", parse_dates=True)
+messages = pd.read_csv(PROCESSED_FILE, index_col="time", parse_dates=True)
 names = messages['device_id'].unique()
 
 
