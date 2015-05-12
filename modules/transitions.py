@@ -8,11 +8,7 @@ Calculates and manipulates transition matrices.
 import pandas as pd
 import numpy as np
 from scipy.stats import entropy
-import itertools as it
 import matplotlib.pyplot as plt
-import matplotlib.dates as dates
-from matplotlib.lines import Line2D
-from mpl_toolkits.mplot3d import Axes3D
 from datetime import timedelta
 from datetime import datetime
 import random
