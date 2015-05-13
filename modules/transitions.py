@@ -254,30 +254,30 @@ def transition_state_measure(mat):
     return state,spread,ratio
 
 def dict_vecs_equal_under_norm(vecs):
-	"""
-	Applies the two-norm to each value in vecs, a dictionary of vectors, 
-	Returns true if there are any vectors with identical norms.
-	"""
-	normvecs = [np.linalg.norm(v) for k,v in vecs.iteritems()]
-	mults = [x for x in normvecs if normvecs.count(x) > 1]
-	if mults:
-		return True
-	else:
-		return False
+    """
+    Applies the two-norm to each value in vecs, a dictionary of vectors, 
+    Returns true if there are any vectors with identical norms.
+    """
+    normvecs = [np.linalg.norm(v) for k,v in vecs.iteritems()]
+    mults = [x for x in normvecs if normvecs.count(x) > 1]
+    if mults:
+        return True
+    else:
+        return False
 
 def dict_vecs_special_case_state(vecs):
-	state = None
-	normvecs = {k: np.linalg.norm(v) for k,v in vecs.iteritems()}
-	singles = [k for k,v in normvecs.iteritems() if normvecs.values().count(v) == 1]
-	if (not singles):
-		state = 'stasis'
-	elif (len(singles) == 1 and 'stasis' in singles):
-		state ='development'
-	elif (len(singles) == 1 and 'convergence' in singles):
-		state ='divergence'
-	elif (len(singles) == 1 and 'divergence' in singles):
-		state ='convergence'
-	return state
+    state = None
+    normvecs = {k: np.linalg.norm(v) for k,v in vecs.iteritems()}
+    singles = [k for k,v in normvecs.iteritems() if normvecs.values().count(v) == 1]
+    if (not singles):
+        state = 'stasis'
+    elif (len(singles) == 1 and 'stasis' in singles):
+        state ='development'
+    elif (len(singles) == 1 and 'convergence' in singles):
+        state ='divergence'
+    elif (len(singles) == 1 and 'divergence' in singles):
+        state ='convergence'
+    return state
 
 #####################
 #
