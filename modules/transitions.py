@@ -292,13 +292,13 @@ def print_transition_plots(transitions):
     """
     Saves a PDF of a heatmap plot of each transition matrix in the given list: transitions.
     """
-    for n in range(len(transitions)):
-        state,spread,ratio = transition_state_measure(transitions.ix[n])
-        title = transitions.index[n].isoformat()
+    for transition_matrix in range(len(transitions)):
+        state, spread, ratio = transition_state_measure(transitions.ix[transition_matrix])
+        title = transitions.index[transition_matrix].isoformat()
         print title
         plt.title(title + " " + state + " " + str(spread) + " " + str(ratio))
-        plt.imshow(transitions.ix[n], cmap=plt.cm.binary, interpolation='nearest')
-        plt.savefig(title.replace(":","_") + '.pdf', dpi=150, format="pdf")
+        plt.imshow(transitions.ix[transition_matrix], cmap=plt.cm.binary, interpolation='nearest')
+        plt.savefig(title.replace(":", "_") + '.pdf', dpi=150, format="pdf")
         plt.close()
 
 #####################
@@ -308,14 +308,14 @@ def print_transition_plots(transitions):
 #####################
 
 def calculate_flux_series(transition_matrices):
-	"""
-	Returns a time-series of flux from a series of transition matrices
-	"""
-	if (isinstance(transition_matrices,type(None))):
-		return None
-	flux_series = transition_matrices.dropna().apply(flux_measure)
-	flux_series.name = 'flux_activity'
-	return flux_series
+    """
+    Returns a time-series of flux from a series of transition matrices
+    """
+    if isinstance(transition_matrices, type(None)):
+        return None
+    flux_series = transition_matrices.dropna().apply(flux_measure)
+    flux_series.name = 'flux_activity'
+    return flux_series
 
 def calculate_new_ideas(flux_series, threshold):
 	"""
