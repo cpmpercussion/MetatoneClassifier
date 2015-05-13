@@ -251,7 +251,7 @@ def transition_state_measure(mat):
     else:
         spread = vector_spread(vecs[state])
         ratio = vector_ratio(mat, vecs[state])
-    return state,spread,ratio
+    return state, spread, ratio
 
 def dict_vecs_equal_under_norm(vecs):
     """
@@ -318,79 +318,85 @@ def calculate_flux_series(transition_matrices):
     return flux_series
 
 def calculate_new_ideas(flux_series, threshold):
-	"""
-	Given a time series of flux throughout the performance, returns
-	a time series of points where the flux has increased above the given
-	threshold.
-	"""
-	return flux_series.ix[flux_series.diff() > threshold]
+    """
+    Given a time series of flux throughout the performance, returns
+    a time series of points where the flux has increased above the given
+    threshold.
+    """
+    return flux_series.ix[flux_series.diff() > threshold]
 
 def is_new_idea_with_threshold(flux_series, threshold):
-	"""
-	Returns True if the flux of the most recent pair of transitions 
-	has increased above the given threshold. This suggests that a
-	"new idea" has occured in the ensemble.
-	"""
-	if not isinstance(flux_series, pd.TimeSeries):
-		return False
-	measure = flux_series[-2:].diff().dropna()
-	if ((not measure.empty) and measure[0] > threshold):
-		return True
-	else:
-		return False
+    """
+    Returns True if the flux of the most recent pair of transitions 
+    has increased above the given threshold. This suggests that a
+    "new idea" has occured in the ensemble.
+    """
+    if not isinstance(flux_series, pd.TimeSeries):
+        return False
+    measure = flux_series[-2:].diff().dropna()
+    if (not measure.empty) and measure[0] > threshold:
+        return True
+    else:
+        return False
 
 def is_new_idea(flux_series):
-	"""Shortcut for is_new_idea_with_threshold with built in threshold."""
-	if not isinstance(flux_series, pd.TimeSeries):
-		return False
-	if (is_new_idea_with_threshold(flux_series,NEW_IDEA_THRESHOLD)):
-		return True
-	else:
-		return False
+    """
+    Shortcut for is_new_idea_with_threshold with built in threshold.
+    """
+    if not isinstance(flux_series, pd.TimeSeries):
+        return False
+    if is_new_idea_with_threshold(flux_series, NEW_IDEA_THRESHOLD):
+        return True
+    else:
+        return False
 
 def calculate_group_transitions_for_window(states_frame,window_size):
-	"""
-	Calculates the (group) transition matrices for a given window size 
-	over the states_frame DataFrame.
-	"""
-	if(not isinstance(states_frame,pd.DataFrame) or states_frame.empty):
-		return None
-	transitions = create_transition_dataframe(states_frame).dropna()
-	if(transitions.empty):
-		return None
-	cols = [transitions[n] for n in transitions.columns]
-	for c in range(len(cols)):
-		if (c == 0):
-			group_transitions = cols[c]
-		else:
-			group_transitions = group_transitions + cols[c]       
-	group_transitions = group_transitions.dropna()
-	group_transitions = group_transitions.resample(window_size,how=transition_sum)
-	return group_transitions
+    """
+    Calculates the (group) transition matrices for a given window size 
+    over the states_frame DataFrame.
+    """
+    if not isinstance(states_frame, pd.DataFrame) or states_frame.empty:
+        return None
+    transitions = create_transition_dataframe(states_frame).dropna()
+    if transitions.empty:
+        return None
+    cols = [transitions[n] for n in transitions.columns]
+    for column in range(len(cols)):
+        if column == 0:
+            group_transitions = cols[column]
+        else:
+            group_transitions = group_transitions + cols[column]       
+    group_transitions = group_transitions.dropna()
+    group_transitions = group_transitions.resample(window_size, how=transition_sum)
+    return group_transitions
 
 def calculate_group_transition_matrix(states_frame):
-	"""Returns the group's transition matrix for a whole performance."""
-	if(not isinstance(states_frame,pd.DataFrame) or states_frame.empty):
-		return None
-	transitions = create_transition_dataframe(states_frame).dropna()
-	if(transitions.empty):
-		return None
-	cols = [transitions[n] for n in transitions.columns]
-	for c in range(len(cols)):
-		if (c == 0):
-			group_transitions = cols[c]
-		else:
-			group_transitions = group_transitions + cols[c]       
-	group_transitions = group_transitions.dropna()
-	group_matrix = transition_sum(group_transitions)
-	return group_matrix
+    """
+    Returns the group's transition matrix for a whole performance.
+    """
+    if not isinstance(states_frame, pd.DataFrame) or states_frame.empty:
+        return None
+    transitions = create_transition_dataframe(states_frame).dropna()
+    if transitions.empty:
+        return None
+    cols = [transitions[n] for n in transitions.columns]
+    for c in range(len(cols)):
+        if c == 0:
+            group_transitions = cols[c]
+        else:
+            group_transitions = group_transitions + cols[c]
+    group_transitions = group_transitions.dropna()
+    group_matrix = transition_sum(group_transitions)
+    return group_matrix
 
 def trim_gesture_frame(gestures):
-	""" Returns the last 60 seconds of entries in a dataframe with a timeseries index."""
-	current_time = datetime.now()
-	delta = timedelta(seconds=-60)
-	cutoff = current_time + delta
-	return gestures.ix[gestures.index > cutoff]
+    """
+    Returns the last 60 seconds of entries in a dataframe with a timeseries index.
+    """
+    current_time = datetime.now()
+    delta = timedelta(seconds=-60)
+    cutoff = current_time + delta
+    return gestures.ix[gestures.index > cutoff]
 
 ##
 ## GenerativeAgent Stuff
@@ -410,4 +416,4 @@ def weighted_choice(weights):
 #
 def is_event(states_frame):
     """TODO: Use this function to return different kinds of events."""
-    return ("nothing","device_id",0)
+    return ("nothing", "device_id", 0)
