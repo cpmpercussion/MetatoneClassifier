@@ -189,14 +189,12 @@ def entropy_measure(mat):
     """
     return entropy(np.reshape(mat,len(mat)**2), base=2)
 
+## TODO - Unity measure
 def unity_measure(mat):
     """
     Should do something along the lines of the transition matrix state functions.
     """
     return 0
-
-## TODO - Unity measure
-
 
 #####################
 #
@@ -204,9 +202,9 @@ def unity_measure(mat):
 #
 #####################
 
-def vector_ratio(mat,vec):
+def vector_ratio(mat, vec):
     """Ratio of Vector to Matrix using the 1-Norm."""
-    vec_size = np.linalg.norm(vec,1)
+    vec_size = np.linalg.norm(vec, 1)
     mat_size = sum(sum(abs(mat)))
     if mat_size == 0:
         return 1 # take care of zero denominator - zero isn't too bad.
@@ -217,7 +215,7 @@ def vector_spread(vec):
     """
     Spread of data along a vector - 0 if all data in one entry, 1 if evenly spread.
     """
-    vec_norm = np.linalg.norm(vec,1)
+    vec_norm = np.linalg.norm(vec, 1)
     if vec_norm == 0:
         spread = 1 # take care of zero denominator
     else:
@@ -236,23 +234,23 @@ def transition_state_measure(mat):
     mat = np.array(mat)
     diag = mat.diagonal()
     rows = [x for x in mat]
-    cols = [mat[:,x] for x in range(mat.shape[1])]
+    cols = [mat[:, x] for x in range(mat.shape[1])]
     vecs = {}
     vecs["stasis"] = diag
     vecs["convergence"] = max(cols, key=np.linalg.norm)
     vecs["divergence"] = max(rows, key=np.linalg.norm)
     #TODO - fix this so that if there is no max, we get "development"
-    if (dict_vecs_equal_under_norm(vecs)):
+    if dict_vecs_equal_under_norm(vecs):
         state = dict_vecs_special_case_state(vecs)
     else:
-        state = max(vecs, key = (lambda x: np.linalg.norm(vecs.get(x))))
+        state = max(vecs, key=(lambda x: np.linalg.norm(vecs.get(x))))
 
-    if (state == 'development'):
+    if state == 'development':
         spread = 1 # not a great choice todo better idea.
-        ratio = 1 - vector_ratio(mat,diag)
+        ratio = 1 - vector_ratio(mat, diag)
     else:
         spread = vector_spread(vecs[state])
-        ratio = vector_ratio(mat,vecs[state])
+        ratio = vector_ratio(mat, vecs[state])
     return state,spread,ratio
 
 def dict_vecs_equal_under_norm(vecs):
@@ -268,17 +266,20 @@ def dict_vecs_equal_under_norm(vecs):
         return False
 
 def dict_vecs_special_case_state(vecs):
+    """
+    Test function - unused.
+    """
     state = None
-    normvecs = {k: np.linalg.norm(v) for k,v in vecs.iteritems()}
-    singles = [k for k,v in normvecs.iteritems() if normvecs.values().count(v) == 1]
-    if (not singles):
+    normvecs = {k: np.linalg.norm(v) for k, v in vecs.iteritems()}
+    singles = [k for k, v in normvecs.iteritems() if normvecs.values().count(v) == 1]
+    if not singles:
         state = 'stasis'
-    elif (len(singles) == 1 and 'stasis' in singles):
-        state ='development'
-    elif (len(singles) == 1 and 'convergence' in singles):
-        state ='divergence'
-    elif (len(singles) == 1 and 'divergence' in singles):
-        state ='convergence'
+    elif len(singles) == 1 and 'stasis' in singles:
+        state = 'development'
+    elif len(singles) == 1 and 'convergence' in singles:
+        state = 'divergence'
+    elif len(singles) == 1 and 'divergence' in singles:
+        state = 'convergence'
     return state
 
 #####################
