@@ -111,30 +111,32 @@ def multi_step_transition(chain):
         return matrix
 
 def create_transition_dataframe(states):
-        """
-        Given a the gesture states of a single player, calculates a dataframe of one-step transition matrices.
-        Used in the calculate_group_transitions_for_window function which is used in the classifyPerformance loop.
-        """
-        dictionary_output = {}
-        for col in states:
-                matrices = [empty_transition_matrix()]
-		prev = -1
-		for s in states[col].index:
-			curr = s
-			if (prev != -1):
-                                from_state = states.at[prev,col]
-                                to_state = states.at[curr,col]
-                                matrix = one_step_transition(from_state,to_state)
-				matrices.append(matrix)
-			prev = s
-                dictionary_output[col] = matrices
-	df = pd.DataFrame(index = states.index, data = dictionary_output)
-        return df
+    """
+    Given a the gesture states of a single player, 
+    calculates a dataframe of one-step transition matrices.
+    Used in the calculate_group_transitions_for_window function 
+    which is used in the classifyPerformance loop.
+    """
+    dictionary_output = {}
+    for col in states:
+        matrices = [empty_transition_matrix()]
+        prev = -1
+        for s in states[col].index:
+            curr = s
+            if prev != -1:
+                from_state = states.at[prev, col]
+                to_state = states.at[curr, col]
+                matrix = one_step_transition(from_state, to_state)
+                matrices.append(matrix)
+            prev = s
+            dictionary_output[col] = matrices
+    return pd.DataFrame(index=states.index, data=dictionary_output)
 
 def transition_sum(tran_arr):
     """
     Sums an array of transition matrices.
-    Used for resampling during performances as well as creating a whole-performance transition matrix.
+    Used for resampling during performances as well 
+    as creating a whole-performance transition matrix.
     """
     out = np.sum(tran_arr,axis=0).tolist()
     return out
