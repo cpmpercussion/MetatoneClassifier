@@ -203,53 +203,55 @@ def unity_measure(mat):
 #####################
 
 def vector_ratio(mat,vec):
-	"""Ratio of Vector to Matrix using the 1-Norm."""
-	vec_size = np.linalg.norm(vec,1)
-	mat_size = sum(sum(abs(mat)))
-	if mat_size == 0:
-		return 1 # take care of zero denominator - zero isn't too bad.
-	else:
-		return vec_size / mat_size
+    """Ratio of Vector to Matrix using the 1-Norm."""
+    vec_size = np.linalg.norm(vec,1)
+    mat_size = sum(sum(abs(mat)))
+    if mat_size == 0:
+        return 1 # take care of zero denominator - zero isn't too bad.
+    else:
+        return vec_size / mat_size
 
 def vector_spread(vec):
-	"""Spread of data along a vector - 0 if all data in one entry, 1 if evenly spread."""
-	vec_norm = np.linalg.norm(vec,1)
-	if vec_norm == 0:
-		spread = 1 # take care of zero denominator
-	else:
-		spread = np.linalg.norm(vec) / vec_norm
-	rootn =  np.sqrt(len(vec))
-	spread = rootn * (1.0 - spread) / (1 - rootn)
-	spread = np.fabs(spread)
-	return spread
+    """
+    Spread of data along a vector - 0 if all data in one entry, 1 if evenly spread.
+    """
+    vec_norm = np.linalg.norm(vec,1)
+    if vec_norm == 0:
+        spread = 1 # take care of zero denominator
+    else:
+        spread = np.linalg.norm(vec) / vec_norm
+    rootn =  np.sqrt(len(vec))
+    spread = rootn * (1.0 - spread) / (1 - rootn)
+    spread = np.fabs(spread)
+    return spread
 
 def transition_state_measure(mat):
-	"""
-	Chooses the vector with the most data in the matrix and 
-	returns a state interpretation as well as the spread of data along
-	that vector.
-	"""
-	mat = np.array(mat)
-	diag = mat.diagonal()
-	rows = [x for x in mat]
-	cols = [mat[:,x] for x in range(mat.shape[1])]
-	vecs = {}
-	vecs["stasis"] = diag
-	vecs["convergence"] = max(cols, key=np.linalg.norm)
-	vecs["divergence"] = max(rows, key=np.linalg.norm)
-	#TODO - fix this so that if there is no max, we get "development"
-	if (dict_vecs_equal_under_norm(vecs)):
-		state = dict_vecs_special_case_state(vecs)
-	else:
-		state = max(vecs, key = (lambda x: np.linalg.norm(vecs.get(x))))
-	
-	if (state == 'development'):
-		spread = 1 # not a great choice todo better idea.
-		ratio = 1 - vector_ratio(mat,diag)
-	else:    
-		spread = vector_spread(vecs[state])
-		ratio = vector_ratio(mat,vecs[state])
-	return state,spread,ratio
+    """
+    Chooses the vector with the most data in the matrix and 
+    returns a state interpretation as well as the spread of data along
+    that vector.
+    """
+    mat = np.array(mat)
+    diag = mat.diagonal()
+    rows = [x for x in mat]
+    cols = [mat[:,x] for x in range(mat.shape[1])]
+    vecs = {}
+    vecs["stasis"] = diag
+    vecs["convergence"] = max(cols, key=np.linalg.norm)
+    vecs["divergence"] = max(rows, key=np.linalg.norm)
+    #TODO - fix this so that if there is no max, we get "development"
+    if (dict_vecs_equal_under_norm(vecs)):
+        state = dict_vecs_special_case_state(vecs)
+    else:
+        state = max(vecs, key = (lambda x: np.linalg.norm(vecs.get(x))))
+
+    if (state == 'development'):
+        spread = 1 # not a great choice todo better idea.
+        ratio = 1 - vector_ratio(mat,diag)
+    else:
+        spread = vector_spread(vecs[state])
+        ratio = vector_ratio(mat,vecs[state])
+    return state,spread,ratio
 
 def dict_vecs_equal_under_norm(vecs):
 	"""
