@@ -180,21 +180,20 @@ def flux_measure(mat):
 	return measure
 
 def entropy_measure(mat):
-        """
-        Measures a transition matrix's entropy in the information theoretic sense.
-        H(P) = -\sum_{i,j}p_{ij}\log_2(p_{ij})
-        Uses scipy.stats.entropy
-        """
-        return entropy(np.reshape(mat,len(mat)**2), base=2)
+    """
+    Measures a transition matrix's entropy in the information theoretic sense.
+    H(P) = -\sum_{i,j}p_{ij}\log_2(p_{ij})
+    Uses scipy.stats.entropy
+    """
+    return entropy(np.reshape(mat,len(mat)**2), base=2)
 
 def unity_measure(mat):
-        """
-        Should do something along the lines of the transition matrix state functions.
-        """
-        return 0
+    """
+    Should do something along the lines of the transition matrix state functions.
+    """
+    return 0
 
 ## TODO - Unity measure
-
 
 
 #####################
