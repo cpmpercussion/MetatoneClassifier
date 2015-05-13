@@ -392,20 +392,19 @@ def trim_gesture_frame(gestures):
 ##
 ## GenerativeAgent Stuff
 ##
-
-
-
 def weighted_choice(weights):
-	""" Returns a random index from a list weighted by the list's entries."""
-	rnd = random.random() * sum(weights)
-	for i, w in enumerate(weights):
-		rnd -= w
-		if rnd < 0:
-			return i
+    """
+    Returns a random index from a list weighted by the list's entries.
+    """
+    rnd = random.random() * sum(weights)
+    for i, w in enumerate(weights):
+        rnd -= w
+        if rnd < 0:
+            return i
 
 #
 # TODO - fixup functionality for this method - should return different kinds of events (or something for no event).
 #
 def is_event(states_frame):
-	"""TODO: Use this function to return different kinds of events."""
-	return ("nothing","device_id",0)
+    """TODO: Use this function to return different kinds of events."""
+    return ("nothing","device_id",0)
