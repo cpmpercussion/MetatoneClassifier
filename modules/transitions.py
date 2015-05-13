@@ -35,29 +35,29 @@ TRANSITIONS_WINDOW = '15s'
 
 ## Int values for Gesture codes.
 NUMBER_GESTURES = 9
-gesture_codes = {
-	'N': 0,
-	'FT': 1,
-	'ST': 2,
-	'FS': 3,
-	'FSA': 4,
-	'VSS': 5,
-	'BS': 6,
-	'SS': 7,
-	'C': 8}
+GESTURE_CODES = {
+    'N': 0,
+    'FT': 1,
+    'ST': 2,
+    'FS': 3,
+    'FSA': 4,
+    'VSS': 5,
+    'BS': 6,
+    'SS': 7,
+    'C': 8}
 
 NUMBER_GROUPS = 5
 GESTURE_GROUPS = {
-	0 : 0,
-	1 : 1,
-	2 : 1,
-	3 : 2,
-	4 : 2,
-	5 : 3,
-	6 : 3,
-	7 : 3,
-	8 : 4,
-	9 : 4}
+    0 : 0,
+    1 : 1,
+    2 : 1,
+    3 : 2,
+    4 : 2,
+    5 : 3,
+    6 : 3,
+    7 : 3,
+    8 : 4,
+    9 : 4}
 
 # NUMBER_GROUPS = 10
 # GESTURE_GROUPS = {
