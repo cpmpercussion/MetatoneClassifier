@@ -99,15 +99,15 @@ def multi_step_transition(chain):
     """
     Calculates the transition matrix of a whole sequence of states.
     """
-        matrix = np.zeros([NUMBER_GROUPS,NUMBER_GROUPS])
-        if len(chain) < 2:
-                return matrix
-        for i in xrange(1, len(chain)):
-                e2 = chain[i]
-                e1 = chain[i-1]
-                # matrix[GESTURE_GROUPS[e2]][GESTURE_GROUPS[e1]] = matrix[GESTURE_GROUPS[e2]][GESTURE_GROUPS[e1]] + 1 # Reduced Gesture Groups. (old code)
-                matrix[GESTURE_GROUPS[e2]][GESTURE_GROUPS[e1]] += 1 # Reduced Gesture Groups.
-                # matrix[e2][e1] += 1 # Full gesture matrix
+    matrix = np.zeros([NUMBER_GROUPS,NUMBER_GROUPS])
+    if len(chain) < 2:
+        return matrix
+    for i in xrange(1, len(chain)):
+        e2 = chain[i]
+        e1 = chain[i-1]
+        # matrix[GESTURE_GROUPS[e2]][GESTURE_GROUPS[e1]] = matrix[GESTURE_GROUPS[e2]][GESTURE_GROUPS[e1]] + 1 # Reduced Gesture Groups. (old code)
+        matrix[GESTURE_GROUPS[e2]][GESTURE_GROUPS[e1]] += 1 # Reduced Gesture Groups.
+        # matrix[e2][e1] += 1 # Full gesture matrix
         return matrix
 
 def create_transition_dataframe(states):
