@@ -79,26 +79,26 @@ GESTURE_GROUPS = {
 #####################
 
 def one_step_transition(e1,e2):
-	"""
-        Calculates a transition matrix between two states.
-        """
-	matrix = np.zeros([NUMBER_GROUPS,NUMBER_GROUPS]) # Reduced Gesture Groups.
-	matrix[GESTURE_GROUPS[e2]][GESTURE_GROUPS[e1]] = matrix[GESTURE_GROUPS[e2]][GESTURE_GROUPS[e1]] + 1 # Reduced Gesture Groups.
+    """
+    Calculates a transition matrix between two states.
+    """
+    matrix = np.zeros([NUMBER_GROUPS,NUMBER_GROUPS]) # Reduced Gesture Groups.
+    matrix[GESTURE_GROUPS[e2]][GESTURE_GROUPS[e1]] = matrix[GESTURE_GROUPS[e2]][GESTURE_GROUPS[e1]] + 1 # Reduced Gesture Groups.
 	# matrix = np.zeros([NUMBER_GESTURES,NUMBER_GESTURES]) # Full gesture matrix
 	# matrix[e2][e1] = matrix[e2][e1] + 1 # Full gesture matrix
-	return matrix
+    return matrix
 
 def empty_transition_matrix():
-        """
-        Returns an empty transition matrix.
-        """
-        # return np.zeros([NUMBER_GESTURES,NUMBER_GESTURES]) # Full gesture matrix
-        return np.zeros([NUMBER_GROUPS,NUMBER_GROUPS]) # Reduced Gesture Groups.
+    """
+    Returns an empty transition matrix.
+    """
+    # return np.zeros([NUMBER_GESTURES,NUMBER_GESTURES]) # Full gesture matrix
+    return np.zeros([NUMBER_GROUPS,NUMBER_GROUPS]) # Reduced Gesture Groups.
 
 def multi_step_transition(chain):
-        """
-        Calculates the transition matrix of a whole sequence of states.
-        """
+    """
+    Calculates the transition matrix of a whole sequence of states.
+    """
         matrix = np.zeros([NUMBER_GROUPS,NUMBER_GROUPS])
         if len(chain) < 2:
                 return matrix
@@ -132,19 +132,19 @@ def create_transition_dataframe(states):
         return df
 
 def transition_sum(tran_arr):
-	"""
-        Sums an array of transition matrices.
-        Used for resampling during performances as well as creating a whole-performance transition matrix.
-        """
-	out = np.sum(tran_arr,axis=0).tolist()
-	return out
+    """
+    Sums an array of transition matrices.
+    Used for resampling during performances as well as creating a whole-performance transition matrix.
+    """
+    out = np.sum(tran_arr,axis=0).tolist()
+    return out
 
 def transition_matrix_to_stochastic_matrix(trans_matrix):
-	""" 
-        Convert a transition matrix with entries >1 to a stochastic matrix where rows sum to 1. 
-        """
-	result = map((lambda x: map((lambda n: n/sum(x)),x)), trans_matrix)
-	return result
+    """ 
+    Convert a transition matrix with entries >1 to a stochastic matrix where rows sum to 1. 
+    """
+    result = map((lambda x: map((lambda n: n/sum(x)),x)), trans_matrix)
+    return result
 
 def reduce_matrix_to_groups(mat):
         """
