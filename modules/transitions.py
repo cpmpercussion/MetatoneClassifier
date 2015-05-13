@@ -286,16 +286,17 @@ def dict_vecs_special_case_state(vecs):
 #####################
 
 def print_transition_plots(transitions):
-	"""Saves a PDF of a heatmap plot of each transition matrix in the given list: transitions."""
-	for n in range(len(transitions)):
-		state,spread,ratio = transition_state_measure(transitions.ix[n])
-		title = transitions.index[n].isoformat()
-		print title
-		plt.title(title + " " + state + " " + str(spread) + " " + str(ratio))
-		plt.imshow(transitions.ix[n], cmap=plt.cm.binary, interpolation='nearest')
-		plt.savefig(title.replace(":","_") + '.pdf', dpi=150, format="pdf")
-		plt.close()
-
+    """
+    Saves a PDF of a heatmap plot of each transition matrix in the given list: transitions.
+    """
+    for n in range(len(transitions)):
+        state,spread,ratio = transition_state_measure(transitions.ix[n])
+        title = transitions.index[n].isoformat()
+        print title
+        plt.title(title + " " + state + " " + str(spread) + " " + str(ratio))
+        plt.imshow(transitions.ix[n], cmap=plt.cm.binary, interpolation='nearest')
+        plt.savefig(title.replace(":","_") + '.pdf', dpi=150, format="pdf")
+        plt.close()
 
 #####################
 #
