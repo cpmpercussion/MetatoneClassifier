@@ -83,9 +83,11 @@ def one_step_transition(e1, e2):
     Calculates a transition matrix between two states.
     """
     matrix = np.zeros([NUMBER_GROUPS, NUMBER_GROUPS]) # Reduced Gesture Groups.
-    matrix[GESTURE_GROUPS[e2]][GESTURE_GROUPS[e1]] = matrix[GESTURE_GROUPS[e2]][GESTURE_GROUPS[e1]] + 1 # Reduced Gesture Groups.
+    # Reduced Gesture Groups.
+    matrix[GESTURE_GROUPS[e2]][GESTURE_GROUPS[e1]] += 1 
+    # old code.. # matrix[GESTURE_GROUPS[e2]][GESTURE_GROUPS[e1]] + 1
 	# matrix = np.zeros([NUMBER_GESTURES,NUMBER_GESTURES]) # Full gesture matrix
-	# matrix[e2][e1] = matrix[e2][e1] + 1 # Full gesture matrix
+	# matrix[e2][e1] += 1 # Full gesture matrix
     return matrix
 
 def empty_transition_matrix():
@@ -105,8 +107,6 @@ def multi_step_transition(chain):
     for i in xrange(1, len(chain)):
         e2 = chain[i]
         e1 = chain[i-1]
-        # Reduced Gesture Groups. (old code)
-        # matrix[GESTURE_GROUPS[e2]][GESTURE_GROUPS[e1]] = matrix[GESTURE_GROUPS[e2]][GESTURE_GROUPS[e1]] + 1 
         matrix[GESTURE_GROUPS[e2]][GESTURE_GROUPS[e1]] += 1 # Reduced Gesture Groups.
         # matrix[e2][e1] += 1 # Full gesture matrix
         return matrix
@@ -156,7 +156,7 @@ def reduce_matrix_to_groups(mat):
     group_matrix = np.zeros([NUMBER_GROUPS,NUMBER_GROUPS])
     for i in range(NUMBER_GESTURES):
         for j in range(NUMBER_GESTURES):
-                group_matrix[GESTURE_GROUPS[i]][GESTURE_GROUPS[j]] += mat[i][j]
+            group_matrix[GESTURE_GROUPS[i]][GESTURE_GROUPS[j]] += mat[i][j]
     return group_matrix
 
 #####################
@@ -177,7 +177,9 @@ def flux_measure(mat):
     d = np.linalg.norm(mat.diagonal(),1) # |d|_1 
     m = sum(sum(abs(mat))) # |M|_1
     if m == 0:
-        measure = 0 # Take care of case of empty matrix - returning 0 is wrong but more benign than NaN
+        # Take care of case of empty matrix
+        # returning 0 is wrong but more benign than NaN
+        measure = 0
     else:
         measure = (m - d) / m # Flux.
     return measure
@@ -413,7 +415,7 @@ def weighted_choice(weights):
             return i
 
 #
-# TODO - fixup functionality for this method - should return different kinds of events (or something for no event).
+# TODO - fixup functionality for this method - should return different kinds of events
 #
 def is_event(states_frame):
     """TODO: Use this function to return different kinds of events."""
