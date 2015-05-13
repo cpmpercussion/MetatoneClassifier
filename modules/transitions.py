@@ -121,14 +121,14 @@ def create_transition_dataframe(states):
     for col in states:
         matrices = [empty_transition_matrix()]
         prev = -1
-        for s in states[col].index:
-            curr = s
+        for index_loc in states[col].index:
+            curr = index_loc
             if prev != -1:
                 from_state = states.at[prev, col]
                 to_state = states.at[curr, col]
                 matrix = one_step_transition(from_state, to_state)
                 matrices.append(matrix)
-            prev = s
+            prev = index_loc
             dictionary_output[col] = matrices
     return pd.DataFrame(index=states.index, data=dictionary_output)
 
