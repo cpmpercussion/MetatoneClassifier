@@ -149,14 +149,14 @@ def transition_matrix_to_stochastic_matrix(trans_matrix):
     return result
 
 def reduce_matrix_to_groups(mat):
-        """
-        Converts a 9x9 matrix of all gesture transitions to the simpler gesture groups.
-        """
-        group_matrix = np.zeros([NUMBER_GROUPS,NUMBER_GROUPS])
-        for i in range(NUMBER_GESTURES):
-                for j in range(NUMBER_GESTURES):
-                        group_matrix[GESTURE_GROUPS[i]][GESTURE_GROUPS[j]] += mat[i][j]
-        return group_matrix
+    """
+    Converts a 9x9 matrix of all gesture transitions to the simpler gesture groups.
+    """
+    group_matrix = np.zeros([NUMBER_GROUPS,NUMBER_GROUPS])
+    for i in range(NUMBER_GESTURES):
+        for j in range(NUMBER_GESTURES):
+                group_matrix[GESTURE_GROUPS[i]][GESTURE_GROUPS[j]] += mat[i][j]
+    return group_matrix
 
 #####################
 #
@@ -165,21 +165,21 @@ def reduce_matrix_to_groups(mat):
 #####################
 	
 def flux_measure(mat):
-	"""
-	Measure of a transition matrix's flux. Given a numpy matrix M with diagonal D, 
-	returns the ||M||_1 - ||D||_1 / ||M||_1
-	Maximised at 1 when nothing on diagonal, 
-	Minimised at 0 when everything on diagonal.
-	Name is deprecated and will be migrated to "flux" in later code.
-	"""
-	mat = np.array(mat)
-	d = np.linalg.norm(mat.diagonal(),1) # |d|_1 
-	m = sum(sum(abs(mat))) # |M|_1
-	if m == 0:
-		measure = 0 # Take care of case of empty matrix - returning 0 is wrong but more benign than NaN
-	else:
-		measure = (m - d) / m # Flux.
-	return measure
+    """
+    Measure of a transition matrix's flux. Given a numpy matrix M with diagonal D, 
+    returns the ||M||_1 - ||D||_1 / ||M||_1
+    Maximised at 1 when nothing on diagonal, 
+    Minimised at 0 when everything on diagonal.
+    Name is deprecated and will be migrated to "flux" in later code.
+    """
+    mat = np.array(mat)
+    d = np.linalg.norm(mat.diagonal(),1) # |d|_1 
+    m = sum(sum(abs(mat))) # |M|_1
+    if m == 0:
+        measure = 0 # Take care of case of empty matrix - returning 0 is wrong but more benign than NaN
+    else:
+        measure = (m - d) / m # Flux.
+    return measure
 
 def entropy_measure(mat):
     """
