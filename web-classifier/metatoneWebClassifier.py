@@ -46,6 +46,9 @@ class MetatoneWebApplication(tornado.web.Application):
     """
     Main Web Application Class.
     """
+    connections = set()
+    clients = dict()
+
     def __init__(self):
         handlers = [
             (r"/", MetatoneWebsiteHandler),
@@ -58,6 +61,34 @@ class MetatoneWebApplication(tornado.web.Application):
             xsrf_cookies=True,
         )
         tornado.web.Application.__init__(self, handlers, **settings)
+
+    def send_osc_to_all_clients(self, address, arguments):
+        """
+        Sends an OSC formatted message with the same contents to all 
+        clients.
+        """
+        # print("Sending OSC to All Clients: " + repr(address) + repr(arguments))
+        try:
+            for connection in self.connections:
+                try:
+                    connection.send_osc(address, arguments)
+                except:
+                    print("Exception sending group message to: " + connection.deviceID)
+        except:
+            print("Couldn't send group message. Probably clients still joining.")
+
+    def send_osc_to_individual_clients(self, address, device_to_arg_dict):
+        """
+        Sends an OSC formatted message with the same address to each 
+        connected client according to the dictionary of arguments.
+        """
+        # print("Sending OSC to Individual Clients: " + repr(address) + ' ' + repr(device_to_arg_dict))
+        for connection in self.connections:
+            if connection.deviceID in device_to_arg_dict.keys():
+                try:
+                    connection.send_osc(address, [connection.deviceID, device_to_arg_dict[connection.deviceID]])
+                except:
+                    print("Exception sending individual message to: " + connection.deviceID)
 
 class MetatoneWebsiteHandler(tornado.web.RequestHandler):
     """
@@ -78,22 +109,23 @@ class MetatoneAppConnectionHandler(tornado.websocket.WebSocketHandler):
 
     def open(self):
         print("Client opened WebSocket")
-        connections.add(self)
+        # print(str(self.application))
+        self.application.connections.add(self)
         logging.info(datetime.now().isoformat() + " Connection Opened.")
         # print("Connections: " + repr(connections))
 
     def on_message(self, message):
         time = datetime.now()
-        processMetatoneMessageString(self, time, message)
+        process_metatone_message_string(self, time, message)
             
     def on_close(self):
         print("!!!! SERVER: Client closed WebSocket: " + self.deviceID)
-        removeMetatoneAppFromClassifier(self.deviceID)
+        remove_metatone_app_from_classifier(self.deviceID)
         logging.info(datetime.now().isoformat() + " Connection Closed, " + self.deviceID)
-        connections.remove(self)
+        self.application.connections.remove(self)
         print("!!!! Removal done.")
 
-    def sendOSC(self, address, arguments):
+    def send_osc(self, address, arguments):
         """
         Attempts to send an OSC formatted message to the client.
         """
@@ -108,10 +140,7 @@ class MetatoneAppConnectionHandler(tornado.websocket.WebSocketHandler):
 ##############################################
 ## Top level functions... should get some of these into the Application class.
 
-connections = set()
-clients = dict()
-
-def processMetatoneMessageString(handler, time, packet):
+def process_metatone_message_string(handler, time, packet):
     message = OSC.decodeOSC(packet)
     try:
         if "/metatone/touch/ended" in message[0]:
@@ -123,7 +152,7 @@ def processMetatoneMessageString(handler, time, packet):
             metatoneClassifier.switch_handler(message[0], message[1][1:], message[2:], FAKE_OSC_SOURCE)
         elif "/metatone/online" in message[0]:
             metatoneClassifier.onlineoffline_handler(message[0], message[1][1:], message[2:], FAKE_OSC_SOURCE)
-            handler.sendOSC("/metatone/classifier/hello", [])
+            handler.send_osc("/metatone/classifier/hello", [])
             handler.deviceID = message[2]
             handler.app = message[3]
         elif "/metatone/offline" in message[0]:
@@ -140,45 +169,15 @@ def processMetatoneMessageString(handler, time, packet):
     except():
         print("Message did not decode to a non-empty list.")
 
-
-def sendOSCToAllClients(address, arguments):
-    """
-    Sends an OSC formatted message with the same contents to all 
-    clients.
-    """
-    # print("Sending OSC to All Clients: " + repr(address) + repr(arguments))
-    try:
-        for connection in connections:
-            try:
-                connection.sendOSC(address, arguments)
-            except:
-                print("Exception sending group message to: " + connection.deviceID)
-    except:
-        print("Couldn't send group message. Probably clients still joining.")
-
-def sendOSCToIndividualClients(address, device_to_arg_dict):
-    """
-    Sends an OSC formatted message with the same address to each 
-    connected client according to the dictionary of arguments.
-    """
-    # print("Sending OSC to Individual Clients: " + repr(address) + ' ' + repr(device_to_arg_dict))
-    for connection in connections:
-        if connection.deviceID in device_to_arg_dict.keys():
-            try:
-                connection.sendOSC(address, 
-                                   [connection.deviceID, device_to_arg_dict[connection.deviceID]])
-            except:
-                print("Exception sending individual message to: " + connection.deviceID)
-
-def removeMetatoneAppFromClassifier(deviceID):
+def remove_metatone_app_from_classifier(device_id):
     """
     Instructs the Classifier to remove an app with a particular deviceID
     from its list of connected sources.
     """
-    print("!!!! Removing App: " + repr(deviceID))
-    metatoneClassifier.remove_source(deviceID)
+    print("!!!! Removing App: " + repr(device_id))
+    metatoneClassifier.remove_source(device_id)
 
-def clearMetatoneAppsFromClassifier():
+def clear_metatone_apps_from_classifier():
     """
     Instructs the Classifier to remove ALL connected apps
     from its list of sources.
@@ -221,8 +220,8 @@ def main():
           + ": " + PERFORMANCE_TYPE_NAMES[options.type])
     metatoneClassifier.performance_composition = random.randint(0, 100)
     metatoneClassifier.WEB_SERVER_MODE = True
-    metatoneClassifier.webserver_sendtoall_function = sendOSCToAllClients
-    metatoneClassifier.webserver_sendindividual_function = sendOSCToIndividualClients
+    metatoneClassifier.webserver_sendtoall_function = app.send_osc_to_all_clients
+    metatoneClassifier.webserver_sendindividual_function = app.send_osc_to_individual_clients
 
     classification_thread = threading.Thread(target=metatoneClassifier.classifyForever, name="Classification-Thread")
 
@@ -239,7 +238,7 @@ def main():
     except KeyboardInterrupt:
         print("Received Ctrl-C - Closing down.")
         metatoneClassifier.stopClassifying()
-        clearMetatoneAppsFromClassifier()
+        clear_metatone_apps_from_classifier()
         bonjour_service_register.close()
         print("Closed down. Bye!")
 
