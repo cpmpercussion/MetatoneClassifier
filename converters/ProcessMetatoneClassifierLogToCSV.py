@@ -60,7 +60,7 @@ for line in raw_file:
     if "touch," in line:
         #touch_file.write(line.replace("touch, ",""))
         touch_file.write(line.replace("touch,", ""))
-    if "MetatoneLiveProc" in line:
+    if ("MetatoneLiveProc" in line) or ("MetatoneWebProc" in line):
         events_file.write(line)
     if "metatone," in line:
         metatone_file.write(line)
