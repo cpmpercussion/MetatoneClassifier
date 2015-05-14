@@ -18,18 +18,16 @@ TODO:
 - better system for naming devices.
 """
 
-import select
-import sys
 import pybonjour
 import OSC
-import time, threading
+import time
+import threading
 import socket
 from datetime import timedelta
 from datetime import datetime
 import pandas as pd
 import numpy as np
 from sklearn.ensemble import RandomForestClassifier
-import time,sched
 import pickle
 import logging
 import transitions
