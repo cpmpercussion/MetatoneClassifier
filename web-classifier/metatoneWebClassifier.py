@@ -48,7 +48,7 @@ class MetatoneWebApplication(tornado.web.Application):
     """
     def __init__(self):
         handlers = [
-            (r"/", MainHandler),
+            (r"/", MetatoneWebsiteHandler),
             (r"/classifier", MetatoneAppConnectionHandler),
         ]
         settings = dict(
@@ -59,12 +59,54 @@ class MetatoneWebApplication(tornado.web.Application):
         )
         tornado.web.Application.__init__(self, handlers, **settings)
 
-class MainHandler(tornado.web.RequestHandler):
+class MetatoneWebsiteHandler(tornado.web.RequestHandler):
     """
     Handler class for web requests.
     """
     def get(self):
         self.render("index.html")
+
+##############################################
+
+class MetatoneAppConnectionHandler(tornado.websocket.WebSocketHandler):
+    """
+    Class for handling connection to a Metatone App. Received messages are processed and
+    sent to the classifier. Can send OSC formatted messages via the web socket connection.
+    """
+    deviceID = ''
+    app = ''
+
+    def open(self):
+        print("Client opened WebSocket")
+        connections.add(self)
+        logging.info(datetime.now().isoformat() + " Connection Opened.")
+        # print("Connections: " + repr(connections))
+
+    def on_message(self, message):
+        time = datetime.now()
+        processMetatoneMessageString(self, time, message)
+            
+    def on_close(self):
+        print("!!!! SERVER: Client closed WebSocket: " + self.deviceID)
+        removeMetatoneAppFromClassifier(self.deviceID)
+        logging.info(datetime.now().isoformat() + " Connection Closed, " + self.deviceID)
+        connections.remove(self)
+        print("!!!! Removal done.")
+
+    def sendOSC(self, address, arguments):
+        """
+        Attempts to send an OSC formatted message to the client.
+        """
+        msg = OSC.OSCMessage(address)
+        msg.extend(arguments)
+        packet = msg.getBinary()
+        try:
+            self.write_message(packet, binary=True)
+        except:
+            logging.error("Error sending OSC message to client", exc_info=True)
+
+##############################################
+## Top level functions... should get some of these into the Application class.
 
 connections = set()
 clients = dict()
@@ -144,47 +186,6 @@ def clearMetatoneAppsFromClassifier():
     print("Clearing all apps from Classifier")
     metatoneClassifier.clear_all_sources()
 
-##############################################
-
-class MetatoneAppConnectionHandler(tornado.websocket.WebSocketHandler):
-    """
-    Class for handling connection to a Metatone App. Received messages are processed and
-    sent to the classifier. Can send OSC formatted messages via the web socket connection.
-    """
-    deviceID = ''
-    app = ''
-
-    def open(self):
-        print("Client opened WebSocket")
-        connections.add(self)
-        logging.info(datetime.now().isoformat() + " Connection Opened.")
-        # print("Connections: " + repr(connections))
-
-    def on_message(self, message):
-        time = datetime.now()
-        processMetatoneMessageString(self, time, message)
-            
-    def on_close(self):
-        print("!!!! SERVER: Client closed WebSocket: " + self.deviceID)
-        removeMetatoneAppFromClassifier(self.deviceID)
-        logging.info(datetime.now().isoformat() + " Connection Closed, " + self.deviceID)
-        connections.remove(self)
-        print("!!!! Removal done.")
-
-    def sendOSC(self, address, arguments):
-        """
-        Attempts to send an OSC formatted message to the client.
-        """
-        msg = OSC.OSCMessage(address)
-        msg.extend(arguments)
-        packet = msg.getBinary()
-        try:
-            self.write_message(packet, binary=True)
-        except:
-            logging.error("Error sending OSC message to client", exc_info=True)
-
-##############################################
-
 def bonjour_callback(sdRef, flags, errorCode, name, regtype, domain):
     """
     Callback function for bonjour service.
@@ -194,12 +195,13 @@ def bonjour_callback(sdRef, flags, errorCode, name, regtype, domain):
         print('  name    =', name)
         print('  regtype =', regtype)
         print('  domain  =', domain)
+        print(str(sdRef))
+        print(str(flags))
 
 def main():
     """
     Main function loads classifier and sets up bonjour service and web server.
     """
-    global sdRef
     print("Loading Metatone Classifier.")
     metatoneClassifier.load_classifier()
     metatoneClassifier.startLog()
@@ -222,23 +224,23 @@ def main():
     metatoneClassifier.webserver_sendtoall_function = sendOSCToAllClients
     metatoneClassifier.webserver_sendindividual_function = sendOSCToIndividualClients
 
-    classificationThread = threading.Thread(target=metatoneClassifier.classifyForever, name="Classification-Thread")
+    classification_thread = threading.Thread(target=metatoneClassifier.classifyForever, name="Classification-Thread")
 
     print("Starting Bonjour Service.")
-    bonjourServiceRegister = pybonjour.DNSServiceRegister(
+    bonjour_service_register = pybonjour.DNSServiceRegister(
         name=options.name,
         regtype=METACLASSIFIER_SERVICE_TYPE,
         port=options.port,
         callBack=bonjour_callback)
     
     try:
-        classificationThread.start()
+        classification_thread.start()
         tornado.ioloop.IOLoop.instance().start()
     except KeyboardInterrupt:
         print("Received Ctrl-C - Closing down.")
         metatoneClassifier.stopClassifying()
         clearMetatoneAppsFromClassifier()
-        bonjourServiceRegister.close()
+        bonjour_service_register.close()
         print("Closed down. Bye!")
 
 if __name__ == "__main__":
