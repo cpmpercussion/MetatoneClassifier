@@ -1,3 +1,7 @@
+"""
+Metatone Classifier Main File - Runs the classifier using a web socket.
+Appropriate for local or remote server use.
+"""
 import logging
 import metatoneClassifier
 import threading
@@ -8,16 +12,14 @@ from tornado.options import define, options
 import tornado.web
 import tornado.websocket
 import os.path
-import uuid
 import OSC
 import pybonjour
-from datetime import timedelta
 from datetime import datetime
 import random
 
 define("port", default=8888, help="run on the given port", type=int)
 define("name", default='MetatoneWebProc', help="name for webserver application", type=str)
-define("type",default=0,help="Type of performance to start. 0 = Local, 1 = Remote, 2 = Both, 3 = None, 4 = Button, 5 = Server",type=int)
+define("type", default=0, help="Type of performance to start. 0 = Local, 1 = Remote, 2 = Both, 3 = None, 4 = Button, 5 = Server", type=int)
 
 ##
 PERFORMANCE_TYPE_LOCAL = 0
@@ -26,17 +28,22 @@ EXPERIMENT_TYPE_BOTH = 2
 EXPERIMENT_TYPE_NONE = 3
 EXPERIMENT_TYPE_BUTTON = 4
 EXPERIMENT_TYPE_SERVER = 5
-PERFORMANCE_TYPE_NAMES = ["Performane-Local","Performance-Remote","Experiment-Both","Experiment-None","Experiment-Button","Experiment-Server"]
+PERFORMANCE_TYPE_NAMES = [
+    "Performane-Local", "Performance-Remote", "Experiment-Both", 
+    "Experiment-None", "Experiment-Button", "Experiment-Server"]
 ##
 
 METACLASSIFIER_SERVICE_TYPE = "_metatoneclassifier._tcp."
 FAKE_OSC_IP_ADDRESS = '127.0.0.1'
 FAKE_OSC_PORT = 9999
-FAKE_OSC_SOURCE = (FAKE_OSC_IP_ADDRESS,FAKE_OSC_PORT)
+FAKE_OSC_SOURCE = (FAKE_OSC_IP_ADDRESS, FAKE_OSC_PORT)
 
 #logger = logging.getLogger('gateway')
 
 class Application(tornado.web.Application):
+    """
+    Main Application Class.
+    """
     def __init__(self):
         handlers = [
             (r"/", MainHandler),
@@ -51,13 +58,16 @@ class Application(tornado.web.Application):
         tornado.web.Application.__init__(self, handlers, **settings)
 
 class MainHandler(tornado.web.RequestHandler):
+    """
+    Handler class for web requests.
+    """
     def get(self):
         self.render("index.html")
 
 connections = set()
 clients = dict()
 
-def processMetatoneMessageString(handler,time,packet):
+def processMetatoneMessageString(handler, time, packet):
     message = OSC.decodeOSC(packet)
     try:
         if "/metatone/touch/ended" in message[0]:
@@ -87,7 +97,7 @@ def processMetatoneMessageString(handler,time,packet):
         print("Message did not decode to a non-empty list.")
 
 
-def sendOSCToAllClients(address,arguments):
+def sendOSCToAllClients(address, arguments):
     # print("Sending OSC to All Clients: " + repr(address) + repr(arguments))
     try:
         for connection in connections:
@@ -134,7 +144,7 @@ class MetatoneAppConnectionHandler(tornado.websocket.WebSocketHandler):
     def on_close(self):
         print("!!!! SERVER: Client closed WebSocket: " + self.deviceID)
         removeMetatoneAppFromClassifier(self.deviceID)
-        logging.info(datetime.now().isoformat() + " Connection Closed, " + deviceID)
+        logging.info(datetime.now().isoformat() + " Connection Closed, " + self.deviceID)
         connections.remove(self)
         print("!!!! Removal done.")
 
@@ -150,6 +160,9 @@ class MetatoneAppConnectionHandler(tornado.websocket.WebSocketHandler):
 ##############################################
 
 def bonjour_callback(sdRef, flags, errorCode, name, regtype, domain):
+    """
+    Callback function for bonjour service.
+    """
     if errorCode == pybonjour.kDNSServiceErr_NoError:
         print('Registered service:')
         print('  name    =', name)
@@ -157,6 +170,9 @@ def bonjour_callback(sdRef, flags, errorCode, name, regtype, domain):
         print('  domain  =', domain)
 
 def main():
+    """
+    Main function loads classifier and sets up bonjour service and web server.
+    """
     global sdRef
     print("Loading Metatone Classifier.")
     metatoneClassifier.load_classifier()
