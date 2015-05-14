@@ -1,15 +1,17 @@
 #! /usr/bin/env python
-
+# pylint: disable=line-too-long
+"""
+This script splits up Metatone Classifier logs into 6 CSV files according to the type of data.
+30/06/2014
+"""
+from __future__ import print_function
 import argparse
-parser = argparse.ArgumentParser(description='Convert a Metatone Classifier log file into a set of useful CSV.')
-parser.add_argument('filename',help='A Metatone Classifier .log file to be converted.')
-args = parser.parse_args()
-input_filename = args.filename
-
-## This script splits up Metatone Classifier logs into 6 CSV files according to the type of data.
-## 30/06/2014
-
-device_names = {
+PARSER = argparse.ArgumentParser(description='Convert a Metatone Classifier log file into a set of useful CSV.')
+PARSER.add_argument('filename', help='A Metatone Classifier .log file to be converted.')
+ARGS = PARSER.parse_args()
+INPUT_FILENAME = ARGS.filename
+#INPUT_FILENAME = '/Users/charles/Dropbox/Metatone/20140317/metatoneset-performance/2014-03-17T18-30-57-MetatoneOSCLog.txt'
+DEVICE_NAMES = {
     '2678456D-9AE7-4DCC-A561-688A4766C325':'charles', # old
     '97F37307-2A95-4796-BAC9-935BF417AC42':'christina', # old
     '6769FE40-5F64-455B-82D4-814E26986A99':'yvonne', # old
@@ -22,21 +24,18 @@ device_names = {
     '16742ED0-5061-4FC8-9BF6-6F23FF76D767':'charles_ipadair',
     '46D2EBCA-A5BD-448A-8DB5-69C39D5220EE':'jonathan_iPad2'
 }
-
-#input_filename = '/Users/charles/Dropbox/Metatone/20140317/metatoneset-performance/2014-03-17T18-30-57-MetatoneOSCLog.txt'
-
-touch_filename = input_filename.replace(".log","") + '-touches.csv'
-gesture_filename = input_filename.replace(".log","") + '-gestures.csv'
-transitions_filename = input_filename.replace(".log","") + '-transitions.csv'
-events_filename = input_filename.replace(".log","") + '-events.csv'
-metatone_filename = input_filename.replace(".log","") + '-metatone.csv'
-online_filename = input_filename.replace(".log","") + '-online.csv'
-gesture_target_filename = input_filename.replace(".log","") + '-gesturetargets.csv'
-
 # only open the gesture_target_file if there are gesture target messages present.
 FOUND_TARGET_GESTURES = False
 
-raw_file = open(input_filename, 'r')
+touch_filename = INPUT_FILENAME.replace(".log","") + '-touches.csv'
+gesture_filename = INPUT_FILENAME.replace(".log","") + '-gestures.csv'
+transitions_filename = INPUT_FILENAME.replace(".log","") + '-transitions.csv'
+events_filename = INPUT_FILENAME.replace(".log","") + '-events.csv'
+metatone_filename = INPUT_FILENAME.replace(".log","") + '-metatone.csv'
+online_filename = INPUT_FILENAME.replace(".log","") + '-online.csv'
+gesture_target_filename = INPUT_FILENAME.replace(".log","") + '-gesturetargets.csv'
+
+raw_file = open(INPUT_FILENAME, 'r')
 touch_file = open(touch_filename,'w')
 gesture_file = open(gesture_filename,'w')
 transitions_file = open(transitions_filename,'w')
@@ -54,15 +53,13 @@ gesture_column_names = ['time']
 all_gesture_lines = []
 
 for line in raw_file:
-    for device_id in device_names.keys():
+    for device_id in DEVICE_NAMES.keys():
         if device_id in line:
-            line = line.replace(device_id,device_names[device_id])
-
-    line = line.replace(" ","")
-
+            line = line.replace(device_id, DEVICE_NAMES[device_id])
+    line = line.replace(" ", "")
     if "touch," in line:
         #touch_file.write(line.replace("touch, ",""))
-        touch_file.write(line.replace("touch,",""))
+        touch_file.write(line.replace("touch,", ""))
     if "MetatoneLiveProc" in line:
         events_file.write(line)
     if "metatone," in line:
@@ -74,8 +71,8 @@ for line in raw_file:
 
     if "/classifier/gestures" in line:
         #line = line.replace("/classifier/gestures, ","")
-        line = line.replace("/classifier/gestures,","")
-        line = line.replace('\n','')
+        line = line.replace("/classifier/gestures,", "")
+        line = line.replace('\n', '')
         parts = line.split(",")
         gestures = parts[1:]
         line_gestures = {'time':parts[0]}
@@ -89,11 +86,11 @@ for line in raw_file:
     if "/metatone/targetgesture" in line:
         if not FOUND_TARGET_GESTURES: 
             print("Found target gestures, opening target gesture file.")
-            gesture_target_file = open(gesture_target_filename,'w')
+            gesture_target_file = open(gesture_target_filename, 'w')
             gesture_target_file.write('time,target\n')
             FOUND_TARGET_GESTURES = True
         # open_gesture_target_file()
-        line = line.replace("/metatone/targetgesture,","")
+        line = line.replace("/metatone/targetgesture,", "")
         gesture_target_file.write(line)
 
 # write the gesture file:
