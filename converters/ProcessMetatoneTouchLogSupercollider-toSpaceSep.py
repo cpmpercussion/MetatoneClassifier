@@ -1,3 +1,7 @@
+"""
+Convert a Metatone Supercollider OSC Log into a useful CSV. Throws away all messages except /metatone/touches
+Space Separated version? What use is that?
+"""
 import pandas as pd
 import numpy as np
 from datetime import timedelta

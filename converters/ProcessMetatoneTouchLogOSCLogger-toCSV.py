@@ -1,3 +1,8 @@
+"""
+Converts an OSC Logger (OS X Application) logger file into a CSV.
+No longer useful!
+Should be deleted.
+"""
 import pandas as pd
 import numpy as np
 from datetime import timedelta

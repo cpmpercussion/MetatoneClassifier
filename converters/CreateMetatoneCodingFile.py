@@ -1,5 +1,6 @@
-# Metatone Video Coding File Generator
-
+"""
+Create a CSV Coding form for Ensemble Metatone videos.
+"""
 from datetime import timedelta
 from datetime import datetime
 from datetime import time

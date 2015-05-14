@@ -1,3 +1,7 @@
+"""
+Convert a Metatone OSC Logger file into a useful CSV.
+Superceded.
+"""
 import pandas as pd
 import numpy as np
 from datetime import timedelta

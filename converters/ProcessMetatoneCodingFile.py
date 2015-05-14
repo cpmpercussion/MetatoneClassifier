@@ -1,3 +1,6 @@
+"""
+Change the date index of a coding file to match the start of the touch log.
+"""
 import pandas as pd
 import numpy as np
 from datetime import timedelta

@@ -1,3 +1,6 @@
+"""
+Script to convert a metatone touch log to Ben Swift's Viscotheque logging format (not used...)
+"""
 import pandas as pd
 import numpy as np
 
