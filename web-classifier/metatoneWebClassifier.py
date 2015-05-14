@@ -42,7 +42,7 @@ FAKE_OSC_SOURCE = (FAKE_OSC_IP_ADDRESS, FAKE_OSC_PORT)
 
 #logger = logging.getLogger('gateway')
 
-class Application(tornado.web.Application):
+class MetatoneWebApplication(tornado.web.Application):
     """
     Main Web Application Class.
     """
@@ -87,7 +87,7 @@ def processMetatoneMessageString(handler, time, packet):
         elif "/metatone/offline" in message[0]:
             metatoneClassifier.onlineoffline_handler(message[0], message[1][1:], message[2:], FAKE_OSC_SOURCE)
         elif "/metatone/acceleration" in message[0]:
-            metatoneClassifier.accel_handler(message[0], message[1][1:], essage[2:], FAKE_OSC_SOURCE)
+            metatoneClassifier.accel_handler(message[0], message[1][1:], message[2:], FAKE_OSC_SOURCE)
         elif "/metatone/app" in message[0]:
             metatoneClassifier.metatone_app_handler(message[0], message[1][1:], message[2:], FAKE_OSC_SOURCE)
         elif "/metatone/targetgesture" in message[0]:
@@ -100,6 +100,10 @@ def processMetatoneMessageString(handler, time, packet):
 
 
 def sendOSCToAllClients(address, arguments):
+    """
+    Sends an OSC formatted message with the same contents to all 
+    clients.
+    """
     # print("Sending OSC to All Clients: " + repr(address) + repr(arguments))
     try:
         for connection in connections:
@@ -205,7 +209,7 @@ def main():
            + metatoneClassifier.logging_filename)
 
     tornado.options.parse_command_line()
-    app = Application()
+    app = MetatoneWebApplication()
     app.listen(options.port)
     metatoneClassifier.name = options.name
     metatoneClassifier.performance_type = options.type
@@ -236,7 +240,6 @@ def main():
         clearMetatoneAppsFromClassifier()
         bonjourServiceRegister.close()
         print("Closed down. Bye!")
-
 
 if __name__ == "__main__":
     main()
