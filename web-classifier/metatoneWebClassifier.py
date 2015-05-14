@@ -31,7 +31,7 @@ EXPERIMENT_TYPE_NONE = 3
 EXPERIMENT_TYPE_BUTTON = 4
 EXPERIMENT_TYPE_SERVER = 5
 PERFORMANCE_TYPE_NAMES = [
-    "Performane-Local", "Performance-Remote", "Experiment-Both", 
+    "Performane-Local", "Performance-Remote", "Experiment-Both",
     "Experiment-None", "Experiment-Button", "Experiment-Server"]
 ##
 
@@ -64,7 +64,7 @@ class MetatoneWebApplication(tornado.web.Application):
 
     def send_osc_to_all_clients(self, address, arguments):
         """
-        Sends an OSC formatted message with the same contents to all 
+        Sends an OSC formatted message with the same contents to all
         clients.
         """
         # print("Sending OSC to All Clients: " + repr(address) + repr(arguments))
@@ -79,7 +79,7 @@ class MetatoneWebApplication(tornado.web.Application):
 
     def send_osc_to_individual_clients(self, address, device_to_arg_dict):
         """
-        Sends an OSC formatted message with the same address to each 
+        Sends an OSC formatted message with the same address to each
         connected client according to the dictionary of arguments.
         """
         # print("Sending OSC to Individual Clients: " + repr(address) + ' ' + repr(device_to_arg_dict))
@@ -116,11 +116,11 @@ class MetatoneAppConnectionHandler(tornado.websocket.WebSocketHandler):
 
     def on_message(self, message):
         time = datetime.now()
-        process_metatone_message_string(self, time, message)
-            
+        process_metatone_message(self, time, message)
+
     def on_close(self):
         print("!!!! SERVER: Client closed WebSocket: " + self.deviceID)
-        remove_metatone_app_from_classifier(self.deviceID)
+        remove_metatone_app(self.deviceID)
         logging.info(datetime.now().isoformat() + " Connection Closed, " + self.deviceID)
         self.application.connections.remove(self)
         print("!!!! Removal done.")
@@ -140,7 +140,12 @@ class MetatoneAppConnectionHandler(tornado.websocket.WebSocketHandler):
 ##############################################
 ## Top level functions... should get some of these into the Application class.
 
-def process_metatone_message_string(handler, time, packet):
+def process_metatone_message(handler, time, packet):
+    """
+    Function to decode an OSC formatted string and then process it
+    according to its address. Sends processed messages directly
+    to the metatoneClassifier module's message handling functions.
+    """
     message = OSC.decodeOSC(packet)
     try:
         if "/metatone/touch/ended" in message[0]:
@@ -165,11 +170,12 @@ def process_metatone_message_string(handler, time, packet):
             metatoneClassifier.target_gesture_handler(message[0], message[1][1:], message[2:], FAKE_OSC_SOURCE)
         else:
             print("Got an unknown message! Address was: " + message[0])
+            print("Time was: " + str(time))
             print(u'Raw Message Data: {}'.format(packet))
     except():
         print("Message did not decode to a non-empty list.")
 
-def remove_metatone_app_from_classifier(device_id):
+def remove_metatone_app(device_id):
     """
     Instructs the Classifier to remove an app with a particular deviceID
     from its list of connected sources.
@@ -177,7 +183,7 @@ def remove_metatone_app_from_classifier(device_id):
     print("!!!! Removing App: " + repr(device_id))
     metatoneClassifier.remove_source(device_id)
 
-def clear_metatone_apps_from_classifier():
+def clear_metatone_apps():
     """
     Instructs the Classifier to remove ALL connected apps
     from its list of sources.
@@ -185,16 +191,16 @@ def clear_metatone_apps_from_classifier():
     print("Clearing all apps from Classifier")
     metatoneClassifier.clear_all_sources()
 
-def bonjour_callback(sdRef, flags, errorCode, name, regtype, domain):
+def bonjour_callback(sdref, flags, error_code, name, regtype, domain):
     """
     Callback function for bonjour service.
     """
-    if errorCode == pybonjour.kDNSServiceErr_NoError:
+    if error_code == pybonjour.kDNSServiceErr_NoError:
         print('Registered service:')
         print('  name    =', name)
         print('  regtype =', regtype)
         print('  domain  =', domain)
-        print(str(sdRef))
+        print(str(sdref))
         print(str(flags))
 
 def main():
@@ -206,7 +212,7 @@ def main():
     metatoneClassifier.startLog()
     print("Metatone Classifier Ready.")
     logging.info("WebServer Logging started - " + metatoneClassifier.logging_filename)
-    print ("Classifier WebServer Started - logging to: " 
+    print ("Classifier WebServer Started - logging to: "
            + metatoneClassifier.logging_filename)
 
     tornado.options.parse_command_line()
@@ -214,9 +220,9 @@ def main():
     app.listen(options.port)
     metatoneClassifier.name = options.name
     metatoneClassifier.performance_type = options.type
-    logging.info("WebServer Performance type is: " + str(options.type) 
+    logging.info("WebServer Performance type is: " + str(options.type)
                  + ": " + PERFORMANCE_TYPE_NAMES[options.type])
-    print("WebServer Performance type is: " + str(options.type) 
+    print("WebServer Performance type is: " + str(options.type)
           + ": " + PERFORMANCE_TYPE_NAMES[options.type])
     metatoneClassifier.performance_composition = random.randint(0, 100)
     metatoneClassifier.WEB_SERVER_MODE = True
@@ -231,14 +237,14 @@ def main():
         regtype=METACLASSIFIER_SERVICE_TYPE,
         port=options.port,
         callBack=bonjour_callback)
-    
+
     try:
         classification_thread.start()
         tornado.ioloop.IOLoop.instance().start()
     except KeyboardInterrupt:
         print("Received Ctrl-C - Closing down.")
         metatoneClassifier.stopClassifying()
-        clear_metatone_apps_from_classifier()
+        clear_metatone_apps()
         bonjour_service_register.close()
         print("Closed down. Bye!")
 
