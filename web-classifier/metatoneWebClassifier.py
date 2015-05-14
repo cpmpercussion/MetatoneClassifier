@@ -1,7 +1,9 @@
+# pylint: disable=line-too-long
 """
 Metatone Classifier Main File - Runs the classifier using a web socket.
 Appropriate for local or remote server use.
 """
+from __future__ import print_function
 import logging
 import metatoneClassifier
 import threading
@@ -16,7 +18,6 @@ import OSC
 import pybonjour
 from datetime import datetime
 import random
-from __future__ import print_function
 
 define("port", default=8888, help="run on the given port", type=int)
 define("name", default='MetatoneWebProc', help="name for webserver application", type=str)
@@ -43,7 +44,7 @@ FAKE_OSC_SOURCE = (FAKE_OSC_IP_ADDRESS, FAKE_OSC_PORT)
 
 class Application(tornado.web.Application):
     """
-    Main Application Class.
+    Main Web Application Class.
     """
     def __init__(self):
         handlers = [
@@ -118,7 +119,8 @@ def sendOSCToIndividualClients(address, device_to_arg_dict):
     for connection in connections:
         if connection.deviceID in device_to_arg_dict.keys():
             try:
-                connection.sendOSC(address, [connection.deviceID, device_to_arg_dict[connection.deviceID]])
+                connection.sendOSC(address, 
+                                   [connection.deviceID, device_to_arg_dict[connection.deviceID]])
             except:
                 print("Exception sending individual message to: " + connection.deviceID)
 
