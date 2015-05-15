@@ -2,6 +2,7 @@
 *.pyc
 *~
 *.lprof
+analysis/data
 classifier/build
 classifier/dist
 classifier/logs
