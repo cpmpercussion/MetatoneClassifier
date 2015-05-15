@@ -85,7 +85,7 @@ def main():
     performance_length_frame['time'] = performance_length_frame.index
     performers = performances[0].performers().tolist()
     long_performance_lengths = pd.melt(performance_length_frame, id_vars=['time'], value_vars=performers)
-    long_performance_lengths.replace({'variable':DEVICE_SEATS})
+    long_performance_lengths = long_performance_lengths.replace({'variable':DEVICE_SEATS})
     long_performance_lengths.to_csv("performance_lengths.csv")
     #TODO - get the performance condition into the data frame
     #TODO - associate the seats with performers.
