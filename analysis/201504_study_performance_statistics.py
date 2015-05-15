@@ -14,6 +14,12 @@ ONLINE_PATH = '-online.csv'
 TOUCHES_PATH = '-touches.csv'
 TRANSITIONS_PATH = '-transitions.csv'
 
+DEVICE_SEATS = {
+    "BD49B35A-8999-4987-9759-8D3F28D1292B":1,
+    "9A5116EA-2793-4C75-AC93-524C9EF550FD":2,
+    "1A56F5DD-C5B6-4E56-8690-E5A12BAA7E78":3,
+    "24C41EC3-7ECC-40DA-B942-7ABE23017E74":4}
+
 class MetatonePerformanceLog:
     """
     Class to contain dataframes of a single metatone performance logs.
@@ -43,7 +49,6 @@ class MetatonePerformanceLog:
         last_touch = self.touches[-1:].index[0].to_datetime()
         return (last_touch - first_touch).total_seconds()
 
-
     def performer_lengths(self):
         """
         Returns the individual performers' performance lengths
@@ -62,11 +67,6 @@ class MetatonePerformanceLog:
             # print("Performer: " + performer_id + " Length was: " + str(performer_length))
         return {self.touches[:1].index[0]:performance_lengths}
 
-# if len(log_files) > 0:
-#     print("Found "+ str(len(log_files)) + " log files. Now going to run some stats.")
-# else:
-#     print("Didn't find any log files. :-(")
-
 def main():
     """Load up all the performances and do some stats"""
     log_files = []
@@ -82,7 +82,13 @@ def main():
     for perf in performances:
         performer_length_dict.update(perf.performer_lengths())
     performance_length_frame = pd.DataFrame.from_dict(performer_length_dict, orient="index")
-    performance_length_frame.to_csv("performance_lengths.csv")
+    performance_length_frame['time'] = performance_length_frame.index
+    performers = performances[0].performers().tolist()
+    long_performance_lengths = pd.melt(performance_length_frame, id_vars=['time'], value_vars=performers)
+    long_performance_lengths.replace({'variable':DEVICE_SEATS})
+    long_performance_lengths.to_csv("performance_lengths.csv")
+    #TODO - get the performance condition into the data frame
+    #TODO - associate the seats with performers.
 
 if __name__ == '__main__':
     main()
