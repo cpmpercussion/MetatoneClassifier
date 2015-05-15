@@ -172,11 +172,15 @@ def main():
     and processes the log file to six CSVs.
     """
     parser = argparse.ArgumentParser(description='Convert a Metatone Classifier log file into a set of useful CSV.')
-    parser.add_argument('filename', help='A Metatone Classifier .log file to be converted.')
-    args = PARSER.parse_args()
-    input_filename = args.filename
+    parser.add_argument('filename', help='A Metatone Classifier .log file to be converted.', nargs='+')
+    # parser.add_argument('multi', nargs='+')
+    args = parser.parse_args("abc.txt 123.txt".split())
+    args = parser.parse_args()
+    for input_filename in args.filename:
+        print("Processing: " + input_filename + "\n")
+        process_metatone_file_to_csv(input_filename)
+    # input_filename = args.filename
     #input_filename = '/Users/charles/Dropbox/Metatone/20140317/metatoneset-performance/2014-03-17T18-30-57-MetatoneOSCLog.txt'
-    process_metatone_file_to_csv(input_filename)
 
 if __name__ == '__main__':
     main()
