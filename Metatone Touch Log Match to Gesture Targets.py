@@ -9,15 +9,11 @@ from sklearn.naive_bayes import GaussianNB
 ##
 def feature_frame(frame):
     window_size = '5s'
-    
-    
     frame_freq = frame['device_id'].resample(window_size,how='count') 
     frame_touchdowns = frame.ix[frame['velocity'] == 0]
     frame_touchdowns = frame_touchdowns['velocity'].resample(window_size,how='count')
     frame_vel = frame['velocity'].resample(window_size,how='mean')
     frame_centroid = frame[['x_pos','y_pos']].resample(window_size,how='mean')
-    
-    
     fframe = pd.DataFrame({'freq':frame_freq,
         'device_id':frame['device_id'].resample(window_size,how='first')
             .fillna(method='ffill'),
