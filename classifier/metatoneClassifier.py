@@ -136,10 +136,10 @@ def findReceiveAddress():
             receive_address = ("localhost", port)
     print("Server Address: " + str(receive_address))
     print("Starting Bonjour Service.")
-    sdRef = pybonjour.DNSServiceRegister(name = name,
-                                     regtype = "_osclogger._udp.",
-                                     port = port,
-                                     callBack = bonjour_callback)
+    sdRef = pybonjour.DNSServiceRegister(name=name,
+                                         regtype="_osclogger._udp.",
+                                         port=port,
+                                         callBack=bonjour_callback)
 
 def startOscServer():
     """
@@ -150,7 +150,7 @@ def startOscServer():
     global s
     s = OSC.OSCServer(receive_address) # basic
     global st
-    st = threading.Thread(target = s.serve_forever, name="OSC-Server-Thread")
+    st = threading.Thread(target=s.serve_forever, name="OSC-Server-Thread")
     st.start()
     # Add all the handlers.
     s.addMsgHandler("/metatone/touch", touch_handler)
@@ -267,7 +267,7 @@ def classify_touch_messages(messages):
     """
     if not messages:
         return classify_empty_touch_messages()
-    touch_frame = pd.DataFrame(messages,columns = ['time','device_id','x_pos','y_pos','velocity']) ## This line can fail with a ValueError exception
+    touch_frame = pd.DataFrame(messages, columns=['time', 'device_id', 'x_pos', 'y_pos', 'velocity']) ## This line can fail with a ValueError exception
     touch_frame = touch_frame.set_index('time')
     delta = timedelta(seconds=-5)
     time_now = datetime.now()
@@ -295,10 +295,10 @@ def make_gesture_frame(gesture_log):
     with columns for each active device.
     """
     if not gesture_log:
-        return pd.DataFrame(columns = ['time'])
+        return pd.DataFrame(columns=['time'])
     gesture_columns = ['time']
     gesture_columns.extend(active_names)
-    gesture_frame = pd.DataFrame(gesture_log, columns = gesture_columns).set_index('time')
+    gesture_frame = pd.DataFrame(gesture_log, columns=gesture_columns).set_index('time')
     return gesture_frame
 
 ######################################
@@ -574,60 +574,68 @@ def add_active_device(device_id):
 ######################################
 
 def touch_handler(addr, tags, stuff, source):
+    """ Handles /metatone/touch OSC Messages """
     add_source_to_list(get_device_name(stuff[0]), source)
     add_active_device(stuff[0])
-    if (tags == "sfff"):
-        time = datetime.now()
-        message = [time.isoformat(), "touch", get_device_name(stuff[0]), stuff[1], stuff[2], stuff[3]]
+    if tags == "sfff":
+        current_time = datetime.now()
+        message = [current_time.isoformat(), "touch", get_device_name(stuff[0]), stuff[1], stuff[2], stuff[3]]
         log_messages(message)
-        touch_messages.append([time, get_device_name(stuff[0]), stuff[1], stuff[2], stuff[3]])
+        touch_messages.append([current_time, get_device_name(stuff[0]), stuff[1], stuff[2], stuff[3]])
         ## Repeat Message to visualiser:
         if VISUALISER_MODE_ON: 
             send_touch_to_visualiser(stuff)
         
 def touch_ended_handler(addr, tags, stuff, source):
+    """ Handles /metatone/touch/ended OSC Messages """
     add_source_to_list(get_device_name(stuff[0]), source)
     add_active_device(stuff[0])
     if tags == "s":
         message = [datetime.now().isoformat(), "touch/ended", get_device_name(stuff[0])]
         log_messages(message)
 
-def switch_handler(addr,tags,stuff,source):
-    add_source_to_list(get_device_name(stuff[0]),source)
+def switch_handler(addr, tags, stuff, source):
+    """ Handles /metatone/switch OSC Messages """
+    add_source_to_list(get_device_name(stuff[0]), source)
     add_active_device(stuff[0])
-    if (tags == "sss"):
-        message = [datetime.now().isoformat(),"switch",get_device_name(stuff[0]),stuff[1],stuff[2]]
+    if tags == "sss":
+        message = [datetime.now().isoformat(), "switch", get_device_name(stuff[0]), stuff[1], stuff[2]]
         log_messages(message)
         
-def onlineoffline_handler(addr,tags,stuff,source):
-    add_source_to_list(get_device_name(stuff[0]),source)
+def onlineoffline_handler(addr, tags, stuff, source):
+    """ Handles /metatone/online and /metatone/offline OSC Messages """
+    add_source_to_list(get_device_name(stuff[0]), source)
     add_active_device(stuff[0])
     send_performance_start_message(get_device_name(stuff[0]))
-    if (tags == "ss"):
-        message = [datetime.now().isoformat(),addr,get_device_name(stuff[0]),stuff[1]]
-        print(get_device_name(stuff[0]) + " is online with "+stuff[1]+".")
-        add_active_app(get_device_name(stuff[0]),stuff[1])
+    if tags == "ss":
+        message = [datetime.now().isoformat(), addr, get_device_name(stuff[0]), stuff[1]]
+        print(get_device_name(stuff[0]) + " is online with " + stuff[1] + ".")
+        add_active_app(get_device_name(stuff[0]), stuff[1])
         log_messages(message)
         
-def accel_handler(addr,tags,stuff,source):
-    add_source_to_list(get_device_name(stuff[0]),source)
+def accel_handler(addr, tags, stuff, source):
+    """ Handles /metatone/acceleration OSC Messages """
+    add_source_to_list(get_device_name(stuff[0]), source)
     add_active_device(stuff[0])
-    if (tags == "sfff"):
-        #do nothing
-        message = [datetime.now().isoformat(),"accel",get_device_name(stuff[0]),stuff[1],stuff[2],stuff[3]]
+    if tags == "sfff":
+        # Just logs message - no action.
+        message = [datetime.now().isoformat(), "accel", get_device_name(stuff[0]), stuff[1], stuff[2], stuff[3]]
+        log_messages(message)
 
-def metatone_app_handler(addr,tags,stuff,source):
-    add_source_to_list(get_device_name(stuff[0]),source)
+def metatone_app_handler(addr, tags, stuff, source):
+    """ Handles /metatone/app OSC Messages """
+    add_source_to_list(get_device_name(stuff[0]), source)
     add_active_device(stuff[0])
-    if (tags == "sss"):
-        message = [datetime.now().isoformat(),"metatone",get_device_name(stuff[0]),stuff[1],stuff[2]]
+    if tags == "sss":
+        message = [datetime.now().isoformat(), "metatone", get_device_name(stuff[0]), stuff[1], stuff[2]]
         log_messages(message)
         if WEB_SERVER_MODE:
             # Repeat message back to Metatone Devices.
-            webserver_sendtoall_function(addr,stuff)
+            webserver_sendtoall_function(addr, stuff)
 
 
 def target_gesture_handler(addr, tags, stuff, source):
+    """ Handles /metatone/targetgesture OSC Messages """
     message = [datetime.now().isoformat(), addr, stuff[0]]
     # print("Capturing Target Gesture: " + str(stuff[0]))
     log_messages(message)
