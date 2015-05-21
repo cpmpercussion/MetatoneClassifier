@@ -1,4 +1,5 @@
 #!/usr/bin/python
+# pylint: disable=line-too-long
 """
 metatoneClassifier Module
 
@@ -91,6 +92,9 @@ DEVICE_NAMES = {
     # '670EC230-5C3E-4759-B70F-5FDBCE14189B':'charles-iphone5'
 }
 ##
+# Column names for feature vectors.
+FEATURE_VECTOR_COLUMNS = ['centroid_x', 'centroid_y', 'std_x', 'std_y', 'freq', 'movement_freq', 'touchdown_freq', 'velocity']
+GESTURE_CLASS_NAMES = ['n', 'ft', 'st', 'fs', 'fsa', 'vss', 'bs', 'ss', 'c']
 
 ######################################
 #
@@ -118,18 +122,18 @@ def findReceiveAddress():
     #ip = ([ip for ip in socket.gethostbyname_ex(socket.gethostname())[2] if not ip.startswith("127.")][1:])
     # ip = socket.getaddrinfo(socket.gethostname(),9000)[:1][0][4]
 
-    name    = SERVER_NAME
-    port    = SERVER_PORT
+    name = SERVER_NAME
+    port = SERVER_PORT
     #receive_address = "10.0.1.2"
     try:
         receive_address = (ip[0], port)
     except IndexError:
-        if (WEB_SERVER_MODE):
+        if WEB_SERVER_MODE:
             print("Could not find IP address automatically. Using CLOUD_SERVER_IP in WEB_SERVER_MODE.")
-            receive_address = (CLOUD_SERVER_IP,SERVER_PORT)
+            receive_address = (CLOUD_SERVER_IP, SERVER_PORT)
         else:
             print("Could not find IP address automatically. Using localhost instead.")
-            receive_address = ("localhost",port)
+            receive_address = ("localhost", port)
     print("Server Address: " + str(receive_address))
     print("Starting Bonjour Service.")
     sdRef = pybonjour.DNSServiceRegister(name = name,
@@ -143,9 +147,9 @@ def startOscServer():
     """
     print("Starting OSCServer.")
     # OSC Server. there are three different types of server. 
-    global s 
+    global s
     s = OSC.OSCServer(receive_address) # basic
-    global st 
+    global st
     st = threading.Thread(target = s.serve_forever, name="OSC-Server-Thread")
     st.start()
     # Add all the handlers.
@@ -155,7 +159,7 @@ def startOscServer():
     s.addMsgHandler("/metatone/online", onlineoffline_handler)
     s.addMsgHandler("/metatone/offline", onlineoffline_handler)
     s.addMsgHandler("/metatone/acceleration", accel_handler)
-    s.addMsgHandler("/metatone/app",metatone_app_handler)
+    s.addMsgHandler("/metatone/app", metatone_app_handler)
     s.addMsgHandler("/metatone/targetgesture", target_gesture_handler)
 
 def close_server():
@@ -177,14 +181,14 @@ def close_server():
         st.join(1)
     print("Finished closing.")
 
-def ensure_dir(f):
+def ensure_dir(file_name):
     """
     Checks if a directory exists in the local directory,
     if it doesn't, creates it.
     """
-    d = os.path.dirname(f)
-    if not os.path.exists(d):
-        os.makedirs(d)
+    dir_to_make = os.path.dirname(file_name)
+    if not os.path.exists(dir_to_make):
+        os.makedirs(dir_to_make)
 
 ###########################
 ##
@@ -200,18 +204,18 @@ def load_classifier():
     global classifier
     print("### Loading Gesture Classifier.           ###")
     try:
-        pickle_file = open(PICKLED_CLASSIFIER_FILE, "rb" )
+        pickle_file = open(PICKLED_CLASSIFIER_FILE, "rb")
         classifier = pickle.load(pickle_file)
         pickle_file.close()
         print("### Classifier file successfully loaded.  ###")
-    except(IOError):
+    except IOError:
         print("### IOError Loading Classifier.           ###")
         print("### Saving new pickled classifier object. ###")
-        classifier = generate_classifier.pickleClassifier(generate_classifier.INPUT_FILE,generate_classifier.CLASSIFIER_NAME)
+        classifier = generate_classifier.pickleClassifier(generate_classifier.INPUT_FILE, generate_classifier.CLASSIFIER_NAME)
     except:
         print("### Exception Loading Classifier.         ###")
         print("### Generating new classifier object.     ###")
-        classifier = generate_classifier.pickleClassifier(generate_classifier.INPUT_FILE,generate_classifier.CLASSIFIER_NAME)
+        classifier = generate_classifier.pickleClassifier(generate_classifier.INPUT_FILE, generate_classifier.CLASSIFIER_NAME)
 
 #@profile
 def feature_frame(frame):
@@ -219,9 +223,9 @@ def feature_frame(frame):
     Calculates feature vectors for a dataframe of touch
     messages containing one device_id.
     """
-    if (frame.empty):
+    if frame.empty:
         fframe = pd.DataFrame({
-            'freq':pd.Series(0,index=range(1)),
+            'freq':pd.Series(0, index=range(1)),
             'device_id':'nobody',
             'touchdown_freq':0,
             'movement_freq':0,
@@ -233,14 +237,14 @@ def feature_frame(frame):
         return fframe
 
     window_size = '5s'
-    count_zeros = lambda s: len([x for x in s if x==0])
+    count_zeros = lambda s: len([x for x in s if x == 0])
 
-    frame_deviceid = frame['device_id'].resample(window_size,how='first').fillna(method='ffill')
-    frame_freq = frame['device_id'].resample(window_size,how='count').fillna(0)
-    frame_touchdowns = frame['velocity'].resample(window_size,how=count_zeros).fillna(0)
-    frame_vel = frame['velocity'].resample(window_size,how='mean').fillna(0)
-    frame_centroid = frame[['x_pos','y_pos']].resample(window_size,how='mean').fillna(-1)
-    frame_std = frame[['x_pos','y_pos']].resample(window_size,how='std').fillna(0)
+    frame_deviceid = frame['device_id'].resample(window_size, how='first').fillna(method='ffill')
+    frame_freq = frame['device_id'].resample(window_size, how='count').fillna(0)
+    frame_touchdowns = frame['velocity'].resample(window_size, how=count_zeros).fillna(0)
+    frame_vel = frame['velocity'].resample(window_size, how='mean').fillna(0)
+    frame_centroid = frame[['x_pos', 'y_pos']].resample(window_size, how='mean').fillna(-1)
+    frame_std = frame[['x_pos', 'y_pos']].resample(window_size, how='std').fillna(0)
     
     fframe = pd.DataFrame({
         'freq':frame_freq,
@@ -261,7 +265,6 @@ def classify_touch_messages(messages):
     for each active device for the preceding 5 seconds. 
     Returned as a dictionary.
     """
-    FEATURE_VECTOR_COLUMNS = ['centroid_x','centroid_y','std_x','std_y','freq','movement_freq','touchdown_freq','velocity']
     if not messages:
         return classify_empty_touch_messages()
     touch_frame = pd.DataFrame(messages,columns = ['time','device_id','x_pos','y_pos','velocity']) ## This line can fail with a ValueError exception
@@ -310,12 +313,11 @@ def pretty_print_classes(classes):
     readable gesture state.
     """
     names = list(classes)
-    class_names = ['n','ft','st','fs','fsa','vss','bs','ss','c']
     pretty_classes = {}
     result = ""
     for n in names:
-        pretty_classes[n] = class_names[classes[n]]
-        result +=  n + " : " + class_names[classes[n]] + "\n"
+        pretty_classes[n] = GESTURE_CLASS_NAMES[classes[n]]
+        result += n + " : " + GESTURE_CLASS_NAMES[classes[n]] + "\n"
     # return pretty_classes
     return result
 
@@ -339,7 +341,7 @@ def log_messages(message):
     """
     Log the message line to system log.
     """
-    logging.info(str(message).replace("[","").replace("]","").replace("'",""))
+    logging.info(str(message).replace("[", "").replace("]", "").replace("'", ""))
 
 def record_latest_gestures(classes, global_gesture_log):
     """
@@ -363,7 +365,7 @@ def record_latest_gestures(classes, global_gesture_log):
     ## Now add to the gesture log.
     ## TODO: add the whole classes dict! Not just the list of gestures! how stupid!
     classes = [classes[n] for n in classes.keys()]
-    classes.insert(0,time)
+    classes.insert(0, time)
     global_gesture_log.append(classes)
 
     ## Now trim the gesture list if necessary.
@@ -378,7 +380,7 @@ def trim_touch_messages():
     global touch_messages
     current_time = datetime.now()
     delta = timedelta(seconds=-5)
-    touch_messages = [x for x in touch_messages if (x[0] > datetime.now() + delta)]
+    touch_messages = [x for x in touch_messages if x[0] > current_time + delta]
 
 ######################################
 #
@@ -390,13 +392,12 @@ def send_gestures(classes):
     """
     Send gesture classes to the relevant active devices.
     """
-    class_names = ['n','ft','st','fs','fsa','vss','bs','ss','c']
     for n in osc_sources.keys():
         if n in classes.keys():
             msg = OSC.OSCMessage("/metatone/classifier/gesture")
-            msg.extend([n,class_names[classes[n]]])
+            msg.extend([n, GESTURE_CLASS_NAMES[classes[n]]])
             try:
-                oscClient.sendto(msg,osc_sources[n],timeout=10.0)
+                oscClient.sendto(msg, osc_sources[n], timeout=10.0)
             except OSC.OSCClientError as err:
                 print("Couldn't send gestures to " + n + ". OSCClientError")
                 print(msg)
@@ -407,8 +408,8 @@ def send_gestures(classes):
     if WEB_SERVER_MODE:
         class_strings = {}
         for n in classes.keys():
-            class_strings[n] = class_names[classes[n]]
-        webserver_sendindividual_function("/metatone/classifier/gesture",class_strings)
+            class_strings[n] = GESTURE_CLASS_NAMES[classes[n]]
+        webserver_sendindividual_function("/metatone/classifier/gesture", class_strings)
 
 def send_message_to_sources(msg):
     """
@@ -416,7 +417,7 @@ def send_message_to_sources(msg):
     """
     for n in osc_sources.keys():
         try:
-            oscClient.sendto(msg,osc_sources[n],timeout=10.0)
+            oscClient.sendto(msg, osc_sources[n], timeout=10.0)
         except OSC.OSCClientError as err:
             print("Couldn't send message to " + n + ". OSCClientError")
             print(msg)
@@ -425,7 +426,7 @@ def send_message_to_sources(msg):
             print("Couldn't send message to " + n + ", bad address (removed).")
             remove_source(n)
     if WEB_SERVER_MODE:
-        webserver_sendtoall_function(msg.address,msg.values())
+        webserver_sendtoall_function(msg.address, msg.values())
     log_line = [datetime.now().isoformat()]
     log_line.extend(msg)
     log_messages(log_line)
@@ -442,7 +443,7 @@ def send_performance_start_message(device_name):
     msg.append(performance_type)
     msg.append(performance_composition)
     try:
-        oscClient.sendto(msg,osc_sources[device_name],timeout=10.0)
+        oscClient.sendto(msg, osc_sources[device_name], timeout=10.0)
     except OSC.OSCClientError as err:
         print("Couldn't send performance start to " + device_name + ". OSCClientError")
         print(msg)
@@ -451,7 +452,7 @@ def send_performance_start_message(device_name):
         print("Couldn't send performance start to " + device_name + ", bad address (removed).")
         remove_source(n)
     if WEB_SERVER_MODE:
-        webserver_sendtoall_function(msg.address,msg.values())
+        webserver_sendtoall_function(msg.address, msg.values())
         # TODO - fix this up, need a new sending function on the webserver side.
     # send to webclient
 
@@ -465,7 +466,7 @@ def send_performance_end_message(device_name):
     msg.append(PERFORMANCE_EVENT_NAME)
     msg.append(device_name)
     try:
-        oscClient.sendto(msg,osc_sources[device_name],timeout=10.0)
+        oscClient.sendto(msg, osc_sources[device_name], timeout=10.0)
     except OSC.OSCClientError as err:
         print("Couldn't send performance end to " + device_name + ". OSCClientError")
         print(msg)
@@ -474,7 +475,7 @@ def send_performance_end_message(device_name):
         print("Couldn't send performance end to " + device_name + ", bad address (removed).")
         remove_source(n)
     if WEB_SERVER_MODE:
-        webserver_sendtoall_function(msg.address,msg.values())
+        webserver_sendtoall_function(msg.address, msg.values())
         # TODO - fix this up, need a new sending function on the webserver side.
     # send to webclient
 
@@ -493,7 +494,7 @@ def send_touch_to_visualiser(touch_data):
     msg = OSC.OSCMessage("/metatone/touch")
     msg.extend(touch_data)
     try: 
-        oscClient.sendto(msg,(VISUALISER_HOST,VISUALISER_PORT))
+        oscClient.sendto(msg,(VISUALISER_HOST, VISUALISER_PORT))
     except:
         msg = ""
 
@@ -503,19 +504,19 @@ def send_touch_to_visualiser(touch_data):
 #
 ######################################
 
-def add_source_to_list(name,source):
+def add_source_to_list(name, source):
     """
     Called whenever an OSC messaged is received.
     If a source is not listed, it's added to the dictionary,
     otherwise - nothing happens.
     """
     global osc_sources
-    source_address = (source[0],METATONE_RECEIVING_PORT)
+    source_address = (source[0], METATONE_RECEIVING_PORT)
     if (name not in osc_sources.keys()):
         osc_sources[name] = source_address
         # send new performance start message.
 
-def add_active_app(name,app):
+def add_active_app(name, app):
     """
     Adds the current app whenever an online message is received.
     """
@@ -573,22 +574,22 @@ def add_active_device(device_id):
 ######################################
 
 def touch_handler(addr, tags, stuff, source):
-    add_source_to_list(get_device_name(stuff[0]),source)
+    add_source_to_list(get_device_name(stuff[0]), source)
     add_active_device(stuff[0])
     if (tags == "sfff"):
         time = datetime.now()
-        message = [time.isoformat(),"touch",get_device_name(stuff[0]),stuff[1],stuff[2],stuff[3]]
+        message = [time.isoformat(), "touch", get_device_name(stuff[0]), stuff[1], stuff[2], stuff[3]]
         log_messages(message)
-        touch_messages.append([time,get_device_name(stuff[0]),stuff[1],stuff[2],stuff[3]])
+        touch_messages.append([time, get_device_name(stuff[0]), stuff[1], stuff[2], stuff[3]])
         ## Repeat Message to visualiser:
-        if (VISUALISER_MODE_ON): 
+        if VISUALISER_MODE_ON: 
             send_touch_to_visualiser(stuff)
         
-def touch_ended_handler(addr,tags,stuff,source):
-    add_source_to_list(get_device_name(stuff[0]),source)
+def touch_ended_handler(addr, tags, stuff, source):
+    add_source_to_list(get_device_name(stuff[0]), source)
     add_active_device(stuff[0])
-    if (tags == "s"):
-        message = [datetime.now().isoformat(),"touch/ended",get_device_name(stuff[0])]
+    if tags == "s":
+        message = [datetime.now().isoformat(), "touch/ended", get_device_name(stuff[0])]
         log_messages(message)
 
 def switch_handler(addr,tags,stuff,source):
@@ -626,8 +627,8 @@ def metatone_app_handler(addr,tags,stuff,source):
             webserver_sendtoall_function(addr,stuff)
 
 
-def target_gesture_handler(addr,tags,stuff,source):
-    message = [datetime.now().isoformat(),addr,stuff[0]]
+def target_gesture_handler(addr, tags, stuff, source):
+    message = [datetime.now().isoformat(), addr, stuff[0]]
     # print("Capturing Target Gesture: " + str(stuff[0]))
     log_messages(message)
 
@@ -655,7 +656,7 @@ def classifyPerformance():
     try: 
         if (classes):
             send_gestures(classes)
-            record_latest_gestures(classes,classified_gestures)
+            record_latest_gestures(classes, classified_gestures)
         gestures = make_gesture_frame(classified_gestures).fillna(0)
     except:
         print("Couldn't update gestures.")
