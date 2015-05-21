@@ -17,7 +17,7 @@ TODO:
 - system for holding messages that should be sent to each iPad that connects?
 - better system for naming devices.
 """
-
+from __future__ import print_function
 import pybonjour
 import OSC
 import time
@@ -782,22 +782,22 @@ performance_type = PERFORMANCE_TYPE_LOCAL
 performance_composition = random.randint(0,100)
 
 def main():
-	"""
-	Main Loop function used for terminal mode.
-	Runs the clasifyForever function until it receives Ctrl-C
-	at which point the program exits.
-	"""
-	findReceiveAddress()
-	startOscServer()
-	load_classifier()
-	startLog()
+    """
+    Main Loop function used for terminal mode.
+    Runs the clasifyForever function until it receives Ctrl-C
+    at which point the program exits.
+    """
+    findReceiveAddress()
+    startOscServer()
+    load_classifier()
+    startLog()
 
-	try:
-		classifyForever()
-	except KeyboardInterrupt:
-		print("Received Ctrl-C - Closing down.")
-		stopClassifying()
-		print("Closed down. Bye!")
+    try:
+        classifyForever()
+    except KeyboardInterrupt:
+        print("Received Ctrl-C - Closing down.")
+        stopClassifying()
+        print("Closed down. Bye!")
 
 if __name__ == "__main__":
-	main()
+    main()
