@@ -102,14 +102,14 @@ GESTURE_CLASS_NAMES = ['n', 'ft', 'st', 'fs', 'fsa', 'vss', 'bs', 'ss', 'c']
 #
 ######################################
 
-def bonjour_callback(sdRef, flags, errorCode, name, regtype, domain):
+def bonjour_callback(service_reference, flags, error_code, name, reg_type, domain):
     """
     Callback function for bonjour service registration.
     """
-    if errorCode == pybonjour.kDNSServiceErr_NoError:
+    if error_code == pybonjour.kDNSServiceErr_NoError:
         print('Registered service:')
         print('  name    =', name)
-        print('  regtype =', regtype)
+        print('  regtype =', reg_type)
         print('  domain  =', domain)
 
 def findReceiveAddress():
@@ -120,11 +120,10 @@ def findReceiveAddress():
     global name
     global port
     global receive_address
-    global sdRef
+    global bonjour_service_register
     searched_ips = ([ip for ip in socket.gethostbyname_ex(socket.gethostname())[2] if not ip.startswith("127.")][:1])
     #ip = ([ip for ip in socket.gethostbyname_ex(socket.gethostname())[2] if not ip.startswith("127.")][1:])
     # ip = socket.getaddrinfo(socket.gethostname(),9000)[:1][0][4]
-
     name = SERVER_NAME
     port = SERVER_PORT
     #receive_address = "10.0.1.2"
@@ -139,49 +138,49 @@ def findReceiveAddress():
             receive_address = ("localhost", port)
     print("Server Address: " + str(receive_address))
     print("Starting Bonjour Service.")
-    sdRef = pybonjour.DNSServiceRegister(name=name,
-                                         regtype="_osclogger._udp.",
-                                         port=port,
-                                         callBack=bonjour_callback)
+    bonjour_service_register = pybonjour.DNSServiceRegister(name=name,
+                                                            regtype="_osclogger._udp.",
+                                                            port=port,
+                                                            callBack=bonjour_callback)
 
 def startOscServer():
     """
     Starts the OSCServer serving on a new thread and adds message handlers.
     """
+    global server
+    global server_thread
     print("Starting OSCServer.")
     # OSC Server. there are three different types of server. 
-    global s
-    s = OSC.OSCServer(receive_address) # basic
-    global st
-    st = threading.Thread(target=s.serve_forever, name="OSC-Server-Thread")
-    st.start()
+    server = OSC.OSCServer(receive_address) # basic
+    server_thread = threading.Thread(target=server.serve_forever, name="OSC-Server-Thread")
+    server_thread.start()
     # Add all the handlers.
-    s.addMsgHandler("/metatone/touch", touch_handler)
-    s.addMsgHandler("/metatone/touch/ended", touch_ended_handler)
-    s.addMsgHandler("/metatone/switch", switch_handler)
-    s.addMsgHandler("/metatone/online", onlineoffline_handler)
-    s.addMsgHandler("/metatone/offline", onlineoffline_handler)
-    s.addMsgHandler("/metatone/acceleration", accel_handler)
-    s.addMsgHandler("/metatone/app", metatone_app_handler)
-    s.addMsgHandler("/metatone/targetgesture", target_gesture_handler)
+    server.addMsgHandler("/metatone/touch", touch_handler)
+    server.addMsgHandler("/metatone/touch/ended", touch_ended_handler)
+    server.addMsgHandler("/metatone/switch", switch_handler)
+    server.addMsgHandler("/metatone/online", onlineoffline_handler)
+    server.addMsgHandler("/metatone/offline", onlineoffline_handler)
+    server.addMsgHandler("/metatone/acceleration", accel_handler)
+    server.addMsgHandler("/metatone/app", metatone_app_handler)
+    server.addMsgHandler("/metatone/targetgesture", target_gesture_handler)
 
 def close_server():
     """
     Closes the OSCServer, server thread and Bonjour service reference.
     """
-    global s
-    global st
-    global sdRef
+    global server
+    global server_thread
+    global bonjour_service_register
     print("\nClosing OSC Server systems...")
-    if 'sdRef' in globals() or 'sdRef' in locals():
+    if 'bonjour_service_register' in globals() or 'bonjour_service_register' in locals():
         print("Closing Bonjour Service.")
-        sdRef.close()
-    if 's' in globals() or 's' in locals():
+        bonjour_service_register.close()
+    if 'server' in globals() or 'server' in locals():
         print("Closing Server.")
-        s.close()
-    if 'st' in globals() or 'st' in locals():
+        server.close()
+    if 'server_thread' in globals() or 'server_thread' in locals():
         print("Closing Server Thread.")
-        st.join(1)
+        server_thread.join(1)
     print("Finished closing.")
 
 def ensure_dir(file_name):
@@ -455,9 +454,9 @@ def send_performance_start_message(device_name):
         print("Couldn't send performance start to " + device_name + ", bad address (removed).")
         remove_source(osc_sources[device_name])
     if WEB_SERVER_MODE:
+        # send to webclient
         webserver_sendtoall_function(msg.address, msg.values())
         # TODO - fix this up, need a new sending function on the webserver side.
-    # send to webclient
 
 
 ## TODO - make sure these are working.
@@ -526,6 +525,7 @@ def add_active_app(name, app):
     global active_apps
     active_apps[name] = app
 
+# TODO sort out this function so that it is useful - it should only be run inside the classification thread.
 def remove_source(name):
     """
     Removes a device from the osc_sources dictionary. 
@@ -540,6 +540,9 @@ def remove_source(name):
     # if name in active_names: active_names.remove(name) # can't do this until I fix gesture logging... needs to be dictionary not list. 
 
 def clear_all_sources():
+    """
+    Sends a performance end message to all connected apps and then removes them all. 
+    """
     global osc_sources
     global active_names
     global active_apps
