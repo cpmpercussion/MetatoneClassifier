@@ -654,7 +654,7 @@ def classifyPerformance():
         print("Couldn't classify messages.")
         classes = False
     try: 
-        if (classes):
+        if classes:
             send_gestures(classes)
             record_latest_gestures(classes, classified_gestures)
         gestures = make_gesture_frame(classified_gestures).fillna(0)
@@ -664,9 +664,9 @@ def classifyPerformance():
     
     try:
         latest_gestures = transitions.trim_gesture_frame(gestures)
-        transition_matrices = transitions.calculate_group_transitions_for_window(latest_gestures,'15s')
+        transition_matrices = transitions.calculate_group_transitions_for_window(latest_gestures, '15s')
         flux_series = transitions.calculate_flux_series(transition_matrices)
-        if (isinstance(transition_matrices,pd.TimeSeries)):
+        if isinstance(transition_matrices, pd.TimeSeries):
             state = transitions.transition_state_measure(transition_matrices[-1])
         else:
             state = False
@@ -675,10 +675,10 @@ def classifyPerformance():
         state = False
         raise
 
-    if (state):
+    if state:
         # print(state)
         msg = OSC.OSCMessage("/metatone/classifier/ensemble/state")
-        msg.extend([state[0],state[1],state[2]])
+        msg.extend([state[0], state[1], state[2]])
         send_message_to_sources(msg)
     
     # Print Flux Increase:
@@ -689,31 +689,29 @@ def classifyPerformance():
     except:
         print("Not enough flux readings.")
     # measure = flux_series[-2:].diff().dropna()
-
     newidea = transitions.is_new_idea(flux_series)
-    if (newidea):
+    if newidea:
         # print("New Idea Detected!")
         msg = OSC.OSCMessage("/metatone/classifier/ensemble/event/new_idea")
-        msg.extend([name,"new_idea"])
+        msg.extend([name, "new_idea"])
         send_message_to_sources(msg)
+    return (classes, state, newidea)
 
-    return (classes,state,newidea)
-
-def printPerformanceState(stateTuple):
+def printPerformanceState(state_tuple):
     """
     Given the performance state tuple returned by classifyPerformance(),
     this function prints it out nicely on the screen.
     """
     print("# # # # # # # # # # # #")
     print("Performance State: " + str(datetime.now()))
-    classes = stateTuple[0]
-    state = stateTuple[1]
-    newidea = stateTuple[2]
-    if (classes):
+    classes = state_tuple[0]
+    state = state_tuple[1]
+    newidea = state_tuple[2]
+    if classes:
         print(pretty_print_classes(classes))
-    if (state):
+    if state:
         print(pretty_print_state(state))
-    if (newidea):
+    if newidea:
         print("New Idea detected.")
     print("# # # # # # # # # # # #")
 
@@ -728,14 +726,13 @@ def classifyForever():
     while classifyingForever:
         try:
             start_time = datetime.now()
-            delta = timedelta(seconds=1)
-            currentState = classifyPerformance()
-            printPerformanceState(currentState)
+            current_state = classifyPerformance()
+            printPerformanceState(current_state)
             trim_touch_messages()
             end_time = datetime.now()
             delta_seconds = (end_time-start_time).total_seconds() # process as timedelta
             print("### Classification took: " + str(delta_seconds) + "s. ###")
-            time.sleep(max(0,1-delta_seconds))
+            time.sleep(max(0, 1-delta_seconds))
         except:
             print("### Couldn't perform analysis - exception. ###")
             raise
