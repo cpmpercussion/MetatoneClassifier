@@ -103,6 +103,9 @@ GESTURE_CLASS_NAMES = ['n', 'ft', 'st', 'fs', 'fsa', 'vss', 'bs', 'ss', 'c']
 ######################################
 
 def bonjour_callback(sdRef, flags, errorCode, name, regtype, domain):
+    """
+    Callback function for bonjour service registration.
+    """
     if errorCode == pybonjour.kDNSServiceErr_NoError:
         print('Registered service:')
         print('  name    =', name)
@@ -118,7 +121,7 @@ def findReceiveAddress():
     global port
     global receive_address
     global sdRef
-    ip = ([ip for ip in socket.gethostbyname_ex(socket.gethostname())[2] if not ip.startswith("127.")][:1])
+    searched_ips = ([ip for ip in socket.gethostbyname_ex(socket.gethostname())[2] if not ip.startswith("127.")][:1])
     #ip = ([ip for ip in socket.gethostbyname_ex(socket.gethostname())[2] if not ip.startswith("127.")][1:])
     # ip = socket.getaddrinfo(socket.gethostname(),9000)[:1][0][4]
 
@@ -126,7 +129,7 @@ def findReceiveAddress():
     port = SERVER_PORT
     #receive_address = "10.0.1.2"
     try:
-        receive_address = (ip[0], port)
+        receive_address = (searched_ips[0], port)
     except IndexError:
         if WEB_SERVER_MODE:
             print("Could not find IP address automatically. Using CLOUD_SERVER_IP in WEB_SERVER_MODE.")
@@ -353,9 +356,9 @@ def record_latest_gestures(classes, global_gesture_log):
     """
     if not classes:
         return
-    time = datetime.now()
+    current_time = datetime.now()
     ## First add to the file log.
-    message_log_line = [time.isoformat()]
+    message_log_line = [current_time.isoformat()]
     message_log_line.append("/classifier/gestures")
     for key in classes.keys():
         message_log_line.append(key)
@@ -365,7 +368,7 @@ def record_latest_gestures(classes, global_gesture_log):
     ## Now add to the gesture log.
     ## TODO: add the whole classes dict! Not just the list of gestures! how stupid!
     classes = [classes[n] for n in classes.keys()]
-    classes.insert(0, time)
+    classes.insert(0, current_time)
     global_gesture_log.append(classes)
 
     ## Now trim the gesture list if necessary.
@@ -450,7 +453,7 @@ def send_performance_start_message(device_name):
         print(err)
     except socket.error:
         print("Couldn't send performance start to " + device_name + ", bad address (removed).")
-        remove_source(n)
+        remove_source(osc_sources[device_name])
     if WEB_SERVER_MODE:
         webserver_sendtoall_function(msg.address, msg.values())
         # TODO - fix this up, need a new sending function on the webserver side.
@@ -473,13 +476,13 @@ def send_performance_end_message(device_name):
         print(err)
     except socket.error:
         print("Couldn't send performance end to " + device_name + ", bad address (removed).")
-        remove_source(n)
+        remove_source(osc_sources[device_name])
     if WEB_SERVER_MODE:
         webserver_sendtoall_function(msg.address, msg.values())
         # TODO - fix this up, need a new sending function on the webserver side.
     # send to webclient
 
-def dummy_websocket_sender(address,arguments):
+def dummy_websocket_sender(address, arguments):
     """
     Dummy function: when running in webserver mode, the server replaces this with functions
     to send data to correct clients.
@@ -494,7 +497,7 @@ def send_touch_to_visualiser(touch_data):
     msg = OSC.OSCMessage("/metatone/touch")
     msg.extend(touch_data)
     try: 
-        oscClient.sendto(msg,(VISUALISER_HOST, VISUALISER_PORT))
+        oscClient.sendto(msg, (VISUALISER_HOST, VISUALISER_PORT))
     except:
         msg = ""
 
@@ -632,7 +635,6 @@ def metatone_app_handler(addr, tags, stuff, source):
         if WEB_SERVER_MODE:
             # Repeat message back to Metatone Devices.
             webserver_sendtoall_function(addr, stuff)
-
 
 def target_gesture_handler(addr, tags, stuff, source):
     """ Handles /metatone/targetgesture OSC Messages """
