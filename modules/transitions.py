@@ -146,7 +146,10 @@ def transition_matrix_to_stochastic_matrix(trans_matrix):
     """ 
     Convert a transition matrix with entries >1 to a stochastic matrix where rows sum to 1. 
     """
-    result = map((lambda x: map((lambda n: n/sum(x)),x)), trans_matrix)
+    try:
+        result = map((lambda x: map((lambda n: n/sum(x)),x)), trans_matrix)
+    except ZeroDivisionError:
+        result = trans_matrix
     return result
 
 def reduce_matrix_to_groups(mat):
@@ -297,12 +300,22 @@ def print_transition_plots(transitions):
     """
     for transition_matrix in range(len(transitions)):
         state, spread, ratio = transition_state_measure(transitions.ix[transition_matrix])
-        title = transitions.index[transition_matrix].isoformat()
-        print title
-        plt.title(title + " " + state + " " + str(spread) + " " + str(ratio))
-        plt.imshow(transitions.ix[transition_matrix], cmap=plt.cm.binary, interpolation='nearest')
-        plt.savefig(title.replace(":", "_") + '.pdf', dpi=150, format="pdf")
+        mat = transition_matrix_to_stochastic_matrix(transitions.ix[transition_matrix])
+        flux = flux_measure(mat)
+        filename = transitions.index[transition_matrix].isoformat()
+        title = transitions.index[transition_matrix].strftime('%Y-%m-%d %H:%M:%S')
+        print(title)
+        colours = plt.cm.hot # plt.cm.autumn # plt.cm.binary for black and white
+        # plt.title(title + " " + state + " " + str(spread) + " " + str(ratio))
+        plt.title("Transition Matrix: " + title  + " Flux: " + str(round(flux, 3)))
+        plt.imshow(mat, cmap=colours, interpolation='nearest')
+        plt.colorbar()
+        labels = ["none","taps","swipes","swirls","combo"]
+        plt.xticks([0, 1, 2, 3, 4], labels)
+        plt.yticks([0, 1, 2, 3, 4], labels)
+        plt.savefig(filename.replace(":", "_") + '.pdf', dpi=150, format="pdf")
         plt.close()
+        # TODO make sure stochastic calculation doesn't fail on nonzero matrices.
 
 #####################
 #
