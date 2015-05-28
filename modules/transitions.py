@@ -4,7 +4,7 @@ Charles Martin 2013-2014
 
 Calculates and manipulates transition matrices.
 """
-
+from __future__ import print_function
 import pandas as pd
 import numpy as np
 from scipy.stats import entropy
@@ -305,12 +305,12 @@ def print_transition_plots(transitions):
         filename = transitions.index[transition_matrix].isoformat()
         title = transitions.index[transition_matrix].strftime('%Y-%m-%d %H:%M:%S')
         print(title)
-        colours = plt.cm.hot # plt.cm.autumn # plt.cm.binary for black and white
+        colours = plt.cm.Reds #plt.cm.hot # plt.cm.autumn # plt.cm.binary for black and white
         # plt.title(title + " " + state + " " + str(spread) + " " + str(ratio))
         plt.title("Transition Matrix: " + title  + " Flux: " + str(round(flux, 3)))
         plt.imshow(mat, cmap=colours, interpolation='nearest')
         plt.colorbar()
-        labels = ["none","taps","swipes","swirls","combo"]
+        labels = ["none", "taps", "swipes", "swirls", "combo"]
         plt.xticks([0, 1, 2, 3, 4], labels)
         plt.yticks([0, 1, 2, 3, 4], labels)
         plt.savefig(filename.replace(":", "_") + '.pdf', dpi=150, format="pdf")
