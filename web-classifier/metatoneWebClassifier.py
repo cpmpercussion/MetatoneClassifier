@@ -242,7 +242,7 @@ def main():
         classification_thread.start()
         tornado.ioloop.IOLoop.instance().start()
     except KeyboardInterrupt:
-        print("Received Ctrl-C - Closing down.")
+        print("\nReceived Ctrl-C - Closing down.")
         metatoneClassifier.stopClassifying()
         clear_metatone_apps()
         bonjour_service_register.close()
