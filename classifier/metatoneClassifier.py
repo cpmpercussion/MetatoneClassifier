@@ -73,6 +73,9 @@ WEB_SERVER_MODE = False
 classifying_forever = False
 ##
 
+MAX_GESTURE_LENGTH = 300 # 600 is probably a good number.
+
+
 ##
 DEVICE_NAMES = {
     # '2678456D-9AE7-4DCC-A561-688A4766C325':'charles', # old
@@ -114,7 +117,7 @@ def bonjour_callback(service_reference, flags, error_code, name, reg_type, domai
         print('  regtype =', reg_type)
         print('  domain  =', domain)
 
-def findReceiveAddress():
+def find_receive_address():
     """
     Figures out the local IP address and port that the OSCServer should use and
     starts the Bonjour service.
@@ -145,7 +148,7 @@ def findReceiveAddress():
                                                             port=port,
                                                             callBack=bonjour_callback)
 
-def startOscServer():
+def start_osc_server():
     """
     Starts the OSCServer serving on a new thread and adds message handlers.
     """
@@ -381,8 +384,6 @@ def trim_touch_messages():
     delta = timedelta(seconds=-5)
     touch_messages = [x for x in touch_messages if x[0] > current_time + delta]
 
-MAX_GESTURE_LENGTH = 600
-
 def trim_gesture_log():
     """
     Trims the global gesture list to the length defined in MAX_GESTURE_LENGTH. 
@@ -390,7 +391,8 @@ def trim_gesture_log():
     """
     global classified_gestures
     if len(classified_gestures) > MAX_GESTURE_LENGTH:
-        classified_gestures = classified_gestures[:MAX_GESTURE_LENGTH]
+        # print("Reducing gesture list.")
+        classified_gestures = classified_gestures[-MAX_GESTURE_LENGTH:]
 
 
 ######################################
@@ -661,7 +663,7 @@ def target_gesture_handler(addr, tags, stuff, source):
 ######################################
 
 #@profile
-def classifyPerformance():
+def classify_performance():
     """
     Classifies the current performance state.
     Sends messages regarding current gestures, new ideas and other state.
@@ -695,7 +697,7 @@ def classifyPerformance():
     except:
         print ("Couldn't perform transition calculations.")
         state = False
-        # raise # TODO - figure out why this fails sometimes.
+        raise # TODO - figure out why this fails sometimes.
 
     if state:
         # print(state)
@@ -710,9 +712,9 @@ def classifyPerformance():
         send_message_to_sources(msg)
     return (classes, state, newidea, flux_series)
 
-def printPerformanceState(state_tuple):
+def print_performance_state(state_tuple):
     """
-    Given the performance state tuple returned by classifyPerformance(),
+    Given the performance state tuple returned by classify_performance(),
     this function prints it out nicely on the screen.
     """
     print("# # # # # # # # # # # #")
@@ -738,7 +740,7 @@ def printPerformanceState(state_tuple):
         print("!! New Idea Detected !!")
     print("# # # # # # # # # # # #")
 
-def classifyForever():
+def classify_forever():
     """
     Starts a classification process that repeats every second.
     This blocks the thread.
@@ -748,8 +750,8 @@ def classifyForever():
     while classifying_forever:
         try:
             start_time = datetime.now()
-            current_state = classifyPerformance()
-            printPerformanceState(current_state)
+            current_state = classify_performance()
+            print_performance_state(current_state)
             trim_touch_messages()
             trim_gesture_log()
             end_time = datetime.now()
@@ -761,7 +763,7 @@ def classifyForever():
             print("### Couldn't perform analysis - exception. ###")
             raise
 
-def stopClassifying():
+def stop_classifying():
     """
     Stops the classification process and also shuts down the server.
     """
@@ -771,7 +773,7 @@ def stopClassifying():
     clear_all_sources()
     close_server()
 
-def startLog():
+def start_log():
     """
     Start a new log with the filename set to the current time.
     Checks that we have a log directory and creates it if necessary.
@@ -809,16 +811,16 @@ def main():
     Runs the clasifyForever function until it receives Ctrl-C
     at which point the program exits.
     """
-    findReceiveAddress()
-    startOscServer()
+    find_receive_address()
+    start_osc_server()
     load_classifier()
-    startLog()
+    start_log()
 
     try:
-        classifyForever()
+        classify_forever()
     except KeyboardInterrupt:
         print("\nReceived Ctrl-C - Closing down.")
-        stopClassifying()
+        stop_classifying()
         print("Closed down. Bye!")
 
 if __name__ == "__main__":
