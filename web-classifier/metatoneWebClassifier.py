@@ -209,7 +209,7 @@ def main():
     """
     print("Loading Metatone Classifier.")
     metatoneClassifier.load_classifier()
-    metatoneClassifier.startLog()
+    metatoneClassifier.start_log()
     print("Metatone Classifier Ready.")
     logging.info("WebServer Logging started - " + metatoneClassifier.logging_filename)
     print ("Classifier WebServer Started - logging to: "
@@ -229,7 +229,7 @@ def main():
     metatoneClassifier.webserver_sendtoall_function = app.send_osc_to_all_clients
     metatoneClassifier.webserver_sendindividual_function = app.send_osc_to_individual_clients
 
-    classification_thread = threading.Thread(target=metatoneClassifier.classifyForever, name="Classification-Thread")
+    classification_thread = threading.Thread(target=metatoneClassifier.classify_forever, name="Classification-Thread")
 
     print("Starting Bonjour Service.")
     bonjour_service_register = pybonjour.DNSServiceRegister(
@@ -243,7 +243,7 @@ def main():
         tornado.ioloop.IOLoop.instance().start()
     except KeyboardInterrupt:
         print("\nReceived Ctrl-C - Closing down.")
-        metatoneClassifier.stopClassifying()
+        metatoneClassifier.stop_classifying()
         clear_metatone_apps()
         bonjour_service_register.close()
         print("Closed down. Bye!")
