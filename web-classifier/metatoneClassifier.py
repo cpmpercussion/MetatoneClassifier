@@ -70,6 +70,8 @@ VISUALISER_HOST = 'localhost'
 ##
 WEB_SERVER_MODE = False
 ##
+classifying_forever = False
+##
 
 ##
 DEVICE_NAMES = {
@@ -370,11 +372,6 @@ def record_latest_gestures(classes, global_gesture_log):
     classes.insert(0, current_time)
     global_gesture_log.append(classes)
 
-    ## Now trim the gesture list if necessary.
-    print("Length of global gesture log: " + str(len(global_gesture_log)))
-    if len(global_gesture_log) > 600:
-        global_gesture_log = global_gesture_log[1:]
-
 def trim_touch_messages():
     """
     Trims the global touch_messages list to the last five seconds of activity.
@@ -383,6 +380,18 @@ def trim_touch_messages():
     current_time = datetime.now()
     delta = timedelta(seconds=-5)
     touch_messages = [x for x in touch_messages if x[0] > current_time + delta]
+
+MAX_GESTURE_LENGTH = 600
+
+def trim_gesture_log():
+    """
+    Trims the global gesture list to the length defined in MAX_GESTURE_LENGTH. 
+    This runs after every classification step.
+    """
+    global classified_gestures
+    if len(classified_gestures) > MAX_GESTURE_LENGTH:
+        classified_gestures = classified_gestures[:MAX_GESTURE_LENGTH]
+
 
 ######################################
 #
@@ -686,29 +695,20 @@ def classifyPerformance():
     except:
         print ("Couldn't perform transition calculations.")
         state = False
-        raise
+        # raise # TODO - figure out why this fails sometimes.
 
     if state:
         # print(state)
         msg = OSC.OSCMessage("/metatone/classifier/ensemble/state")
         msg.extend([state[0], state[1], state[2]])
         send_message_to_sources(msg)
-    
-    # Print Flux Increase:
-    # if isinstance(flux_series, pd.TimeSeries):
-    try:
-        print("Latest 2 Flux Were:" + str(flux_series[-2:]))
-        print("Flux Difference was:" + str(flux_series[-2:].diff().dropna()))
-    except:
-        print("Not enough flux readings.")
-    # measure = flux_series[-2:].diff().dropna()
     newidea = transitions.is_new_idea(flux_series)
     if newidea:
         # print("New Idea Detected!")
         msg = OSC.OSCMessage("/metatone/classifier/ensemble/event/new_idea")
         msg.extend([name, "new_idea"])
         send_message_to_sources(msg)
-    return (classes, state, newidea)
+    return (classes, state, newidea, flux_series)
 
 def printPerformanceState(state_tuple):
     """
@@ -716,35 +716,46 @@ def printPerformanceState(state_tuple):
     this function prints it out nicely on the screen.
     """
     print("# # # # # # # # # # # #")
-    print("Performance State: " + str(datetime.now()))
+    print("Classification: " + str(datetime.now()))
     classes = state_tuple[0]
-    state = state_tuple[1]
-    newidea = state_tuple[2]
     if classes:
         print(pretty_print_classes(classes))
-    if state:
-        print(pretty_print_state(state))
+    # state = state_tuple[1]
+    # if state:
+    #     print(pretty_print_state(state))
+    # Print Flux Increase:
+    flux_series = state_tuple[3]
+    if isinstance(flux_series, pd.TimeSeries):
+        flux_series = flux_series.dropna()
+        if flux_series.count() > 0:
+            flux_latest = flux_series.tolist()[-1]
+            print("Latest flux reading: " + str(round(flux_latest, 3)))
+        if flux_series.count() > 1:
+            flux_diff = flux_series[-2:].diff().dropna().tolist()[0]
+            print("Flux difference was: " + str(round(flux_diff)))
+    newidea = state_tuple[2]
     if newidea:
-        print("New Idea detected.")
+        print("!! New Idea Detected !!")
     print("# # # # # # # # # # # #")
-
 
 def classifyForever():
     """
     Starts a classification process that repeats every second.
     This blocks the thread.
     """
-    global classifyingForever
-    classifyingForever = True
-    while classifyingForever:
+    global classifying_forever
+    classifying_forever = True
+    while classifying_forever:
         try:
             start_time = datetime.now()
             current_state = classifyPerformance()
             printPerformanceState(current_state)
             trim_touch_messages()
+            trim_gesture_log()
             end_time = datetime.now()
             delta_seconds = (end_time-start_time).total_seconds() # process as timedelta
-            print("### Classification took: " + str(delta_seconds) + "s. ###")
+            print("(Classification took: " + str(delta_seconds) + "s)")
+            print("Length of global gesture list: " + str(len(classified_gestures)) + "\n")
             time.sleep(max(0, 1-delta_seconds))
         except:
             print("### Couldn't perform analysis - exception. ###")
@@ -754,8 +765,8 @@ def stopClassifying():
     """
     Stops the classification process and also shuts down the server.
     """
-    global classifyingForever
-    classifyingForever = False
+    global classifying_forever
+    classifying_forever = False
     time.sleep(1)
     clear_all_sources()
     close_server()
@@ -768,8 +779,8 @@ def startLog():
     global logging_filename
     if not os.path.exists('logs'):
         os.makedirs('logs')
-    logging_filename = datetime.now().isoformat().replace(":","-")[:19] + "-MetatoneOSCLog.log"
-    logging.basicConfig(filename="logs/"+logging_filename,level=logging.DEBUG,format='%(message)s')
+    logging_filename = datetime.now().isoformat().replace(":", "-")[:19] + "-MetatoneOSCLog.log"
+    logging.basicConfig(filename="logs/" + logging_filename, level=logging.DEBUG, format='%(message)s')
     logging.info("Logging started - " + logging_filename)
     print("Classifier Server Started - logging to: " + logging_filename)
 
@@ -806,7 +817,7 @@ def main():
     try:
         classifyForever()
     except KeyboardInterrupt:
-        print("Received Ctrl-C - Closing down.")
+        print("\nReceived Ctrl-C - Closing down.")
         stopClassifying()
         print("Closed down. Bye!")
 

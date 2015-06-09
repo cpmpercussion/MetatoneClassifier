@@ -695,7 +695,7 @@ def classifyPerformance():
     except:
         print ("Couldn't perform transition calculations.")
         state = False
-        raise
+        # raise # TODO - figure out why this fails sometimes.
 
     if state:
         # print(state)
