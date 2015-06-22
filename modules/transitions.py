@@ -350,6 +350,8 @@ def is_new_idea_with_threshold(flux_series, threshold):
     if not isinstance(flux_series, pd.TimeSeries):
         return False
     measure = flux_series[-2:].diff().dropna()
+    # if (not measure.empty):
+    #     print("Flux Increase: " + str(measure[0])) # printing flux increase should be removed later.
     if (not measure.empty) and measure[0] > threshold:
         return True
     else:
