@@ -101,6 +101,8 @@ DEVICE_NAMES = {
 FEATURE_VECTOR_COLUMNS = ['centroid_x', 'centroid_y', 'std_x', 'std_y', 'freq', 'movement_freq', 'touchdown_freq', 'velocity']
 GESTURE_CLASS_NAMES = ['n', 'ft', 'st', 'fs', 'fsa', 'vss', 'bs', 'ss', 'c']
 
+SOURCES_TO_REMOVE = []
+
 ######################################
 #
 # OSC UDP Server Functions. (Not used in webserver mode)
@@ -122,8 +124,6 @@ def find_receive_address():
     Figures out the local IP address and port that the OSCServer should use and
     starts the Bonjour service.
     """
-    global name
-    global port
     global receive_address
     global bonjour_service_register
     searched_ips = ([ip for ip in socket.gethostbyname_ex(socket.gethostname())[2] if not ip.startswith("127.")][:1])
@@ -539,16 +539,32 @@ def add_active_app(name, app):
 # TODO sort out this function so that it is useful - it should only be run inside the classification thread.
 def remove_source(name):
     """
-    Removes a device from the osc_sources dictionary. 
-    Called after failing to contact the source.
+    Queues a touch-data source for removal from processing.
+    Called after a source closes it's connection.
+    The sources are removed by process_source_removal() which only
+    runs inside the classification thread.
+    """
+    global SOURCES_TO_REMOVE
+    SOURCES_TO_REMOVE.append(name) 
+
+def process_source_removal():
+    """ 
+    Removes the touch data sources in the global list.
+    Should only be run inside the classification thread. 
     """
     global osc_sources
     global active_names
-    # print("CLASSIFIER: Removing a source: " + name)
-    # print("Sources: "+ repr(osc_sources))
-    # print("Active Names: "+ repr(active_names))
-    # if name in osc_sources: del osc_sources[name]
-    # if name in active_names: active_names.remove(name) # can't do this until I fix gesture logging... needs to be dictionary not list. 
+    global SOURCES_TO_REMOVE
+    for name in SOURCES_TO_REMOVE:
+        print("CLASSIFIER: Removing a source: " + name)
+        print("Sources: "+ repr(osc_sources))
+        print("Active Names: "+ repr(active_names))
+        if name in osc_sources: 
+            del osc_sources[name]
+        if name in active_names: 
+            active_names.remove(name) # can't do this until I fix gesture logging... needs to be dictionary not list. 
+    SOURCES_TO_REMOVE = []
+
 
 def clear_all_sources():
     """
@@ -734,7 +750,7 @@ def print_performance_state(state_tuple):
             print("Latest flux reading: " + str(round(flux_latest, 3)))
         if flux_series.count() > 1:
             flux_diff = flux_series[-2:].diff().dropna().tolist()[0]
-            print("Flux difference was: " + str(round(flux_diff)))
+            print("Flux difference was: " + str(round(flux_diff, 3)))
     newidea = state_tuple[2]
     if newidea:
         print("!! New Idea Detected !!")
@@ -754,6 +770,7 @@ def classify_forever():
             print_performance_state(current_state)
             trim_touch_messages()
             trim_gesture_log()
+            # process_source_removal()
             end_time = datetime.now()
             delta_seconds = (end_time-start_time).total_seconds() # process as timedelta
             print("(Classification took: " + str(delta_seconds) + "s)")
