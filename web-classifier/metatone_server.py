@@ -1,11 +1,11 @@
 # pylint: disable=line-too-long
 """
-Metatone Classifier Main File - Runs the classifier using a web socket.
+Metatone Classifier Server - Runs the classifier using a web socket.
 Appropriate for local or remote server use.
 """
 from __future__ import print_function
 import logging
-import metatoneClassifier
+import metatone_classifier
 import threading
 import tornado.escape
 import tornado.ioloop
@@ -144,30 +144,30 @@ def process_metatone_message(handler, time, packet):
     """
     Function to decode an OSC formatted string and then process it
     according to its address. Sends processed messages directly
-    to the metatoneClassifier module's message handling functions.
+    to the metatone_classifier module's message handling functions.
     """
     message = OSC.decodeOSC(packet)
     try:
         if "/metatone/touch/ended" in message[0]:
-            metatoneClassifier.touch_ended_handler(message[0], message[1][1:], message[2:], FAKE_OSC_SOURCE)
+            metatone_classifier.touch_ended_handler(message[0], message[1][1:], message[2:], FAKE_OSC_SOURCE)
         elif "/metatone/touch" in message[0]:
             # def touch_handler(addr, tags, stuff, source):
-            metatoneClassifier.touch_handler(message[0], message[1][1:], message[2:], FAKE_OSC_SOURCE)
+            metatone_classifier.touch_handler(message[0], message[1][1:], message[2:], FAKE_OSC_SOURCE)
         elif "/metatone/switch" in message[0]:
-            metatoneClassifier.switch_handler(message[0], message[1][1:], message[2:], FAKE_OSC_SOURCE)
+            metatone_classifier.switch_handler(message[0], message[1][1:], message[2:], FAKE_OSC_SOURCE)
         elif "/metatone/online" in message[0]:
-            metatoneClassifier.onlineoffline_handler(message[0], message[1][1:], message[2:], FAKE_OSC_SOURCE)
+            metatone_classifier.onlineoffline_handler(message[0], message[1][1:], message[2:], FAKE_OSC_SOURCE)
             handler.send_osc("/metatone/classifier/hello", [])
             handler.deviceID = message[2]
             handler.app = message[3]
         elif "/metatone/offline" in message[0]:
-            metatoneClassifier.onlineoffline_handler(message[0], message[1][1:], message[2:], FAKE_OSC_SOURCE)
+            metatone_classifier.onlineoffline_handler(message[0], message[1][1:], message[2:], FAKE_OSC_SOURCE)
         elif "/metatone/acceleration" in message[0]:
-            metatoneClassifier.accel_handler(message[0], message[1][1:], message[2:], FAKE_OSC_SOURCE)
+            metatone_classifier.accel_handler(message[0], message[1][1:], message[2:], FAKE_OSC_SOURCE)
         elif "/metatone/app" in message[0]:
-            metatoneClassifier.metatone_app_handler(message[0], message[1][1:], message[2:], FAKE_OSC_SOURCE)
+            metatone_classifier.metatone_app_handler(message[0], message[1][1:], message[2:], FAKE_OSC_SOURCE)
         elif "/metatone/targetgesture" in message[0]:
-            metatoneClassifier.target_gesture_handler(message[0], message[1][1:], message[2:], FAKE_OSC_SOURCE)
+            metatone_classifier.target_gesture_handler(message[0], message[1][1:], message[2:], FAKE_OSC_SOURCE)
         else:
             print("Got an unknown message! Address was: " + message[0])
             print("Time was: " + str(time))
@@ -181,7 +181,7 @@ def remove_metatone_app(device_id):
     from its list of connected sources.
     """
     print("!!!! Removing App: " + repr(device_id))
-    metatoneClassifier.remove_source(device_id)
+    metatone_classifier.remove_source(device_id)
 
 def clear_metatone_apps():
     """
@@ -189,7 +189,7 @@ def clear_metatone_apps():
     from its list of sources.
     """
     print("Clearing all apps from Classifier")
-    metatoneClassifier.clear_all_sources()
+    metatone_classifier.clear_all_sources()
 
 def bonjour_callback(sdref, flags, error_code, name, regtype, domain):
     """
@@ -208,28 +208,28 @@ def main():
     Main function loads classifier and sets up bonjour service and web server.
     """
     print("Loading Metatone Classifier.")
-    metatoneClassifier.load_classifier()
-    metatoneClassifier.start_log()
+    metatone_classifier.load_classifier()
+    metatone_classifier.start_log()
     print("Metatone Classifier Ready.")
-    logging.info("WebServer Logging started - " + metatoneClassifier.logging_filename)
+    logging.info("WebServer Logging started - " + metatone_classifier.logging_filename)
     print ("Classifier WebServer Started - logging to: "
-           + metatoneClassifier.logging_filename)
+           + metatone_classifier.logging_filename)
 
     tornado.options.parse_command_line()
     app = MetatoneWebApplication()
     app.listen(options.port)
-    metatoneClassifier.name = options.name
-    metatoneClassifier.performance_type = options.type
+    metatone_classifier.name = options.name
+    metatone_classifier.performance_type = options.type
     logging.info("WebServer Performance type is: " + str(options.type)
                  + ": " + PERFORMANCE_TYPE_NAMES[options.type])
     print("WebServer Performance type is: " + str(options.type)
           + ": " + PERFORMANCE_TYPE_NAMES[options.type])
-    metatoneClassifier.performance_composition = random.randint(0, 100)
-    metatoneClassifier.WEB_SERVER_MODE = True
-    metatoneClassifier.webserver_sendtoall_function = app.send_osc_to_all_clients
-    metatoneClassifier.webserver_sendindividual_function = app.send_osc_to_individual_clients
+    metatone_classifier.performance_composition = random.randint(0, 100)
+    metatone_classifier.WEB_SERVER_MODE = True
+    metatone_classifier.webserver_sendtoall_function = app.send_osc_to_all_clients
+    metatone_classifier.webserver_sendindividual_function = app.send_osc_to_individual_clients
 
-    classification_thread = threading.Thread(target=metatoneClassifier.classify_forever, name="Classification-Thread")
+    classification_thread = threading.Thread(target=metatone_classifier.classify_forever, name="Classification-Thread")
 
     print("Starting Bonjour Service.")
     bonjour_service_register = pybonjour.DNSServiceRegister(
@@ -243,7 +243,7 @@ def main():
         tornado.ioloop.IOLoop.instance().start()
     except KeyboardInterrupt:
         print("\nReceived Ctrl-C - Closing down.")
-        metatoneClassifier.stop_classifying()
+        metatone_classifier.stop_classifying()
         clear_metatone_apps()
         bonjour_service_register.close()
         print("Closed down. Bye!")
