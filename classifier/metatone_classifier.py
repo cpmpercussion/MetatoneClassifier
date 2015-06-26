@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # pylint: disable=line-too-long
 """
-metatoneClassifier Module
+metatone_classifier Module
 
 Copyright 2014 Charles Martin
 
@@ -102,91 +102,6 @@ FEATURE_VECTOR_COLUMNS = ['centroid_x', 'centroid_y', 'std_x', 'std_y', 'freq', 
 GESTURE_CLASS_NAMES = ['n', 'ft', 'st', 'fs', 'fsa', 'vss', 'bs', 'ss', 'c']
 
 SOURCES_TO_REMOVE = []
-
-######################################
-#
-# OSC UDP Server Functions. (Not used in webserver mode)
-#
-######################################
-
-def bonjour_callback(service_reference, flags, error_code, name, reg_type, domain):
-    """
-    Callback function for bonjour service registration.
-    """
-    if error_code == pybonjour.kDNSServiceErr_NoError:
-        print('Registered service:')
-        print('  name    =', name)
-        print('  regtype =', reg_type)
-        print('  domain  =', domain)
-
-def find_receive_address():
-    """
-    Figures out the local IP address and port that the OSCServer should use and
-    starts the Bonjour service.
-    """
-    global receive_address
-    global bonjour_service_register
-    searched_ips = ([ip for ip in socket.gethostbyname_ex(socket.gethostname())[2] if not ip.startswith("127.")][:1])
-    #ip = ([ip for ip in socket.gethostbyname_ex(socket.gethostname())[2] if not ip.startswith("127.")][1:])
-    # ip = socket.getaddrinfo(socket.gethostname(),9000)[:1][0][4]
-    name = SERVER_NAME
-    port = SERVER_PORT
-    #receive_address = "10.0.1.2"
-    try:
-        receive_address = (searched_ips[0], port)
-    except IndexError:
-        if WEB_SERVER_MODE:
-            print("Could not find IP address automatically. Using CLOUD_SERVER_IP in WEB_SERVER_MODE.")
-            receive_address = (CLOUD_SERVER_IP, SERVER_PORT)
-        else:
-            print("Could not find IP address automatically. Using localhost instead.")
-            receive_address = ("localhost", port)
-    print("Server Address: " + str(receive_address))
-    print("Starting Bonjour Service.")
-    bonjour_service_register = pybonjour.DNSServiceRegister(name=name,
-                                                            regtype="_osclogger._udp.",
-                                                            port=port,
-                                                            callBack=bonjour_callback)
-
-def start_osc_server():
-    """
-    Starts the OSCServer serving on a new thread and adds message handlers.
-    """
-    global server
-    global server_thread
-    print("Starting OSCServer.")
-    # OSC Server. there are three different types of server. 
-    server = OSC.OSCServer(receive_address) # basic
-    server_thread = threading.Thread(target=server.serve_forever, name="OSC-Server-Thread")
-    server_thread.start()
-    # Add all the handlers.
-    server.addMsgHandler("/metatone/touch", touch_handler)
-    server.addMsgHandler("/metatone/touch/ended", touch_ended_handler)
-    server.addMsgHandler("/metatone/switch", switch_handler)
-    server.addMsgHandler("/metatone/online", onlineoffline_handler)
-    server.addMsgHandler("/metatone/offline", onlineoffline_handler)
-    server.addMsgHandler("/metatone/acceleration", accel_handler)
-    server.addMsgHandler("/metatone/app", metatone_app_handler)
-    server.addMsgHandler("/metatone/targetgesture", target_gesture_handler)
-
-def close_server():
-    """
-    Closes the OSCServer, server thread and Bonjour service reference.
-    """
-    global server
-    global server_thread
-    global bonjour_service_register
-    print("\nClosing OSC Server systems...")
-    if 'bonjour_service_register' in globals() or 'bonjour_service_register' in locals():
-        print("Closing Bonjour Service.")
-        bonjour_service_register.close()
-    if 'server' in globals() or 'server' in locals():
-        print("Closing Server.")
-        server.close()
-    if 'server_thread' in globals() or 'server_thread' in locals():
-        print("Closing Server Thread.")
-        server_thread.join(1)
-    print("Finished closing.")
 
 def ensure_dir(file_name):
     """
@@ -307,12 +222,6 @@ def make_gesture_frame(gesture_log):
     gesture_columns.extend(active_names)
     gesture_frame = pd.DataFrame(gesture_log, columns=gesture_columns).set_index('time')
     return gesture_frame
-
-######################################
-#
-# Pretty-Printing Functions for terminal output.
-#
-######################################
 
 def pretty_print_classes(classes):
     """
@@ -805,7 +714,7 @@ def start_log():
 
 ######################################
 #
-# Main Function for running as a terminal application.
+# Functions for running as a terminal application.
 #
 ######################################
 
@@ -821,6 +730,92 @@ webserver_sendtoall_function = dummy_websocket_sender
 webserver_sendindividual_function = dummy_websocket_sender
 performance_type = PERFORMANCE_TYPE_LOCAL
 performance_composition = random.randint(0,100)
+
+
+######################################
+#
+# OSC UDP Server Functions. (Not used in webserver mode)
+#
+######################################
+
+def bonjour_callback(service_reference, flags, error_code, name, reg_type, domain):
+    """
+    Callback function for bonjour service registration.
+    """
+    if error_code == pybonjour.kDNSServiceErr_NoError:
+        print('Registered service:')
+        print('  name    =', name)
+        print('  regtype =', reg_type)
+        print('  domain  =', domain)
+
+def find_receive_address():
+    """
+    Figures out the local IP address and port that the OSCServer should use and
+    starts the Bonjour service.
+    """
+    global receive_address
+    global bonjour_service_register
+    searched_ips = ([ip for ip in socket.gethostbyname_ex(socket.gethostname())[2] if not ip.startswith("127.")][:1])
+    #ip = ([ip for ip in socket.gethostbyname_ex(socket.gethostname())[2] if not ip.startswith("127.")][1:])
+    # ip = socket.getaddrinfo(socket.gethostname(),9000)[:1][0][4]
+    name = SERVER_NAME
+    port = SERVER_PORT
+    #receive_address = "10.0.1.2"
+    try:
+        receive_address = (searched_ips[0], port)
+    except IndexError:
+        if WEB_SERVER_MODE:
+            print("Could not find IP address automatically. Using CLOUD_SERVER_IP in WEB_SERVER_MODE.")
+            receive_address = (CLOUD_SERVER_IP, SERVER_PORT)
+        else:
+            print("Could not find IP address automatically. Using localhost instead.")
+            receive_address = ("localhost", port)
+    print("Server Address: " + str(receive_address))
+    print("Starting Bonjour Service.")
+    bonjour_service_register = pybonjour.DNSServiceRegister(name=name,
+                                                            regtype="_osclogger._udp.",
+                                                            port=port,
+                                                            callBack=bonjour_callback)
+
+def start_osc_server():
+    """
+    Starts the OSCServer serving on a new thread and adds message handlers.
+    """
+    global server
+    global server_thread
+    print("Starting OSCServer.")
+    # OSC Server. there are three different types of server. 
+    server = OSC.OSCServer(receive_address) # basic
+    server_thread = threading.Thread(target=server.serve_forever, name="OSC-Server-Thread")
+    server_thread.start()
+    # Add all the handlers.
+    server.addMsgHandler("/metatone/touch", touch_handler)
+    server.addMsgHandler("/metatone/touch/ended", touch_ended_handler)
+    server.addMsgHandler("/metatone/switch", switch_handler)
+    server.addMsgHandler("/metatone/online", onlineoffline_handler)
+    server.addMsgHandler("/metatone/offline", onlineoffline_handler)
+    server.addMsgHandler("/metatone/acceleration", accel_handler)
+    server.addMsgHandler("/metatone/app", metatone_app_handler)
+    server.addMsgHandler("/metatone/targetgesture", target_gesture_handler)
+
+def close_server():
+    """
+    Closes the OSCServer, server thread and Bonjour service reference.
+    """
+    global server
+    global server_thread
+    global bonjour_service_register
+    print("\nClosing OSC Server systems...")
+    if 'bonjour_service_register' in globals() or 'bonjour_service_register' in locals():
+        print("Closing Bonjour Service.")
+        bonjour_service_register.close()
+    if 'server' in globals() or 'server' in locals():
+        print("Closing Server.")
+        server.close()
+    if 'server_thread' in globals() or 'server_thread' in locals():
+        print("Closing Server Thread.")
+        server_thread.join(1)
+    print("Finished closing.")
 
 def main():
     """
