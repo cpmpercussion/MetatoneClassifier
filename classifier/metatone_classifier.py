@@ -265,9 +265,11 @@ class MetatoneClassifier:
         self.receive_address = ("localhost", SERVER_PORT)
         self.webserver_sendtoall_function = dummy_websocket_sender
         self.webserver_sendindividual_function = dummy_websocket_sender
+        self.name = SERVER_NAME
         self.performance_type = PERFORMANCE_TYPE_LOCAL
         self.performance_composition = random.randint(0, 100)
         self.visualiser_mode = VISUALISER_MODE_ON
+        self.logging_filename = ""
 
     #@profile
     def classify_touch_messages(self, messages):
@@ -325,10 +327,10 @@ class MetatoneClassifier:
         """
         if not os.path.exists('logs'):
             os.makedirs('logs')
-        logging_filename = datetime.now().isoformat().replace(":", "-")[:19] + "-MetatoneOSCLog.log"
-        logging.basicConfig(filename="logs/" + logging_filename, level=logging.DEBUG, format='%(message)s')
-        logging.info("Logging started - " + logging_filename)
-        print("Classifier Server Started - logging to: " + logging_filename)
+        self.logging_filename = datetime.now().isoformat().replace(":", "-")[:19] + "-MetatoneOSCLog.log"
+        logging.basicConfig(filename="logs/" + self.logging_filename, level=logging.DEBUG, format='%(message)s')
+        logging.info("Logging started - " + self.logging_filename)
+        print("Classifier Server Started - logging to: " + self.logging_filename)
 
     def log_messages(self, message):
         """
