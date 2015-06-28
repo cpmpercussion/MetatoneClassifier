@@ -58,15 +58,10 @@ EXPERIMENT_TYPE_SERVER = 5
 PERFORMANCE_TYPE = 4 #this can be 0-5
 PERFORMANCE_COMPOSITION = 4 #this can be any random int.
 PERFORMANCE_EVENT_NAME = "MetatonePerformanceStart"
-##
-
-##
 VISUALISER_MODE_ON = True
 VISUALISER_PORT = 61200
 VISUALISER_HOST = 'localhost'
-##
 MAX_GESTURE_LENGTH = 300 # Corresponds to five minutes of performance time.
-##
 DEVICE_NAMES = {
     # '2678456D-9AE7-4DCC-A561-688A4766C325':'charles', # old
     # '95585C5C-C1C1-4612-9836-BFC68B0DC36F':'charles',
@@ -86,7 +81,6 @@ DEVICE_NAMES = {
     # '6EAD764A-E424-48EB-9672-03EF44679A5E':'iPad2-64-white',
     # '670EC230-5C3E-4759-B70F-5FDBCE14189B':'charles-iphone5'
 }
-##
 # Column names for feature vectors.
 FEATURE_VECTOR_COLUMNS = ['centroid_x', 'centroid_y', 'std_x', 'std_y', 'freq', 'movement_freq', 'touchdown_freq', 'velocity']
 GESTURE_CLASS_NAMES = ['n', 'ft', 'st', 'fs', 'fsa', 'vss', 'bs', 'ss', 'c']
@@ -248,7 +242,9 @@ def print_performance_state(state_tuple):
 ###########################
 
 class MetatoneClassifier:
-    """ A classifier that mediates Metatone touch-screen performances. """
+    """ 
+    A classifier that mediates Metatone touch-screen performances. 
+    """
 
     def __init__(self):
         """ Initialise the MetatoneClassifier """
@@ -376,7 +372,6 @@ class MetatoneClassifier:
         """
         if len(self.classified_gestures) > MAX_GESTURE_LENGTH:
             self.classified_gestures = self.classified_gestures[-MAX_GESTURE_LENGTH:]
-
 
     ######################################
     #

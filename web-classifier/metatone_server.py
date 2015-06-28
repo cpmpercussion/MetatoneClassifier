@@ -44,10 +44,10 @@ class MetatoneWebApplication(tornado.web.Application):
     """
     Main Web Application Class.
     """
-    connections = set()
-    clients = dict()
-
-    def __init__(self):
+    def __init__(self, classifier_object):
+        self.classifier = classifier_object
+        self.connections = set()
+        self.clients = dict()
         handlers = [
             (r"/", MetatoneWebsiteHandler),
             (r"/classifier", MetatoneAppConnectionHandler),
@@ -88,6 +88,59 @@ class MetatoneWebApplication(tornado.web.Application):
                 except:
                     print("Exception sending individual message to: " + connection.deviceID)
 
+    def process_metatone_message(self, handler, time, packet):
+        """
+        Function to decode an OSC formatted string and then process it
+        according to its address. Sends processed messages directly
+        to the metatone_classifier module's message handling functions.
+        """
+        message = OSC.decodeOSC(packet)
+        try:
+            if "/metatone/touch/ended" in message[0]:
+                self.classifier.handle_client_message(message[0], message[1][1:], message[2:], FAKE_OSC_SOURCE)
+            elif "/metatone/touch" in message[0]:
+                # def touch_handler(addr, tags, stuff, source):
+                self.classifier.handle_client_message(message[0], message[1][1:], message[2:], FAKE_OSC_SOURCE)
+            elif "/metatone/switch" in message[0]:
+                self.classifier.handle_client_message(message[0], message[1][1:], message[2:], FAKE_OSC_SOURCE)
+            elif "/metatone/online" in message[0]:
+                self.classifier.handle_client_message(message[0], message[1][1:], message[2:], FAKE_OSC_SOURCE)
+                handler.send_osc("/metatone/classifier/hello", [])
+                handler.deviceID = message[2]
+                handler.app = message[3]
+            elif "/metatone/offline" in message[0]:
+                self.classifier.handle_client_message(message[0], message[1][1:], message[2:], FAKE_OSC_SOURCE)
+            elif "/metatone/acceleration" in message[0]:
+                self.classifier.handle_client_message(message[0], message[1][1:], message[2:], FAKE_OSC_SOURCE)
+            elif "/metatone/app" in message[0]:
+                self.classifier.handle_client_message(message[0], message[1][1:], message[2:], FAKE_OSC_SOURCE)
+            elif "/metatone/targetgesture" in message[0]:
+                self.classifier.handle_client_message(message[0], message[1][1:], message[2:], FAKE_OSC_SOURCE)
+            else:
+                print("Got an unknown message! Address was: " + message[0])
+                print("Time was: " + str(time))
+                print(u'Raw Message Data: {}'.format(packet))
+        except():
+            print("Message did not decode to a non-empty list.")
+
+    def remove_metatone_app(self, device_id):
+        """
+        Instructs the Classifier to remove an app with a particular deviceID
+        from its list of connected sources.
+        """
+        print("!!!! Removing App: " + repr(device_id))
+        self.classifier.remove_source(device_id)
+
+    def clear_metatone_apps(self):
+        """
+        Instructs the Classifier to remove ALL connected apps
+        from its list of sources.
+        """
+        print("Clearing all apps from Classifier")
+        self.classifier.clear_all_sources()
+
+
+
 class MetatoneWebsiteHandler(tornado.web.RequestHandler):
     """
     Handler class for web requests.
@@ -114,11 +167,11 @@ class MetatoneAppConnectionHandler(tornado.websocket.WebSocketHandler):
 
     def on_message(self, message):
         time = datetime.now()
-        process_metatone_message(self, time, message)
+        self.application.process_metatone_message(self, time, message)
 
     def on_close(self):
         print("!!!! SERVER: Client closed WebSocket: " + self.deviceID)
-        remove_metatone_app(self.deviceID)
+        self.application.remove_metatone_app(self.deviceID)
         logging.info(datetime.now().isoformat() + " Connection Closed, " + self.deviceID)
         self.application.connections.remove(self)
         print("!!!! Removal done.")
@@ -137,57 +190,6 @@ class MetatoneAppConnectionHandler(tornado.websocket.WebSocketHandler):
 
 ##############################################
 ## Top level functions... should get some of these into the Application class.
-
-def process_metatone_message(handler, time, packet):
-    """
-    Function to decode an OSC formatted string and then process it
-    according to its address. Sends processed messages directly
-    to the metatone_classifier module's message handling functions.
-    """
-    message = OSC.decodeOSC(packet)
-    try:
-        if "/metatone/touch/ended" in message[0]:
-            classifier.handle_client_message(message[0], message[1][1:], message[2:], FAKE_OSC_SOURCE)
-        elif "/metatone/touch" in message[0]:
-            # def touch_handler(addr, tags, stuff, source):
-            classifier.handle_client_message(message[0], message[1][1:], message[2:], FAKE_OSC_SOURCE)
-        elif "/metatone/switch" in message[0]:
-            classifier.handle_client_message(message[0], message[1][1:], message[2:], FAKE_OSC_SOURCE)
-        elif "/metatone/online" in message[0]:
-            classifier.handle_client_message(message[0], message[1][1:], message[2:], FAKE_OSC_SOURCE)
-            handler.send_osc("/metatone/classifier/hello", [])
-            handler.deviceID = message[2]
-            handler.app = message[3]
-        elif "/metatone/offline" in message[0]:
-            classifier.handle_client_message(message[0], message[1][1:], message[2:], FAKE_OSC_SOURCE)
-        elif "/metatone/acceleration" in message[0]:
-            classifier.handle_client_message(message[0], message[1][1:], message[2:], FAKE_OSC_SOURCE)
-        elif "/metatone/app" in message[0]:
-            classifier.handle_client_message(message[0], message[1][1:], message[2:], FAKE_OSC_SOURCE)
-        elif "/metatone/targetgesture" in message[0]:
-            classifier.handle_client_message(message[0], message[1][1:], message[2:], FAKE_OSC_SOURCE)
-        else:
-            print("Got an unknown message! Address was: " + message[0])
-            print("Time was: " + str(time))
-            print(u'Raw Message Data: {}'.format(packet))
-    except():
-        print("Message did not decode to a non-empty list.")
-
-def remove_metatone_app(device_id):
-    """
-    Instructs the Classifier to remove an app with a particular deviceID
-    from its list of connected sources.
-    """
-    print("!!!! Removing App: " + repr(device_id))
-    classifier.remove_source(device_id)
-
-def clear_metatone_apps():
-    """
-    Instructs the Classifier to remove ALL connected apps
-    from its list of sources.
-    """
-    print("Clearing all apps from Classifier")
-    classifier.clear_all_sources()
 
 def bonjour_callback(sdref, flags, error_code, name, regtype, domain):
     """
@@ -214,7 +216,7 @@ def main():
            + classifier.logging_filename)
 
     tornado.options.parse_command_line()
-    app = MetatoneWebApplication()
+    app = MetatoneWebApplication(classifier)
     app.listen(options.port)
     classifier.name = options.name
     classifier.performance_type = options.type
@@ -242,7 +244,7 @@ def main():
     except KeyboardInterrupt:
         print("\nReceived Ctrl-C - Closing down.")
         classifier.stop_classifying()
-        clear_metatone_apps()
+        app.clear_metatone_apps()
         bonjour_service_register.close()
         print("Closed down. Bye!")
 
