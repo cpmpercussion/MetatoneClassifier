@@ -13,25 +13,18 @@ from datetime import timedelta
 from datetime import datetime
 import random
 
-
-
 ##
 ## Settings up to July 2014 - as used in the 17/3 concert
 ## and CHI2014 demos etc.
 ##
 NEW_IDEA_THRESHOLD = 0.3
 TRANSITIONS_WINDOW = '15s'
-
 ## Old values for the NEW_IDEA_THRESHOLD.
 #new_idea_difference_threshold = 0.15
 # new_idea_difference_threshold = 0.80 # 1-norm version (experimental)
 #new_idea_difference_threshold = 0.5 # 1-norm version (experimental)
 # new_idea_difference_threshold = 0.3 # new 14/3/2014
 #new_idea_difference_threshold =  0.3# new 6/7/2014
-
-##
-## Experimental Settings post July 2014...
-##
 
 ## Int values for Gesture codes.
 NUMBER_GESTURES = 9
