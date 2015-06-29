@@ -33,8 +33,6 @@ EXPERIMENT_TYPE_SERVER = 5
 PERFORMANCE_TYPE_NAMES = [
     "Performance-Local", "Performance-Remote", "Experiment-Both",
     "Experiment-None", "Experiment-Button", "Experiment-Server"]
-##
-
 METACLASSIFIER_SERVICE_TYPE = "_metatoneclassifier._tcp."
 FAKE_OSC_IP_ADDRESS = '127.0.0.1'
 FAKE_OSC_PORT = 9999
@@ -99,7 +97,6 @@ class MetatoneWebApplication(tornado.web.Application):
             if "/metatone/touch/ended" in message[0]:
                 self.classifier.handle_client_message(message[0], message[1][1:], message[2:], FAKE_OSC_SOURCE)
             elif "/metatone/touch" in message[0]:
-                # def touch_handler(addr, tags, stuff, source):
                 self.classifier.handle_client_message(message[0], message[1][1:], message[2:], FAKE_OSC_SOURCE)
             elif "/metatone/switch" in message[0]:
                 self.classifier.handle_client_message(message[0], message[1][1:], message[2:], FAKE_OSC_SOURCE)

@@ -2,6 +2,7 @@
 """
 Metatone Classifier OSC Server - Runs the classifier using a UDP Socket.
 Only useful for local performances and is a bit dodgy in terms of reliability.
+This really only works if your system only has one IP address.
 """
 from __future__ import print_function
 import socket
@@ -62,8 +63,6 @@ class MetatoneOSCServer():
         starts the Bonjour service.
         """
         searched_ips = ([ip for ip in socket.gethostbyname_ex(socket.gethostname())[2] if not ip.startswith("127.")][:1])
-        #ip = ([ip for ip in socket.gethostbyname_ex(socket.gethostname())[2] if not ip.startswith("127.")][1:])
-        # ip = socket.getaddrinfo(socket.gethostname(),9000)[:1][0][4]
         try:
             self.receive_address = (searched_ips[0], self.server_port)
         except IndexError:
