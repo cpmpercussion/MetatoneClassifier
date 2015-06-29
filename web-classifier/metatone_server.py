@@ -31,7 +31,7 @@ EXPERIMENT_TYPE_NONE = 3
 EXPERIMENT_TYPE_BUTTON = 4
 EXPERIMENT_TYPE_SERVER = 5
 PERFORMANCE_TYPE_NAMES = [
-    "Performane-Local", "Performance-Remote", "Experiment-Both",
+    "Performance-Local", "Performance-Remote", "Experiment-Both",
     "Experiment-None", "Experiment-Button", "Experiment-Server"]
 ##
 
