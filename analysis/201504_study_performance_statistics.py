@@ -1,11 +1,13 @@
 #! /usr/bin/env python
 # pylint: disable=line-too-long
 """
-Should calculate a lot of stats about all the performances in the data folder.
+Should calculate a lot of stats about all the performances in the data folder. Also prints each gesture-score.
 """
 from __future__ import print_function
 import os
 import pandas as pd
+import PlotMetatonePerformanceAndTransitions
+import time
 
 EVENTS_PATH = '-events.csv'
 GESTURES_PATH = '-gestures.csv'
@@ -28,6 +30,7 @@ class MetatonePerformanceLog:
     def __init__(self, log_path):
         print("Loading logs for " + log_path)
         performance_path = log_path.replace(".log", "")
+        self.performance_title = performance_path[-34:]
         self.touches = pd.read_csv(performance_path + TOUCHES_PATH, index_col='time', parse_dates=True)
         self.events = pd.read_csv(performance_path + EVENTS_PATH, index_col='time', parse_dates=True)
         self.gestures = pd.read_csv(performance_path + GESTURES_PATH, index_col='time', parse_dates=True)
@@ -67,6 +70,15 @@ class MetatonePerformanceLog:
             # print("Performer: " + performer_id + " Length was: " + str(performer_length))
         return {self.touches[:1].index[0]:performance_lengths}
 
+    def print_gesture_score(self):
+        """
+        Prints a gesture-score using the script procedure
+        """
+        performance_time = time.strptime(self.performance_title[:19],'%Y-%m-%dT%H-%M-%S')
+        plot_title = "gesture-score-" + time.strftime('%y-%m-%d-%H-%M',performance_time)
+        PlotMetatonePerformanceAndTransitions.plot_gesture_score(plot_title,self.events,self.gestures,self.metatone,self.online,self.touches,self.transitions)
+
+
 def main():
     """Load up all the performances and do some stats"""
     log_files = []
@@ -81,6 +93,7 @@ def main():
     performer_length_dict = {}
     for perf in performances:
         performer_length_dict.update(perf.performer_lengths())
+        perf.print_gesture_score() ## Prints out a gesture-score pdf for reference.
     performance_length_frame = pd.DataFrame.from_dict(performer_length_dict, orient="index")
     performance_length_frame['time'] = performance_length_frame.index
     performers = performances[0].performers().tolist()
