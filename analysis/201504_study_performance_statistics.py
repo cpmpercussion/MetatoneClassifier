@@ -62,7 +62,7 @@ class MetatonePerformanceLog:
         performer_last_touches = {}
         performance_lengths = {}
         for performer_id in performers:
-            performer_touches = self.touches.ix[self.touches['device_id']==performer_id]
+            performer_touches = self.touches.ix[self.touches['device_id'] == performer_id]
             performer_first_touches[performer_id] = performer_touches[:1].index[0].to_datetime()
             performer_last_touches[performer_id] = performer_touches[-1:].index[0].to_datetime()
             performer_length = (performer_touches[-1:].index[0].to_datetime() - first_touch).total_seconds()
@@ -74,10 +74,9 @@ class MetatonePerformanceLog:
         """
         Prints a gesture-score using the script procedure
         """
-        performance_time = time.strptime(self.performance_title[:19],'%Y-%m-%dT%H-%M-%S')
-        plot_title = "gesture-score-" + time.strftime('%y-%m-%d-%H-%M',performance_time)
-        PlotMetatonePerformanceAndTransitions.plot_gesture_score(plot_title,self.events,self.gestures,self.metatone,self.online,self.touches,self.transitions)
-
+        performance_time = time.strptime(self.performance_title[:19], '%Y-%m-%dT%H-%M-%S')
+        plot_title = "gesture-score-" + time.strftime('%y-%m-%d-%H-%M', performance_time)
+        PlotMetatonePerformanceAndTransitions.plot_gesture_score(plot_title, self.events, self.gestures, self.metatone, self.online, self.touches, self.transitions)
 
 def main():
     """Load up all the performances and do some stats"""
@@ -93,13 +92,22 @@ def main():
     performer_length_dict = {}
     for perf in performances:
         performer_length_dict.update(perf.performer_lengths())
-        perf.print_gesture_score() ## Prints out a gesture-score pdf for reference.
     performance_length_frame = pd.DataFrame.from_dict(performer_length_dict, orient="index")
     performance_length_frame['time'] = performance_length_frame.index
     performers = performances[0].performers().tolist()
     long_performance_lengths = pd.melt(performance_length_frame, id_vars=['time'], value_vars=performers)
     long_performance_lengths = long_performance_lengths.replace({'variable':DEVICE_SEATS})
     long_performance_lengths.to_csv("performance_lengths.csv")
+    print("Creating Gesture Scores.")
+    for perf in performances:
+        perf.print_gesture_score() ## Prints out a gesture-score pdf for reference.
+
+    #TODO - count up events
+    #TODO - calculate whole performance transition matrix
+    #TODO - calculate transition matrix for individual performers.
+    #TODO - run flux calculation for whole group and individual performers
+    #TODO - run entropy calculation for whole group and individual performers
+
     #TODO - get the performance condition into the data frame
     #TODO - associate the seats with performers.
 
