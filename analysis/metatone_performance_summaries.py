@@ -18,6 +18,7 @@ ONLINE_PATH = '-online.csv'
 TOUCHES_PATH = '-touches.csv'
 TRANSITIONS_PATH = '-transitions.csv'
 
+# 2015-04 study device_id seats.
 DEVICE_SEATS = {
     "BD49B35A-8999-4987-9759-8D3F28D1292B":1,
     "9A5116EA-2793-4C75-AC93-524C9EF550FD":2,
@@ -41,8 +42,7 @@ class MetatonePerformanceLog:
         self.transitions = pd.read_csv(performance_path + TRANSITIONS_PATH, index_col='time', parse_dates=True)
         self.metatone = pd.read_csv(performance_path + METATONE_PATH, index_col='time', parse_dates=True)
         self.online = pd.read_csv(performance_path + ONLINE_PATH, index_col='time', parse_dates=True)
-        # These next two lines still use reduced gestures...
-        self.ensemble_transition_matrix = transitions.calculate_group_transition_matrix(self.gestures.dropna())
+        self.ensemble_transition_matrix = transitions.calculate_full_group_transition_matrix(self.gestures)
         self.ensemble_transition_matrix = transitions.transition_matrix_to_stochastic_matrix(self.ensemble_transition_matrix)
 
     def count_new_idea_interface_changes(self):
@@ -64,6 +64,9 @@ class MetatonePerformanceLog:
         return screen_changed[screen_changed == True].count()
 
     def count_button_interface_changes(self):
+        """
+        Returns the number of interface changes due to UI button presses in the performance.
+        """
         return self.metatone[self.metatone["label"] == "CompositionStep"]["label"].count()
 
     def button_interface_changes_by_performer(self):
@@ -76,9 +79,15 @@ class MetatonePerformanceLog:
         return {self.touches[:1].index[0]:performer_changes}
  
     def ensemble_flux(self):
+        """
+        Returns the flux of the whole ensemble transition matrix.
+        """
         return transitions.flux_measure(self.ensemble_transition_matrix)
 
     def ensemble_entropy(self):
+        """
+        Returns the entropy of the whole ensemble transition matrix.
+        """
         return transitions.entropy_measure(self.ensemble_transition_matrix)
 
     def performers(self):

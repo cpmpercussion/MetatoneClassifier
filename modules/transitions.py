@@ -67,7 +67,68 @@ GESTURE_GROUPS = {
 
 #####################
 #
-# Creating Transition Matrices
+# Full Transition Matrix Calculations.
+#
+#####################
+
+def full_one_step_transition(e1, e2):
+    """
+    Calculates a full transition matrix between two states.
+    """
+    #print("Transition: " + str(e1) + " -> " + str(e2))
+    matrix = full_empty_transition_matrix()
+    matrix[e2][e1] += 1 
+    return matrix
+
+def full_empty_transition_matrix():
+    """
+    Returns a full empty transition matrix.
+    """
+    return np.zeros([NUMBER_GESTURES,NUMBER_GESTURES]) # Full gesture matrix
+
+
+def full_create_transition_dataframe(states):
+    """
+    Given a the gesture states of a single player, 
+    calculates a dataframe of full one-step transition matrices.
+    """
+    dictionary_output = {}
+    for col in states:
+        matrices = [full_empty_transition_matrix()]
+        prev = -1
+        for index_loc in states[col].index:
+            curr = index_loc
+            if prev != -1:
+                from_state = states.at[prev, col]
+                to_state = states.at[curr, col]
+                matrix = full_one_step_transition(from_state, to_state)
+                matrices.append(matrix)
+            prev = index_loc
+            dictionary_output[col] = matrices
+    return pd.DataFrame(index=states.index, data=dictionary_output)
+
+def calculate_full_group_transition_matrix(states_frame):
+    """
+    Returns the group's transition matrix for a whole performance.
+    """
+    if not isinstance(states_frame, pd.DataFrame) or states_frame.empty:
+        return None
+    transitions = full_create_transition_dataframe(states_frame.dropna()).dropna()
+    if transitions.empty:
+        return None
+    cols = [transitions[n] for n in transitions.columns]
+    for c in range(len(cols)):
+        if c == 0:
+            group_transitions = cols[c]
+        else:
+            group_transitions = group_transitions + cols[c]
+    group_transitions = group_transitions.dropna()
+    group_matrix = transition_sum(group_transitions)
+    return group_matrix
+
+#####################
+#
+# Creating Reduced Transition Matrices
 #
 #####################
 
