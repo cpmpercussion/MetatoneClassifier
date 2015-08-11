@@ -8,6 +8,7 @@ import os
 import pandas as pd
 import PlotMetatonePerformanceAndTransitions
 import time
+import datetime
 
 EVENTS_PATH = '-events.csv'
 GESTURES_PATH = '-gestures.csv'
@@ -33,10 +34,36 @@ class MetatonePerformanceLog:
         self.performance_title = performance_path[-34:]
         self.touches = pd.read_csv(performance_path + TOUCHES_PATH, index_col='time', parse_dates=True)
         self.events = pd.read_csv(performance_path + EVENTS_PATH, index_col='time', parse_dates=True)
+        self.raw_new_ideas = self.events[self.events["event_type"] == "new_idea"]["event_type"].count()
+        self.screen_change_new_ideas = self.count_new_idea_interface_changes()
         self.gestures = pd.read_csv(performance_path + GESTURES_PATH, index_col='time', parse_dates=True)
         self.transitions = pd.read_csv(performance_path + TRANSITIONS_PATH, index_col='time', parse_dates=True)
         self.metatone = pd.read_csv(performance_path + METATONE_PATH, index_col='time', parse_dates=True)
         self.online = pd.read_csv(performance_path + ONLINE_PATH, index_col='time', parse_dates=True)
+        self.ensemble_transition_matrix = []
+
+    def count_new_idea_interface_changes(self):
+        NEW_IDEA_DELAY = 10
+        screen_changed_column = {}
+        last_time = datetime.datetime(1, 1, 1, 0, 0, 0, 0)
+        for index, row in perf.events[self.events["event_type"] == "new_idea"].iterrows():
+            if (index.to_datetime() - last_time).total_seconds() > NEW_IDEA_DELAY:
+                screen_changed_column[index] = True
+                last_time = index
+            else: 
+                screen_changed_column[index] = False
+        screen_changed = pd.TimeSeries(screen_changed_column)
+        self.events["screen_changed"] = screen_changed
+        return screen_changed[screen_changed == True].count()
+
+    def count_button_interface_changes(self):
+        return 0
+
+    def ensemble_flux(self):
+        return 0
+
+    def ensemble_entropy(self):
+        return 0
 
     def performers(self):
         """
@@ -101,15 +128,6 @@ def main():
     print("Creating Gesture Scores.")
     for perf in performances:
         perf.print_gesture_score() ## Prints out a gesture-score pdf for reference.
-
-    #TODO - count up events
-    #TODO - calculate whole performance transition matrix
-    #TODO - calculate transition matrix for individual performers.
-    #TODO - run flux calculation for whole group and individual performers
-    #TODO - run entropy calculation for whole group and individual performers
-
-    #TODO - get the performance condition into the data frame
-    #TODO - associate the seats with performers.
 
 if __name__ == '__main__':
     main()
