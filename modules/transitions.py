@@ -75,6 +75,7 @@ def one_step_transition(e1, e2):
     """
     Calculates a transition matrix between two states.
     """
+    #print("Transition: " + str(e1) + " -> " + str(e2))
     matrix = np.zeros([NUMBER_GROUPS, NUMBER_GROUPS]) # Reduced Gesture Groups.
     # Reduced Gesture Groups.
     matrix[GESTURE_GROUPS[e2]][GESTURE_GROUPS[e1]] += 1 

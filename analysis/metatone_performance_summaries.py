@@ -9,6 +9,7 @@ import pandas as pd
 import PlotMetatonePerformanceAndTransitions
 import time
 import datetime
+import transitions
 
 EVENTS_PATH = '-events.csv'
 GESTURES_PATH = '-gestures.csv'
@@ -40,13 +41,19 @@ class MetatonePerformanceLog:
         self.transitions = pd.read_csv(performance_path + TRANSITIONS_PATH, index_col='time', parse_dates=True)
         self.metatone = pd.read_csv(performance_path + METATONE_PATH, index_col='time', parse_dates=True)
         self.online = pd.read_csv(performance_path + ONLINE_PATH, index_col='time', parse_dates=True)
-        self.ensemble_transition_matrix = []
+        # These next two lines still use reduced gestures...
+        self.ensemble_transition_matrix = transitions.calculate_group_transition_matrix(self.gestures.dropna())
+        self.ensemble_transition_matrix = transitions.transition_matrix_to_stochastic_matrix(self.ensemble_transition_matrix)
 
     def count_new_idea_interface_changes(self):
+        """ 
+        Counts new_idea events that resulted in an interface change, 
+        that is, with time in between greater than 10 seconds 
+        """
         NEW_IDEA_DELAY = 10
         screen_changed_column = {}
         last_time = datetime.datetime(1, 1, 1, 0, 0, 0, 0)
-        for index, row in perf.events[self.events["event_type"] == "new_idea"].iterrows():
+        for index, row in self.events[self.events["event_type"] == "new_idea"].iterrows():
             if (index.to_datetime() - last_time).total_seconds() > NEW_IDEA_DELAY:
                 screen_changed_column[index] = True
                 last_time = index
@@ -57,13 +64,22 @@ class MetatonePerformanceLog:
         return screen_changed[screen_changed == True].count()
 
     def count_button_interface_changes(self):
-        return 0
+        return self.metatone[self.metatone["label"] == "CompositionStep"]["label"].count()
 
+    def button_interface_changes_by_performer(self):
+        """
+        Returns a dict of the number of UI interactions for each device_id in the performance.
+        """
+        performer_changes = {}
+        for perf in self.performers():
+            performer_changes[perf] = self.metatone[self.metatone["device_id"] == perf]["label"].count()
+        return {self.touches[:1].index[0]:performer_changes}
+ 
     def ensemble_flux(self):
-        return 0
+        return transitions.flux_measure(self.ensemble_transition_matrix)
 
     def ensemble_entropy(self):
-        return 0
+        return transitions.entropy_measure(self.ensemble_transition_matrix)
 
     def performers(self):
         """
