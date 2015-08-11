@@ -76,7 +76,7 @@ class MetatonePerformanceLog:
         performer_changes = {}
         for perf in self.performers():
             performer_changes[perf] = self.metatone[self.metatone["device_id"] == perf]["label"].count()
-        return {self.touches[:1].index[0]:performer_changes}
+        return {self.first_touch_timestamp:performer_changes}
  
     def ensemble_flux(self):
         """
@@ -95,6 +95,12 @@ class MetatonePerformanceLog:
         Returns the list of performers in this performance
         """
         return self.touches['device_id'].unique()
+
+    def first_touch_timestamp(self):
+        """
+        Returns the timestamp of the first touch.
+        """
+        return self.touches[:1].index[0]
 
     def performance_length(self):
         """
@@ -120,7 +126,7 @@ class MetatonePerformanceLog:
             performer_length = (performer_touches[-1:].index[0].to_datetime() - first_touch).total_seconds()
             performance_lengths[performer_id] = performer_length
             # print("Performer: " + performer_id + " Length was: " + str(performer_length))
-        return {self.touches[:1].index[0]:performance_lengths}
+        return {self.first_touch_timestamp:performance_lengths}
 
     def print_gesture_score(self):
         """
@@ -140,6 +146,9 @@ def main():
     print("Loading the performances.")
     for log in log_files:
         performances.append(MetatonePerformanceLog(log))
+
+    ## Also load up the experiment design dataframe to merge with the data!
+
     print("Finding the lengths.")
     performer_length_dict = {}
     for perf in performances:
@@ -150,9 +159,33 @@ def main():
     long_performance_lengths = pd.melt(performance_length_frame, id_vars=['time'], value_vars=performers)
     long_performance_lengths = long_performance_lengths.replace({'variable':DEVICE_SEATS})
     long_performance_lengths.to_csv("performance_lengths.csv")
+
     print("Creating Gesture Scores.")
     for perf in performances:
         perf.print_gesture_score() ## Prints out a gesture-score pdf for reference.
+
+    print("Creating performance info dataframe.")
+    new_idea_dict = {}
+    changed_new_idea_dict = {}
+    button_presses = {}
+    perf_flux = {}
+    perf_entropy = {}
+    perf_data = {}
+    for perf in performances:
+        new_idea_dict.update({perf.first_touch_timestamp():perf.count_new_idea_interface_changes()})
+        changed_new_idea_dict.update({perf.first_touch_timestamp():perf.raw_new_ideas})
+        button_presses.update({perf.first_touch_timestamp():perf.count_button_interface_changes()})
+        perf_flux.update({perf.first_touch_timestamp():perf.ensemble_flux()})
+        perf_entropy.update({perf.first_touch_timestamp():perf.ensemble_entropy()})
+        perf_data.update({perf.first_touch_timestamp():{
+            "raw_new_ideas":perf.raw_new_ideas,
+            "new_idea_changes":perf.count_new_idea_interface_changes(),
+            "button_presses":perf.count_button_interface_changes(),
+            "flux":perf.ensemble_flux(),
+            "entropy":perf.ensemble_entropy()
+        }})
+    performance_data = pd.DataFrame.from_dict(perf_data, orient = "index")
+    performance_data.to_csv("performance_data.csv")
 
 if __name__ == '__main__':
     main()
