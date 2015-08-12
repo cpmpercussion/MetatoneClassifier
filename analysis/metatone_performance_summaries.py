@@ -6,6 +6,7 @@ Should calculate a lot of stats about all the performances in the data folder. A
 from __future__ import print_function
 import os
 import pandas as pd
+import numpy as np
 import PlotMetatonePerformanceAndTransitions
 import time
 import datetime
@@ -24,6 +25,28 @@ DEVICE_SEATS = {
     "9A5116EA-2793-4C75-AC93-524C9EF550FD":2,
     "1A56F5DD-C5B6-4E56-8690-E5A12BAA7E78":3,
     "24C41EC3-7ECC-40DA-B942-7ABE23017E74":4}
+
+PARTICIPANTS = {1:{
+                    1:"A",
+                    2:"B",
+                    3:"C",
+                    4:"D"},
+                2:{
+                    1:"E",
+                    2:"F",
+                    3:"G",
+                    4:"H"},
+                3:{
+                    1:"I",
+                    2:"J",
+                    3:"K",
+                    4:"L"},
+                4:{
+                    1:"M",
+                    2:"N",
+                    3:"O",
+                    4:"P"}
+                }
 
 class MetatonePerformanceLog:
     """
@@ -76,7 +99,7 @@ class MetatonePerformanceLog:
         performer_changes = {}
         for perf in self.performers():
             performer_changes[perf] = self.metatone[self.metatone["device_id"] == perf]["label"].count()
-        return {self.first_touch_timestamp:performer_changes}
+        return {self.first_touch_timestamp():performer_changes}
  
     def ensemble_flux(self):
         """
@@ -126,7 +149,7 @@ class MetatonePerformanceLog:
             performer_length = (performer_touches[-1:].index[0].to_datetime() - first_touch).total_seconds()
             performance_lengths[performer_id] = performer_length
             # print("Performer: " + performer_id + " Length was: " + str(performer_length))
-        return {self.first_touch_timestamp:performance_lengths}
+        return {self.first_touch_timestamp():performance_lengths}
 
     def print_gesture_score(self):
         """
@@ -148,6 +171,8 @@ def main():
         performances.append(MetatonePerformanceLog(log))
 
     ## Also load up the experiment design dataframe to merge with the data!
+    experiment_design = pd.read_csv("2015-MetatoneStudy-ExperimentDesign.csv", index_col='time', parse_dates=True)
+
 
     print("Finding the lengths.")
     performer_length_dict = {}
@@ -165,18 +190,8 @@ def main():
         perf.print_gesture_score() ## Prints out a gesture-score pdf for reference.
 
     print("Creating performance info dataframe.")
-    new_idea_dict = {}
-    changed_new_idea_dict = {}
-    button_presses = {}
-    perf_flux = {}
-    perf_entropy = {}
     perf_data = {}
     for perf in performances:
-        new_idea_dict.update({perf.first_touch_timestamp():perf.count_new_idea_interface_changes()})
-        changed_new_idea_dict.update({perf.first_touch_timestamp():perf.raw_new_ideas})
-        button_presses.update({perf.first_touch_timestamp():perf.count_button_interface_changes()})
-        perf_flux.update({perf.first_touch_timestamp():perf.ensemble_flux()})
-        perf_entropy.update({perf.first_touch_timestamp():perf.ensemble_entropy()})
         perf_data.update({perf.first_touch_timestamp():{
             "raw_new_ideas":perf.raw_new_ideas,
             "new_idea_changes":perf.count_new_idea_interface_changes(),
@@ -186,6 +201,25 @@ def main():
         }})
     performance_data = pd.DataFrame.from_dict(perf_data, orient = "index")
     performance_data.to_csv("performance_data.csv")
+
+    print("Creating perfomer button press dataframe")
+    performer_presses = {}
+    for perf in performances:
+        performer_presses.update(perf.button_interface_changes_by_performer())
+    button_changes_frame = pd.DataFrame.from_dict(performer_presses,orient = "index")
+    button_experiment_frame = pd.concat([experiment_design,button_changes_frame], axis = 1)
+    performers = performances[0].performers().tolist()
+    button_experiment_frame['time'] = button_experiment_frame.index
+
+    long_button_frame = pd.melt(button_experiment_frame, id_vars=['time', 'perf_number', 'group', 'performance', 'button', 'server', 'overall'],
+        value_vars=performers,
+        var_name='seat',
+        value_name='button_presses')
+    long_button_frame = long_button_frame.replace({'seat':DEVICE_SEATS})
+    long_button_frame['performer'] = np.vectorize(lambda x, y: PARTICIPANTS[x][y])(long_button_frame['group'], long_button_frame['seat'])
+    long_button_frame.to_csv("button_presses_per_performer.csv")
+
+
 
 if __name__ == '__main__':
     main()
