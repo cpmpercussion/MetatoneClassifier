@@ -5,11 +5,15 @@
 //String touchFileName = touchFileDir + "2014-05-05T20-39-43-MetatoneOSCLog-touches.csv";
 
 boolean saving_frames = true;
-boolean portrait = true;
+boolean portrait = false;
 
 int year = 1;
 int month = 1;
 int day = 1;
+
+int startHour = 0;
+int startMinute = 0;
+int startSecond = 0;
 
 int endFrames = 80;
 // Drawing Objects
@@ -49,6 +53,7 @@ void setup() {
 void fileSelected(File selection) {
   if (selection == null) {
     println("Window was closed or the user hit cancel.");
+    makeMovie();
     exit();
   } else {
     println("User selected " + selection.getAbsolutePath());
@@ -63,7 +68,9 @@ void prepareToDrawPerformance(File touchFile) {
   currentRow = 0;
   String firstTouchTime = touchTable.getRow(currentRow).getString("time");
   parsePerformanceDate(firstTouchTime);
-  currentLineTime = (parseDateToSeconds(firstTouchTime) - 10);
+  startTotalSeconds = startHour * 3600.0 + startMinute * 60.0 + startSecond;
+  startTotalSeconds -= 10; // start 10seconds before first touch.
+  currentLineTime = (parseDateToSeconds(firstTouchTime) - startTotalSeconds);
   currentFrameTime = 0.0;
   drawingPositionNumber = 0;
 
@@ -175,10 +182,16 @@ Float parseDateToSeconds(String dateString) {
 
 void parsePerformanceDate(String dateString) {
   String date = split(dateString, "T")[0];
+  String time = split(dateString, "T")[1];
+  String[] timeParts = split(time, ":");
   String[] dateParts = split(date, "-");
   year = int(dateParts[0]);
   month = int(dateParts[1]);
   day = int(dateParts[2]);
+  
+  startHour = int(timeParts[0]);
+  startMinute = int(timeParts[1]);
+  startSecond = int(timeParts[2]);
 }
 
 ///////////////////////////////////////
@@ -229,7 +242,17 @@ String makeTimeString(float nowTime) {
   return timeString;
 }
 
-
+void makeMovie() {
+ println("Going to try to make movie");
+ String movieName = year + "-" + month + "-" + day + "T" + startHour + "-" + startMinute + "-" + startSecond + "-TouchAnimation.mov";
+ println("Filename will be: " + movieName);
+ //String command = "ffmpeg -f image2 -framerate 25 -i %06d.tga -vcodec qtrle -r 25 output.mov";
+ //String command = "ffmpeg -f image2 -framerate 25 -i %06d.tga -vcodec qtrle -r 25 " + movieName;
+ String[] command = {"/usr/local/bin/ffmpeg", "-f","image2", "-framerate", "25", "-i", "/Users/charles/Movies/framestga/%06d.tga", "-vcodec", "qtrle", "-r", 
+ "25", "/Users/charles/Movies/framestga/"+ movieName};
+ open(command);
+ println("done.");
+}
 /////
 //
 // Framerate method
@@ -239,4 +262,3 @@ String makeTimeString(float nowTime) {
 void mouseReleased() {
   println("Framerate is: " + frameRate);
 }
-
