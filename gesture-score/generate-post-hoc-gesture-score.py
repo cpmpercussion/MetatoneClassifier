@@ -42,53 +42,53 @@ gesture_codes = {
     'C': 8,
     '?': 9}
 
-##### Function to calculate feature vectors 
-## (for a dataframe containing one 'device_id'
-##
-## Newer version of feature_frame function
-def feature_frame(frame):
-    ## Protection against empty dataframes
-    if (frame.empty):
-        return zero_feature_row()
-    window_size = '5s'
-    count_zeros = lambda s: len([x for x in s if x==0])
-    count_nonzeros = lambda s: len([x for x in s if x!=0])
+# ##### Function to calculate feature vectors
+# ## (for a dataframe containing one 'device_id'
+# ##
+# ## Newer version of feature_frame function
+# def feature_frame(frame):
+#     ## Protection against empty dataframes
+#     if (frame.empty):
+#         return zero_feature_row()
+#     window_size = '5s'
+#     count_zeros = lambda s: len([x for x in s if x==0])
+#     count_nonzeros = lambda s: len([x for x in s if x!=0])
 
-    frame_deviceid = frame['device_id'].resample(window_size,how='first').fillna(method='ffill')
-    frame_freq = frame['device_id'].resample(window_size,how='count').fillna(0)
-    frame_touchdowns = frame['velocity'].resample(window_size,how=count_zeros).fillna(0)
-    frame_mvmt = frame['velocity'].resample(window_size,how=count_nonzeros).fillna(0)
-    frame_vel = frame['velocity'].resample(window_size,how='mean').fillna(0)
-    frame_centroid = frame[['x_pos','y_pos']].resample(window_size,how='mean').fillna(-1)
-    frame_std = frame[['x_pos','y_pos']].resample(window_size,how='std').fillna(0)
+#     frame_deviceid = frame['device_id'].resample(window_size,how='first').fillna(method='ffill')
+#     frame_freq = frame['device_id'].resample(window_size,how='count').fillna(0)
+#     frame_touchdowns = frame['velocity'].resample(window_size,how=count_zeros).fillna(0)
+#     frame_mvmt = frame['velocity'].resample(window_size,how=count_nonzeros).fillna(0)
+#     frame_vel = frame['velocity'].resample(window_size,how='mean').fillna(0)
+#     frame_centroid = frame[['x_pos','y_pos']].resample(window_size,how='mean').fillna(-1)
+#     frame_std = frame[['x_pos','y_pos']].resample(window_size,how='std').fillna(0)
     
-    fframe = pd.DataFrame({
-        'freq':frame_freq,
-        'device_id':frame_deviceid,
-        'touchdown_freq':frame_touchdowns,
-        'movement_freq':frame_mvmt,
-        'centroid_x':frame_centroid['x_pos'],
-        'centroid_y':frame_centroid['y_pos'],
-        'std_x':frame_std['x_pos'],
-        'std_y':frame_std['y_pos'],
-        'velocity':frame_vel})
-    return fframe.fillna(0)
+#     fframe = pd.DataFrame({
+#         'freq':frame_freq,
+#         'device_id':frame_deviceid,
+#         'touchdown_freq':frame_touchdowns,
+#         'movement_freq':frame_mvmt,
+#         'centroid_x':frame_centroid['x_pos'],
+#         'centroid_y':frame_centroid['y_pos'],
+#         'std_x':frame_std['x_pos'],
+#         'std_y':frame_std['y_pos'],
+#         'velocity':frame_vel})
+#     return fframe.fillna(0)
 
-def zero_feature_row():
-    """
-    Returns a fake feature vector with one row of no touches.
-    """
-    fframe = pd.DataFrame({
-            'freq':pd.Series(0,index=range(1)),
-            'device_id':'nobody',
-            'touchdown_freq':0,
-            'movement_freq':0,
-            'centroid_x':-1,
-            'centroid_y':-1,
-            'std_x':0,
-            'std_y':0,
-            'velocity':0})
-    return fframe
+# def zero_feature_row():
+#     """
+#     Returns a fake feature vector with one row of no touches.
+#     """
+#     fframe = pd.DataFrame({
+#             'freq':pd.Series(0,index=range(1)),
+#             'device_id':'nobody',
+#             'touchdown_freq':0,
+#             'movement_freq':0,
+#             'centroid_x':-1,
+#             'centroid_y':-1,
+#             'std_x':0,
+#             'std_y':0,
+#             'velocity':0})
+#     return fframe
 
 def feature_vector_from_row_time(row, frame, name):
     """
