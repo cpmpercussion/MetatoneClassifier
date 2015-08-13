@@ -29,19 +29,6 @@ pickle_file.close()
 columns = ['time','device_id','x_pos','y_pos','velocity']
 feature_vector_columns = ['centroid_x','centroid_y','std_x','std_y','freq','movement_freq','touchdown_freq','velocity']
 
-## Int values for Gesture codes.
-gesture_codes = {
-    'N': 0,
-    'FT': 1,
-    'ST': 2,
-    'FS': 3,
-    'FSA': 4,
-    'VSS': 5,
-    'BS': 6,
-    'SS': 7,
-    'C': 8,
-    '?': 9}
-
 # ##### Function to calculate feature vectors
 # ## (for a dataframe containing one 'device_id'
 # ##
@@ -127,14 +114,10 @@ def generate_rolling_feature_frame(messages, name):
     features = features.apply(feature_vector_from_row_time, axis=1, frame=messages, name=name)
     return features
 
-
 def main():
     """
     Takes a touch csv file as input, creates a gesture score csv and an image plot.
     """
-    ##
-    ## - Start doing the processing.
-    ##
     parser = argparse.ArgumentParser(description='Classifies Gestures from Metatone Touch Log at 1s intervals. Gestures are output as a CSV file and PDF plot.')
     parser.add_argument('filename', help='A Metatone Touch CSV file to be classified.')
     args = parser.parse_args()
