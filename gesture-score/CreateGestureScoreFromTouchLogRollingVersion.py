@@ -1,14 +1,15 @@
 #! /usr/bin/env python
-# Classifies Gestures from Metatone Touch Log at 1s intervals. Gestures are output as a CSV file and PDF plot.
-# datetime, name, x_pos, y_pos, vel
-
+# pylint: disable=line-too-long
+"""
+Classifies Gestures from Metatone Touch Log at 1s intervals. Gestures are output as a CSV file and PDF plot.
+datetime, name, x_pos, y_pos, vel
+"""
+from __future__ import print_function
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.dates as dates
 from datetime import timedelta
-from datetime import datetime
-from sklearn.ensemble import RandomForestClassifier
 import pickle
 import argparse
 
@@ -76,17 +77,19 @@ def feature_frame(frame):
         'velocity':frame_vel})
     return fframe.fillna(0)
 
-## Returns ONE feature vector from the given dataframe before "time"
-def feature_vector_from_row_time(row,frame,name):
+def feature_vector_from_row_time(row, frame, name):
+    """
+    Returns ONE feature vector from the given dataframe before "time"
+    """
     time = row.name
     delta = timedelta(seconds=-5)
     frame = frame.between_time((time + delta).time(), time.time())
-    if (frame.empty):
-        return [-1,-1,name,0,0,0,0,0,0]
+    if frame.empty:
+        return [-1, -1, name, 0, 0, 0, 0, 0, 0]
     frame_touchdowns = frame.ix[frame['velocity'] == 0]
     frame_mvmt = frame.ix[frame['velocity'] != 0]
-    frame_centroid = frame[['x_pos','y_pos']].mean()
-    frame_std = frame[['x_pos','y_pos']].std().fillna(0)
+    frame_centroid = frame[['x_pos', 'y_pos']].mean()
+    frame_std = frame[['x_pos', 'y_pos']].std().fillna(0)
 
     feature_vector = {
         'freq':frame['device_id'].count(),
@@ -102,6 +105,9 @@ def feature_vector_from_row_time(row,frame,name):
     return feature_vector
 
 def zero_feature_row():
+    """
+    Returns a fake feature vector with one row of no touches.
+    """
     fframe = pd.DataFrame({
             'freq':pd.Series(0,index=range(1)),
             'device_id':'nobody',
@@ -114,71 +120,66 @@ def zero_feature_row():
             'velocity':0})
     return fframe
 
-def generate_rolling_feature_frame(messages,name):
+def generate_rolling_feature_frame(messages, name):
+    """
+    Takes a message frame and creates a gesture frame with calculations every 1s.
+    Returns the generated gesture frame.
+    """
     features = feature_frame(messages)
     features = features.resample('1s')
-    features = features.apply(feature_vector_from_row_time,axis=1,frame=messages,name=name)
+    features = features.apply(feature_vector_from_row_time, axis=1, frame=messages, name=name)
     return features
 
 
-##
-## - Start doing the processing.
-##
+def main():
+    """
+    Takes a touch csv file as input, creates a gesture score csv and an image plot.
+    """
+    ##
+    ## - Start doing the processing.
+    ##
+    parser = argparse.ArgumentParser(description='Classifies Gestures from Metatone Touch Log at 1s intervals. Gestures are output as a CSV file and PDF plot.')
+    parser.add_argument('filename', help='A Metatone Touch CSV file to be classified.')
+    args = parser.parse_args()
+    touchlog_file = args.filename
+    print("Classifying Touch CSV file...")
+    messages = pd.read_csv(touchlog_file, index_col="time", parse_dates=True)
+    names = messages['device_id'].unique()
+    gesture_pred = pd.DataFrame(messages['device_id'].resample('1s', how='count'))
+    ticks = gesture_pred.resample('10s').index.to_pydatetime()
+    for n in names:
+        print ("Processing Performer data for: " + n)
+        performer_features = generate_rolling_feature_frame(messages.ix[messages['device_id'] == n],n)
+        performer_features['pred'] = classifier.predict(performer_features[feature_vector_columns])
+        gesture_pred[n] = performer_features['pred']
+    gesture_pred = gesture_pred.fillna(0)
+    gesture_pred = gesture_pred[names]
+    gesture_pred[names] = gesture_pred[names].astype(int)
+    # Create a good filename for the gesture score:
+    outname = gesture_pred.index[0].strftime('%Y-%m-%dT%H-%M-%S-MetatonePostHoc-gestures')
+    performance_date = gesture_pred.index[0].strftime('%Y-%m-%d %H:%M:%S')
+    print ("Classification complete, saving output to CSV and PDF files named: " + outname)
+    # Save the gesture score as a CSV
+    gesture_pred.to_csv(outname + '.csv', date_format='%Y-%m-%dT%H:%M:%S')
+    # 2014-07-19T13:58:13.993319
+    #Plot and save the Gesture Score as a pdf:
+    idx = gesture_pred.index
+    ax = plt.figure(figsize=(28, 8), frameon = False, tight_layout = True).add_subplot(111)
+    ax.xaxis.set_major_locator(dates.SecondLocator(bysecond=[0, 30]))
+    ax.xaxis.set_major_formatter(dates.DateFormatter("%H:%M:%S"))
+    ax.xaxis.set_minor_locator(dates.SecondLocator(bysecond=[0, 10, 20, 30, 40, 50]))
+    ax.xaxis.grid(True, which="minor")
+    ax.yaxis.grid()
+    plt.title("Post-hoc Gesture Score for Performance: " + performance_date)
+    plt.ylabel("gesture")
+    plt.xlabel("time")
+    plt.ylim(-0.5, 8.5)
+    plt.yticks(np.arange(9),['n', 'ft', 'st', 'fs', 'fsa', 'vss', 'bs', 'ss', 'c'])
+    for n in names:
+        plt.plot_date(idx.to_pydatetime(),gesture_pred[n], '-', label=n)
+    plt.legend(loc='upper right')
+    plt.savefig(outname + '.pdf', dpi=150, format="pdf")
+    plt.close()
 
-parser = argparse.ArgumentParser(description='Classifies Gestures from Metatone Touch Log at 1s intervals. Gestures are output as a CSV file and PDF plot.')
-parser.add_argument('filename',help='A Metatone Touch CSV file to be classified.')
-args = parser.parse_args()
-touchlog_file = args.filename
-# touchlog_file = '/Users/charles/Dropbox/Metatone/20140719-AgentStudy/1/2014-07-19T13-58-10-MetatoneOSCLog-touches.csv'
-
-print("Classifying Touch CSV file...")
-
-##
-##  Load up the next video data for Tests.
-##
-messages = pd.read_csv(touchlog_file, index_col="time", parse_dates=True)
-names = messages['device_id'].unique()
-gesture_pred = pd.DataFrame(messages['device_id'].resample('1s',how='count'))
-ticks = gesture_pred.resample('10s').index.to_pydatetime()
-
-for n in names:
-    print ("Processing Performer data for: " + n)
-    performer_features = generate_rolling_feature_frame(messages.ix[messages['device_id'] == n],n)
-    performer_features['pred'] = classifier.predict(performer_features[feature_vector_columns])
-    gesture_pred[n] = performer_features['pred']
-
-gesture_pred = gesture_pred.fillna(0)
-gesture_pred = gesture_pred[names]
-gesture_pred[names] = gesture_pred[names].astype(int)
-
-# Create a good filename for the gesture score:
-outname = gesture_pred.index[0].strftime('%Y-%m-%dT%H-%M-%S-MetatonePostHoc-gestures')
-performance_date = gesture_pred.index[0].strftime('%Y-%m-%d %H:%M:%S')
-
-print ("Classification complete, saving output to CSV and PDF files named: " + outname)
-
-# Save the gesture score as a CSV
-gesture_pred.to_csv(outname + '.csv',date_format='%Y-%m-%dT%H:%M:%S')
-# 2014-07-19T13:58:13.993319
-
-#Plot and save the Gesture Score as a pdf:
-idx = gesture_pred.index
-ax = plt.figure(figsize=(28,8),frameon=False,tight_layout=True).add_subplot(111)
-ax.xaxis.set_major_locator(dates.SecondLocator(bysecond=[0,30]))
-ax.xaxis.set_major_formatter(dates.DateFormatter("%H:%M:%S"))
-ax.xaxis.set_minor_locator(dates.SecondLocator(bysecond=[0,10,20,30,40,50]))
-ax.xaxis.grid(True,which="minor")
-ax.yaxis.grid()
- 
-plt.title("Post-hoc Gesture Score for Performance: " + performance_date)
-plt.ylabel("gesture")
-plt.xlabel("time")
-plt.ylim(-0.5,8.5)
-plt.yticks(np.arange(9),['n','ft','st','fs','fsa','vss','bs','ss','c'])
-
-for n in names:
-    plt.plot_date(idx.to_pydatetime(),gesture_pred[n],'-',label=n)
-plt.legend(loc='upper right')
-
-plt.savefig(outname + '.pdf', dpi=150, format="pdf")
-plt.close()
+if __name__ == '__main__':
+    main()
