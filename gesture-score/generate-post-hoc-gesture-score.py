@@ -12,6 +12,7 @@ import matplotlib.dates as dates
 from datetime import timedelta
 import pickle
 import argparse
+import metatone_classifier
 
 ##
 ## Pick whichever classifier you wish.
@@ -49,7 +50,6 @@ def feature_frame(frame):
     ## Protection against empty dataframes
     if (frame.empty):
         return zero_feature_row()
-
     window_size = '5s'
     count_zeros = lambda s: len([x for x in s if x==0])
     count_nonzeros = lambda s: len([x for x in s if x!=0])
@@ -73,6 +73,22 @@ def feature_frame(frame):
         'std_y':frame_std['y_pos'],
         'velocity':frame_vel})
     return fframe.fillna(0)
+
+def zero_feature_row():
+    """
+    Returns a fake feature vector with one row of no touches.
+    """
+    fframe = pd.DataFrame({
+            'freq':pd.Series(0,index=range(1)),
+            'device_id':'nobody',
+            'touchdown_freq':0,
+            'movement_freq':0,
+            'centroid_x':-1,
+            'centroid_y':-1,
+            'std_x':0,
+            'std_y':0,
+            'velocity':0})
+    return fframe
 
 def feature_vector_from_row_time(row, frame, name):
     """
@@ -101,28 +117,12 @@ def feature_vector_from_row_time(row, frame, name):
     }
     return feature_vector
 
-def zero_feature_row():
-    """
-    Returns a fake feature vector with one row of no touches.
-    """
-    fframe = pd.DataFrame({
-            'freq':pd.Series(0,index=range(1)),
-            'device_id':'nobody',
-            'touchdown_freq':0,
-            'movement_freq':0,
-            'centroid_x':-1,
-            'centroid_y':-1,
-            'std_x':0,
-            'std_y':0,
-            'velocity':0})
-    return fframe
-
 def generate_rolling_feature_frame(messages, name):
     """
     Takes a message frame and creates a gesture frame with calculations every 1s.
     Returns the generated gesture frame.
     """
-    features = feature_frame(messages)
+    features = metatone_classifier.feature_frame(messages)
     features = features.resample('1s')
     features = features.apply(feature_vector_from_row_time, axis=1, frame=messages, name=name)
     return features
