@@ -31,18 +31,20 @@ int totalRows;
 // Colours
 
 void setup() {
-  println("Trying to access arguments.");
-  println(args);
-  println("Ok, now selecting file.");
-  
-  
-  selectInput("Select a file to process:", "fileSelected");
+  size(1024, 768);
+  //if (portrait) {
+  //  size(768, 1024);
+  //} else {
+  //  size(1024, 768);
+  //}
+  //println("Trying to access arguments.");
+  //println(args.length);
+  //for (String a : args) {
+  ////  println(a);
+  ////};
+  //println("Ok, now selecting file.");
 
-  if (portrait) {
-    size(768, 1024);
-  } else {
-    size(1024, 768);
-  }
+  selectInput("Select a file to process:", "fileSelected");
 
   pg = createGraphics( width, height );
   f = loadFont("HelveticaNeue-18.vlw");
@@ -149,9 +151,15 @@ void draw() {
 //}
 
 // 14 Different colours - should last a while.
-int[] hues = {241,170,128,71 ,28 ,227,240,113,43 ,14 ,213,142,85 ,43 };
-int[] sats = {255,255,170,170,255,255,170,170,255,255,170,255,255,170};
-int[] bris = {255,255,255,255,255,255,255,255,255,255,255,255,255,255};
+int[] hues = {
+  241, 170, 128, 71, 28, 227, 240, 113, 43, 14, 213, 142, 85, 43
+};
+int[] sats = {
+  255, 255, 170, 170, 255, 255, 170, 170, 255, 255, 170, 255, 255, 170
+};
+int[] bris = {
+  255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255
+};
 IntDict namesToColours = new IntDict();
 
 // New colour method that just adds names to a dict and accesses preset colours.
@@ -160,7 +168,9 @@ int[] getColourForName(String name) {
     namesToColours.set(name, namesToColours.size());
   }
   int index = namesToColours.get(name) % hues.length;
-  int[] colour = {hues[index], sats[index], bris[index]};
+  int[] colour = {
+    hues[index], sats[index], bris[index]
+  };
   return colour;
 }
 
@@ -211,7 +221,7 @@ void parsePerformanceDate(String dateString) {
   year = int(dateParts[0]);
   month = int(dateParts[1]);
   day = int(dateParts[2]);
-  
+
   startHour = int(timeParts[0]);
   startMinute = int(timeParts[1]);
   startSecond = int(timeParts[2]);
@@ -266,15 +276,17 @@ String makeTimeString(float nowTime) {
 }
 
 void makeMovie() {
- println("Going to try to make movie");
- String movieName = year + "-" + month + "-" + day + "T" + startHour + "-" + startMinute + "-" + startSecond + "-TouchAnimation.mov";
- println("Filename will be: " + movieName);
- //String command = "ffmpeg -f image2 -framerate 25 -i %06d.tga -vcodec qtrle -r 25 output.mov";
- //String command = "ffmpeg -f image2 -framerate 25 -i %06d.tga -vcodec qtrle -r 25 " + movieName;
- String[] command = {"/usr/local/bin/ffmpeg", "-f","image2", "-framerate", "25", "-i", "/Users/charles/Movies/framestga/%06d.tga", "-vcodec", "qtrle", "-r", 
- "25", "/Users/charles/Movies/framestga/"+ movieName};
- open(command);
- println("done.");
+  println("Going to try to make movie");
+  String movieName = year + "-" + month + "-" + day + "T" + startHour + "-" + startMinute + "-" + startSecond + "-TouchAnimation.mov";
+  println("Filename will be: " + movieName);
+  //String command = "ffmpeg -f image2 -framerate 25 -i %06d.tga -vcodec qtrle -r 25 output.mov";
+  //String command = "ffmpeg -f image2 -framerate 25 -i %06d.tga -vcodec qtrle -r 25 " + movieName;
+  String[] command = {
+    "/usr/local/bin/ffmpeg", "-f", "image2", "-framerate", "25", "-i", "/Users/charles/Movies/framestga/%06d.tga", "-vcodec", "qtrle", "-r",
+    "25", "/Users/charles/Movies/framestga/"+ movieName
+  };
+  //open(command);
+  println("done.");
 }
 // ffmpeg -f image2 -framerate 25 -i %06d.tga -vcodec prores -r 25 output.mov
 
