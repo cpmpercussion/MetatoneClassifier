@@ -28,7 +28,17 @@ float startTotalSeconds;
 int currentRow;
 int totalRows;
 
-// Colours
+//// overriding main now!
+//static public void main(String args[]) {
+//    println("Trying to access arguments.");
+//    println(args.length);
+//    println(args);
+//    for (String a : args) {
+//      println(a);
+//    };
+//    println("Ok, now starting the sketch.");
+//    PApplet.main("MetatoneTouchLogPlayer");
+//}
 
 void setup() {
   size(1024, 768);
