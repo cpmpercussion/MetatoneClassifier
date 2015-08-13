@@ -19,9 +19,6 @@ import argparse
 #classifier_file = "20130701data-classifier.p"
 classifier_file = "2013-07-01-TrainingData-classifier.p"
 #classifier_file = "2013-07-01-TrainingData1s-classifier.p"
-##
-##
-##
 
 ## Load the classifier
 pickle_file = open( classifier_file, "rb" )
@@ -51,7 +48,7 @@ gesture_codes = {
 def feature_frame(frame):
     ## Protection against empty dataframes
     if (frame.empty):
-        return zero_feature_vector()
+        return zero_feature_row()
 
     window_size = '5s'
     count_zeros = lambda s: len([x for x in s if x==0])
