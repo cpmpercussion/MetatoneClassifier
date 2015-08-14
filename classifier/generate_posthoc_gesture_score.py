@@ -49,6 +49,7 @@ def generate_rolling_feature_frame(messages, name):
     """
     features = metatone_classifier.feature_frame(messages)
     features = features.resample('1s')
+    # is it possible to make this next step faster?
     features = features.apply(feature_vector_from_row_time, axis=1, frame=messages, name=name)
     return features
 
