@@ -123,6 +123,24 @@ def plot_gesture_score(plot_title, events, gestures, metatone, online, touches, 
     plt.savefig(plot_title.replace(":", "_") + '.pdf', dpi=150, format="pdf")
     plt.close()
 
+def plot_gesture_only_score(plot_title, gestures):
+    """
+    Plots a gesture score of gestures only - no new ideas!
+    """
+    idx = gestures.index
+    # ax = plt.figure(figsize=(35,10),frameon=False,tight_layout=True).add_subplot(111)
+    ax = plt.figure(figsize=(14, 4), frameon=False, tight_layout=True).add_subplot(111)
+    # ax.xaxis.set_major_locator(dates.SecondLocator(bysecond=[0,30]))
+    ax.xaxis.set_major_locator(dates.SecondLocator(interval=60))
+    ax.xaxis.set_major_formatter(dates.DateFormatter("%H:%M"))
+    ax.yaxis.grid()
+    plt.ylim(-0.5, 8.5)
+    plt.yticks(np.arange(9), ['n', 'ft', 'st', 'fs', 'fsa', 'vss', 'bs', 'ss', 'c'])
+    for n in gestures.columns:
+        plt.plot_date(idx.to_pydatetime(), gestures[n], '-', label=n)
+    # plt.legend(loc='upper right')
+    plt.savefig(plot_title.replace(":", "_") + '.pdf', dpi=150, format="pdf")
+    plt.close()
 
 def plot_score_posthoc_flux(gestures_frame, window, threshold):
     winlen = str(window) + "s"
