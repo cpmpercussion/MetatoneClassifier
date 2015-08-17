@@ -1,11 +1,7 @@
-// String touchFileName = "/Users/charles/Dropbox/Metatone/20140317/studyinbowls-performance/2014-03-17T18-09-46-MetatoneOSCLog-touches.csv";
-//String touchFileName = "/Users/charles/Dropbox/Metatone/20140317/studyinbowls-rehearsal/2014-03-17T17-40-14-MetatoneOSCLog-touches.csv";
-
-//String touchFileDir = "/Users/charles/Dropbox/Metatone/20140505/20-39-StudyInBowls/";
-//String touchFileName = touchFileDir + "2014-05-05T20-39-43-MetatoneOSCLog-touches.csv";
-
+boolean DEFAULT_INPUT = true;
 boolean saving_frames = true;
 boolean portrait = false;
+boolean OUTPUT_MOVIE = true;
 
 int year = 1;
 int month = 1;
@@ -41,7 +37,7 @@ int totalRows;
 //}
 
 void setup() {
-  size(1024, 768);
+  size(1024, 768, P2D);
   //if (portrait) {
   //  size(768, 1024);
   //} else {
@@ -54,8 +50,6 @@ void setup() {
   ////};
   //println("Ok, now selecting file.");
 
-  selectInput("Select a file to process:", "fileSelected");
-
   pg = createGraphics( width, height );
   f = loadFont("HelveticaNeue-18.vlw");
   textFont(f, 18);
@@ -67,22 +61,31 @@ void setup() {
   background(0);
   fill(255);
   noLoop();
+
+  // Load file from default input or from a selection dialogue.
+  if (DEFAULT_INPUT) {
+    println("Default input file: input.csv");
+    prepareToDrawPerformance("input.csv");
+    loop();
+  } else {
+    println("Asking for user selected file.");
+    selectInput("Select a file to process:", "fileSelected");
+  }
 }
 
 void fileSelected(File selection) {
   if (selection == null) {
     println("Window was closed or the user hit cancel.");
-    makeMovie();
     exit();
   } else {
     println("User selected " + selection.getAbsolutePath());
-    prepareToDrawPerformance(selection);
+    prepareToDrawPerformance(selection.getAbsolutePath());
     loop();
   }
 }
 
-void prepareToDrawPerformance(File touchFile) {
-  touchTable = loadTable(touchFile.getAbsolutePath(), "header");
+void prepareToDrawPerformance(String filePath) {
+  touchTable = loadTable(filePath, "header");
   totalRows = touchTable.getRowCount();
   currentRow = 0;
   String firstTouchTime = touchTable.getRow(currentRow).getString("time");
@@ -109,7 +112,7 @@ void draw() {
     currentRow++;
     if (currentRow < totalRows) {
       currentLineTime = (parseDateToSeconds(
-      touchTable.getRow(currentRow).getString("time")) - startTotalSeconds);
+        touchTable.getRow(currentRow).getString("time")) - startTotalSeconds);
     } else {
       println("End of file.");
       break;
@@ -123,6 +126,7 @@ void draw() {
       endFrames--;
     } else {
       noLoop();
+      if (OUTPUT_MOVIE) makeMovie();
       exit();
     }
   }
@@ -219,7 +223,7 @@ Float parseDateToSeconds(String dateString) {
   String[] timeParts = split(time, ":");
   Float seconds = (Float.parseFloat(timeParts[0]) * 3600) 
     + (Float.parseFloat(timeParts[1]) * 60 )
-      + Float.parseFloat(timeParts[2]);
+    + Float.parseFloat(timeParts[2]);
   return seconds;
 }
 
@@ -284,22 +288,7 @@ String makeTimeString(float nowTime) {
   String timeString = nowSeconds + "." + nowHundredths;
   return timeString;
 }
-
-void makeMovie() {
-  println("Going to try to make movie");
-  String movieName = year + "-" + month + "-" + day + "T" + startHour + "-" + startMinute + "-" + startSecond + "-TouchAnimation.mov";
-  println("Filename will be: " + movieName);
-  //String command = "ffmpeg -f image2 -framerate 25 -i %06d.tga -vcodec qtrle -r 25 output.mov";
-  //String command = "ffmpeg -f image2 -framerate 25 -i %06d.tga -vcodec qtrle -r 25 " + movieName;
-  String[] command = {
-    "/usr/local/bin/ffmpeg", "-f", "image2", "-framerate", "25", "-i", "/Users/charles/Movies/framestga/%06d.tga", "-vcodec", "qtrle", "-r",
-    "25", "/Users/charles/Movies/framestga/"+ movieName
-  };
-  //open(command);
-  println("done.");
-}
-// ffmpeg -f image2 -framerate 25 -i %06d.tga -vcodec prores -r 25 output.mov
-
+ //<>//
 /////
 //
 // Framerate method
@@ -308,4 +297,34 @@ void makeMovie() {
 
 void mouseReleased() {
   println("Framerate is: " + frameRate);
+}
+
+void makeMovie() {
+  println("Going to try to make movie");
+  String movieName = year + "-" + month + "-" + day + "T" + startHour + "-" + startMinute + "-" + startSecond + "-TouchAnimation.mov";
+  //String movieName = "TouchAnimationNew.mov";
+  println("Filename will be: " + movieName);
+  String inputDir = "/Users/charles/Movies/framestga";
+  String outputDir = "/Users/charles/Movies/processing-output/";
+  String command = "/usr/local/bin/ffmpeg -f image2 -framerate 25 -i " + inputDir + "/%06d.tga -vcodec libx264 -r 25 -pix_fmt yuv420p -crf 16 " + outputDir + movieName;
+  println(command);
+  //String command = "/usr/local/bin/ffmpeg -f image2 -framerate 25 -i /Users/charles/Movies/framestga/%06d.tga -vcodec qtrle -r 25 /Users/charles/Movies/framestga/" + movieName;
+  Process p;
+  try {
+   p = Runtime.getRuntime().exec(command);
+   p.waitFor();
+  } catch(Exception e) {
+   e.printStackTrace();
+  }
+  println("done encoding.");
+  println("now removing tga files.");
+  command = "rm -r " + inputDir;
+  println(command);
+  try {
+    p = Runtime.getRuntime().exec(command);
+    p.waitFor();
+  } catch(Exception e) {
+    e.printStackTrace();
+  }
+  println("done.");
 }
