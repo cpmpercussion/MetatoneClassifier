@@ -1,4 +1,4 @@
-boolean DEFAULT_INPUT = true;
+boolean DEFAULT_INPUT = false;
 boolean saving_frames = true;
 boolean portrait = false;
 boolean OUTPUT_MOVIE = true;
@@ -288,7 +288,7 @@ String makeTimeString(float nowTime) {
   String timeString = nowSeconds + "." + nowHundredths;
   return timeString;
 }
- //<>//
+ //<>// //<>//
 /////
 //
 // Framerate method
