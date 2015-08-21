@@ -1,18 +1,14 @@
-boolean DEFAULT_INPUT = false; //<>//
-boolean SAVING_FRAME = true;
-boolean PORTRAIT_IPAD = false;
-boolean OUTPUT_MOVIE = true;
+boolean DEFAULT_INPUT = false; // change to true to use "input.csv" //<>//
+boolean SAVING_FRAMES = true; // change to true to save tga frames.
+boolean OUTPUT_MOVIE = true; // true to convert movie with ffmpeg after all frames processed.
 boolean startedLog = false;
 
 int year = 1;
 int month = 1;
 int day = 1;
-
-
 int startHour = 0;
 int startMinute = 0;
 int startSecond = 0;
-
 int endFrames = 80;
 PImage fader;
 PFont f;
@@ -25,31 +21,9 @@ float startTotalSeconds;
 int currentRow;
 int totalRows;
 
-//// overriding main now!
-//static public void main(String args[]) {
-//    println("Trying to access arguments.");
-//    println(args.length);
-//    println(args);
-//    for (String a : args) {
-//      println(a);
-//    };
-//    println("Ok, now starting the sketch.");
-//    PApplet.main("MetatoneTouchLogPlayer");
-//}
-
 void setup() {
-  size(1024, 768, P2D);
-  //if (PORTRAIT_IPAD) {
-  //  size(768, 1024);
-  //} else {
-  //  size(1024, 768);
-  //}
-  //println("Trying to access arguments.");
-  //println(args.length);
-  //for (String a : args) {
-  ////  println(a);
-  ////};
-  noLoop();
+  size(1024, 768, P2D); // if landscape oriented file.
+  //size(768, 1024, P2D); // if portrait oriented file.
   pg = createGraphics( width, height );
   f = loadFont("HelveticaNeue-18.vlw");
   textFont(f, 18);
@@ -105,7 +79,7 @@ void prepareToDrawPerformance(String filePath) {
 
 void draw() {
   background(255);
-  currentFrameTime = frameCount / 25.0;// Hard coded to 25 frames per second
+  currentFrameTime = frameCount / 25.0; // Hard coded to 25 frames per second
 
   pg.beginDraw();
   while ( (currentLineTime < currentFrameTime) && (currentRow < totalRows)) {
@@ -132,7 +106,7 @@ void draw() {
     }
   }
 
-  // fade towards white
+  // fade towards black
   pg.blend(fader, 0, 0, width, height, 0, 0, width, height, SUBTRACT);
   pg.endDraw();
   image(pg, 0, 0);  
@@ -143,7 +117,8 @@ void draw() {
     text(makeDateString(currentFrameTime), 10, height - 10);
   }
 
-  if (SAVING_FRAME) {
+
+  if (SAVING_FRAMES) {
     saveFrame("/Users/charles/Movies/framestga/######.tga");
   }
 }
@@ -153,19 +128,6 @@ void draw() {
 // drawing Helper functions          //
 //                                   //
 ///////////////////////////////////////
-
-//int[] getColourForName(String name) {
-//  byte[] bytes = name.getBytes();
-//  int hueNumber = 0;
-//  for (int i = 0; i < bytes.length; i++) {
-//    hueNumber += bytes[i];
-//  }
-//  hueNumber = hueNumber % 256; 
-//  int[] colour = { 
-//    hueNumber, 255, 255
-//  };
-//  return colour;
-//}
 
 // 14 Different colours - should last a while.
 int[] hues = {
@@ -291,13 +253,9 @@ String makeTimeString(float nowTime) {
   String timeString = nowSeconds + "." + nowHundredths;
   return timeString;
 }
+ //<>//
 
-/////
-//
-// Framerate method
-//
-/////
-
+// Print framerate for benchmarking.
 void mouseReleased() {
   println("Framerate is: " + frameRate);
 }
