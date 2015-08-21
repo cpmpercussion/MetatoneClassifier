@@ -1,18 +1,19 @@
-boolean DEFAULT_INPUT = true;
-boolean saving_frames = true;
-boolean portrait = false;
+boolean DEFAULT_INPUT = false; //<>//
+boolean SAVING_FRAME = true;
+boolean PORTRAIT_IPAD = false;
 boolean OUTPUT_MOVIE = true;
+boolean startedLog = false;
 
 int year = 1;
 int month = 1;
 int day = 1;
+
 
 int startHour = 0;
 int startMinute = 0;
 int startSecond = 0;
 
 int endFrames = 80;
-// Drawing Objects
 PImage fader;
 PFont f;
 PGraphics pg;
@@ -38,7 +39,7 @@ int totalRows;
 
 void setup() {
   size(1024, 768, P2D);
-  //if (portrait) {
+  //if (PORTRAIT_IPAD) {
   //  size(768, 1024);
   //} else {
   //  size(1024, 768);
@@ -48,8 +49,7 @@ void setup() {
   //for (String a : args) {
   ////  println(a);
   ////};
-  //println("Ok, now selecting file.");
-
+  noLoop();
   pg = createGraphics( width, height );
   f = loadFont("HelveticaNeue-18.vlw");
   textFont(f, 18);
@@ -60,12 +60,12 @@ void setup() {
   fader = get();
   background(0);
   fill(255);
-  noLoop();
 
   // Load file from default input or from a selection dialogue.
   if (DEFAULT_INPUT) {
     println("Default input file: input.csv");
     prepareToDrawPerformance("input.csv");
+    startedLog = true;
     loop();
   } else {
     println("Asking for user selected file.");
@@ -80,6 +80,7 @@ void fileSelected(File selection) {
   } else {
     println("User selected " + selection.getAbsolutePath());
     prepareToDrawPerformance(selection.getAbsolutePath());
+    startedLog = true;
     loop();
   }
 }
@@ -112,7 +113,7 @@ void draw() {
     currentRow++;
     if (currentRow < totalRows) {
       currentLineTime = (parseDateToSeconds(
-        touchTable.getRow(currentRow).getString("time")) - startTotalSeconds);
+      touchTable.getRow(currentRow).getString("time")) - startTotalSeconds);
     } else {
       println("End of file.");
       break;
@@ -137,10 +138,12 @@ void draw() {
   image(pg, 0, 0);  
   fill(255);
 
-  // Write timestamp String on the screen.
-  text(makeDateString(currentFrameTime), 10, height - 10);
+  if (startedLog) {
+    // Write timestamp String on the screen.
+    text(makeDateString(currentFrameTime), 10, height - 10);
+  }
 
-  if (saving_frames) {
+  if (SAVING_FRAME) {
     saveFrame("/Users/charles/Movies/framestga/######.tga");
   }
 }
@@ -223,7 +226,7 @@ Float parseDateToSeconds(String dateString) {
   String[] timeParts = split(time, ":");
   Float seconds = (Float.parseFloat(timeParts[0]) * 3600) 
     + (Float.parseFloat(timeParts[1]) * 60 )
-    + Float.parseFloat(timeParts[2]);
+      + Float.parseFloat(timeParts[2]);
   return seconds;
 }
 
@@ -288,7 +291,7 @@ String makeTimeString(float nowTime) {
   String timeString = nowSeconds + "." + nowHundredths;
   return timeString;
 }
- //<>//
+
 /////
 //
 // Framerate method
@@ -311,10 +314,11 @@ void makeMovie() {
   //String command = "/usr/local/bin/ffmpeg -f image2 -framerate 25 -i /Users/charles/Movies/framestga/%06d.tga -vcodec qtrle -r 25 /Users/charles/Movies/framestga/" + movieName;
   Process p;
   try {
-   p = Runtime.getRuntime().exec(command);
-   p.waitFor();
-  } catch(Exception e) {
-   e.printStackTrace();
+    p = Runtime.getRuntime().exec(command);
+    p.waitFor();
+  } 
+  catch(Exception e) {
+    e.printStackTrace();
   }
   println("done encoding.");
   println("now removing tga files.");
@@ -323,7 +327,8 @@ void makeMovie() {
   try {
     p = Runtime.getRuntime().exec(command);
     p.waitFor();
-  } catch(Exception e) {
+  } 
+  catch(Exception e) {
     e.printStackTrace();
   }
   println("done.");
