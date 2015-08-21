@@ -1,7 +1,8 @@
-boolean DEFAULT_INPUT = false; // change to true to use "input.csv" //<>//
+boolean DEFAULT_INPUT = true; // change to true to use "input.csv" //<>//
 boolean SAVING_FRAMES = true; // change to true to save tga frames.
 boolean OUTPUT_MOVIE = true; // true to convert movie with ffmpeg after all frames processed.
 boolean startedLog = false;
+int LEAD_IN_SECONDS = 1;
 
 int year = 1;
 int month = 1;
@@ -24,6 +25,7 @@ int totalRows;
 void setup() {
   size(1024, 768, P2D); // if landscape oriented file.
   //size(768, 1024, P2D); // if portrait oriented file.
+  noLoop();
   pg = createGraphics( width, height );
   f = loadFont("HelveticaNeue-18.vlw");
   textFont(f, 18);
@@ -42,7 +44,7 @@ void setup() {
     startedLog = true;
     loop();
   } else {
-    println("Asking for user selected file.");
+    println("Asking for user to select file.");
     selectInput("Select a file to process:", "fileSelected");
   }
 }
@@ -66,7 +68,7 @@ void prepareToDrawPerformance(String filePath) {
   String firstTouchTime = touchTable.getRow(currentRow).getString("time");
   parsePerformanceDate(firstTouchTime);
   startTotalSeconds = startHour * 3600.0 + startMinute * 60.0 + startSecond;
-  startTotalSeconds -= 10; // start 10seconds before first touch.
+  startTotalSeconds -= LEAD_IN_SECONDS; // start this many seconds before first touch.
   currentLineTime = (parseDateToSeconds(firstTouchTime) - startTotalSeconds);
   currentFrameTime = 0.0;
   drawingPositionNumber = 0;
@@ -116,7 +118,6 @@ void draw() {
     // Write timestamp String on the screen.
     text(makeDateString(currentFrameTime), 10, height - 10);
   }
-
 
   if (SAVING_FRAMES) {
     saveFrame("/Users/charles/Movies/framestga/######.tga");
