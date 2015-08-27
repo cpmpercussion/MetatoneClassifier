@@ -202,8 +202,9 @@ def transition_matrix_to_stochastic_matrix(trans_matrix):
     Convert a transition matrix with entries >1 to a stochastic matrix where rows sum to 1. 
     """
     try:
-        result = map((lambda x: map((lambda n: n/sum(x)),x)), trans_matrix)
+        result = map((lambda x: map((lambda n: 0 if n == 0 else n/sum(x)),x)), trans_matrix)
     except ZeroDivisionError:
+        print("Fail! Zero division error when making stochastic matrix.")
         result = trans_matrix
     return result
 
