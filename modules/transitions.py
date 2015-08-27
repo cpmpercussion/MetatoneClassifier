@@ -200,11 +200,24 @@ def transition_sum(tran_arr):
 def transition_matrix_to_stochastic_matrix(trans_matrix):
     """ 
     Convert a transition matrix with entries >1 to a stochastic matrix where rows sum to 1. 
+    Rows with zero in all entries stay as zero!
     """
     try:
         result = map((lambda x: map((lambda n: 0 if n == 0 else n/sum(x)),x)), trans_matrix)
     except ZeroDivisionError:
         print("Fail! Zero division error when making stochastic matrix.")
+        result = trans_matrix
+    return result
+
+def transition_matrix_to_normal_transition_matrix(trans_matrix):
+    """
+    Convert a transition matrix with entries > 1 to a normal transition matrix ( under the element-wise 1-norm i.e. ||M||_1 = 1).
+    Zero-matrices stay zero.
+    """
+    try:
+        result = map((lambda x: x/sum(sum(trans_matrix))), trans_matrix)
+    except ZeroDivisionError:
+        # Must be a zero matrix - so return it as it came
         result = trans_matrix
     return result
 
