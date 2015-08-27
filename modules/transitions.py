@@ -214,10 +214,10 @@ def transition_matrix_to_normal_transition_matrix(trans_matrix):
     Convert a transition matrix with entries > 1 to a normal transition matrix ( under the element-wise 1-norm i.e. ||M||_1 = 1).
     Zero-matrices stay zero.
     """
-    try:
-        result = map((lambda x: x/sum(sum(trans_matrix))), trans_matrix)
-    except ZeroDivisionError:
-        # Must be a zero matrix - so return it as it came
+    m = sum(sum(abs(np.array(trans_matrix))))
+    if m > 0:
+        result = trans_matrix / m
+    else:
         result = trans_matrix
     return result
 
