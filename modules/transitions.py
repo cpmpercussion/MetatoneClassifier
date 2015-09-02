@@ -75,7 +75,6 @@ def full_one_step_transition(e1, e2):
     """
     Calculates a full transition matrix between two states.
     """
-    #print("Transition: " + str(e1) + " -> " + str(e2))
     matrix = full_empty_transition_matrix()
     matrix[e2][e1] += 1 
     return matrix
@@ -85,7 +84,6 @@ def full_empty_transition_matrix():
     Returns a full empty transition matrix.
     """
     return np.zeros([NUMBER_GESTURES,NUMBER_GESTURES]) # Full gesture matrix
-
 
 def full_create_transition_dataframe(states):
     """
@@ -136,23 +134,17 @@ def one_step_transition(e1, e2):
     """
     Calculates a transition matrix between two states.
     """
-    #print("Transition: " + str(e1) + " -> " + str(e2))
-    matrix = np.zeros([NUMBER_GROUPS, NUMBER_GROUPS]) # Reduced Gesture Groups.
-    # Reduced Gesture Groups.
+    matrix = np.zeros([NUMBER_GROUPS, NUMBER_GROUPS])
     try:
         matrix[GESTURE_GROUPS[e2]][GESTURE_GROUPS[e1]] += 1
     except:
         matrix = np.zeros([NUMBER_GROUPS, NUMBER_GROUPS])
-    # old code.. # matrix[GESTURE_GROUPS[e2]][GESTURE_GROUPS[e1]] + 1
-	# matrix = np.zeros([NUMBER_GESTURES,NUMBER_GESTURES]) # Full gesture matrix
-	# matrix[e2][e1] += 1 # Full gesture matrix
     return matrix
 
 def empty_transition_matrix():
     """
     Returns an empty transition matrix.
     """
-    # return np.zeros([NUMBER_GESTURES,NUMBER_GESTURES]) # Full gesture matrix
     return np.zeros([NUMBER_GROUPS, NUMBER_GROUPS]) # Reduced Gesture Groups.
 
 def multi_step_transition(chain):
@@ -225,8 +217,9 @@ def transition_matrix_to_stochastic_matrix(trans_matrix):
 
 def transition_matrix_to_normal_transition_matrix(trans_matrix):
     """
-    Convert a transition matrix with entries > 1 to a normal transition matrix ( under the element-wise 1-norm i.e. ||M||_1 = 1).
-    Zero-matrices stay zero.
+    Convert a transition matrix with entries > 1 to a normal
+    transition matrix ( under the element-wise 1-norm i.e. ||M||_1 =
+    1). Zero-matrices stay zero.
     """
     m = sum(sum(abs(np.array(trans_matrix))))
     if m > 0:
@@ -451,7 +444,6 @@ def is_new_idea(flux_series):
     else:
         return False
 
-@profile
 def calculate_group_transitions_for_window(states_frame,window_size):
     """
     Calculates the (group) transition matrices for a given window size 
@@ -501,7 +493,7 @@ def trim_gesture_frame(gestures):
     return gestures.ix[gestures.index > cutoff]
 
 ##
-## GenerativeAgent Stuff
+## Generative Agent Stuff
 ##
 def weighted_choice(weights):
     """
