@@ -230,7 +230,8 @@ def transition_matrix_to_normal_transition_matrix(trans_matrix):
 
 def reduce_matrix_to_groups(mat):
     """
-    Converts a 9x9 matrix of all gesture transitions to the simpler gesture groups.
+    Converts a 9x9 matrix of all gesture transitions to the simpler
+    gesture groups.
     """
     group_matrix = np.zeros([NUMBER_GROUPS,NUMBER_GROUPS])
     for i in range(NUMBER_GESTURES):
@@ -246,11 +247,10 @@ def reduce_matrix_to_groups(mat):
 	
 def flux_measure(mat):
     """
-    Measure of a transition matrix's flux. Given a numpy matrix M with diagonal D, 
-    returns the ||M||_1 - ||D||_1 / ||M||_1
-    Maximised at 1 when nothing on diagonal, 
-    Minimised at 0 when everything on diagonal.
-    Name is deprecated and will be migrated to "flux" in later code.
+    Measure of a transition matrix's flux. Given a numpy matrix M with
+    diagonal D, returns the ||M||_1 - ||D||_1 / ||M||_1 Maximised at 1
+    when nothing on diagonal, Minimised at 0 when everything on
+    diagonal.
     """
     mat = np.array(mat)
     d = np.linalg.norm(mat.diagonal(),1) # |d|_1 
@@ -264,10 +264,9 @@ def flux_measure(mat):
     return measure
 
 def entropy_measure(mat):
-    """
-    Measures a transition matrix's entropy in the information theoretic sense.
-    H(P) = -\sum_{i,j}p_{ij}\log_2(p_{ij})
-    Uses scipy.stats.entropy
+    """Measures a transition matrix's entropy in the information
+    theoretic sense. H(P) = -\sum_{i,j}p_{ij}\log_2(p_{ij}) Uses
+    scipy.stats.entropy
     """
     return entropy(np.reshape(mat,len(mat)**2), base=2)
 
