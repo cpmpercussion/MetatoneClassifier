@@ -166,34 +166,12 @@ def multi_step_transition(chain):
         e2 = chain[i]
         e1 = chain[i-1]
         matrix[GESTURE_GROUPS[e2]][GESTURE_GROUPS[e1]] += 1 # Reduced Gesture Groups.
-        # matrix[e2][e1] += 1 # Full gesture matrix
         return matrix
 
 def create_transition_dataframe(states):
     """
-    Given a the gesture states of a single player, 
-    calculates a dataframe of one-step transition matrices.
-    Used in the calculate_group_transitions_for_window function 
-    which is used in the classifyPerformance loop.
-    """
-    dictionary_output = {}
-    for col in states:
-        matrices = [empty_transition_matrix()]
-        prev = -1
-        for index_loc in states[col].index:
-            curr = index_loc
-            if prev != -1:
-                from_state = states.at[prev, col]
-                to_state = states.at[curr, col]
-                matrix = one_step_transition(from_state, to_state)
-                matrices.append(matrix)
-            prev = index_loc
-            dictionary_output[col] = matrices
-    return pd.DataFrame(index=states.index, data=dictionary_output)
-
-def create_transition_dataframe_shift(states):
-    """
-    New version- see if this works and if it's faster.
+    Given a dataframe of gesture states for each player, calculates a
+    new dataframe of one-step transition matrices.
     """
     output = states.copy()
     for col in states:
@@ -201,6 +179,11 @@ def create_transition_dataframe_shift(states):
     return output
 
 def compare_tm_dataframes(tm_1,tm_2):
+    """
+    Compares two dataframes of transition matrices.
+    Returns true if index and each column are equal, otherwise false.
+    Prints each stage - this could be removed.
+    """
     if False not in (tm_1.index == tm_2.index).tolist():
         print("Indexes the same")
     else:
@@ -221,17 +204,17 @@ def compare_tm_dataframes(tm_1,tm_2):
 
 def transition_sum(tran_arr):
     """
-    Sums an array of transition matrices.
-    Used for resampling during performances as well 
-    as creating a whole-performance transition matrix.
+    Sums an array of transition matrices. Used for resampling during
+    performances as well as creating a whole-performance transition
+    matrix.
     """
     out = np.sum(tran_arr,axis=0).tolist()
     return out
 
 def transition_matrix_to_stochastic_matrix(trans_matrix):
-    """ 
-    Convert a transition matrix with entries >1 to a stochastic matrix where rows sum to 1. 
-    Rows with zero in all entries stay as zero!
+    """
+    Convert a transition matrix with entries >1 to a stochastic matrix
+    where rows sum to 1. Rows with zero in all entries stay as zero!
     """
     try:
         result = map((lambda x: map((lambda n: 0 if n == 0 else n/sum(x)),x)), trans_matrix)
