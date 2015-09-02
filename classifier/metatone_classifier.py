@@ -81,8 +81,10 @@ DEVICE_NAMES = {
     # '670EC230-5C3E-4759-B70F-5FDBCE14189B':'charles-iphone5'
 }
 # Column names for feature vectors.
-FEATURE_VECTOR_COLUMNS = ['centroid_x', 'centroid_y', 'std_x', 'std_y', 'freq', 'movement_freq', 'touchdown_freq', 'velocity']
-GESTURE_CLASS_NAMES = ['n', 'ft', 'st', 'fs', 'fsa', 'vss', 'bs', 'ss', 'c']
+FEATURE_VECTOR_COLUMNS = ['centroid_x', 'centroid_y', 'std_x',
+                          'std_y', 'freq', 'movement_freq', 'touchdown_freq', 'velocity']
+GESTURE_CLASS_NAMES = ['n', 'ft', 'st', 'fs', 'fsa', 'vss', 'bs',
+                       'ss', 'c']
 
 # # # # #
 # Utility Functions
@@ -134,18 +136,22 @@ def load_classifier():
     except IOError:
         print("### IOError Loading Classifier.           ###")
         print("### Saving new pickled classifier object. ###")
-        cla = generate_classifier.pickleClassifier(generate_classifier.INPUT_FILE, generate_classifier.CLASSIFIER_NAME)
+        cla =
+        generate_classifier.pickleClassifier(generate_classifier.INPUT_FILE,
+                                             generate_classifier.CLASSIFIER_NAME)
     except:
         print("### Exception Loading Classifier.         ###")
         print("### Generating new classifier object.     ###")
-        cla = generate_classifier.pickleClassifier(generate_classifier.INPUT_FILE, generate_classifier.CLASSIFIER_NAME)
+        cla =
+        generate_classifier.pickleClassifier(generate_classifier.INPUT_FILE,
+                                             generate_classifier.CLASSIFIER_NAME)
     return cla
 
 #@profile
 def feature_frame(frame):
     """
-    Calculates feature vectors for a dataframe of touch
-    messages containing one device_id.
+    Calculates feature vectors for a dataframe of touch messages
+    containing one device_id.
     """
     if frame.empty:
         fframe = pd.DataFrame({
@@ -268,13 +274,15 @@ class MetatoneClassifier:
     #@profile
     def classify_touch_messages(self, messages):
         """
-        Given a list of touch messages, generates a gesture class
-        for each active device for the preceding 5 seconds. 
-        Returned as a dictionary.
+        Given a list of touch messages, generates a gesture class for each
+        active device for the preceding 5 seconds. Returned as a
+        dictionary.
         """
         if not messages:
             return self.classify_empty_touch_messages()
-        touch_frame = pd.DataFrame(messages, columns=['time', 'device_id', 'x_pos', 'y_pos', 'velocity']) ## This line can fail with a ValueError exception
+        ## This line can fail with a ValueError exception
+        touch_frame = pd.DataFrame(messages, columns=['time',
+                                                      'device_id', 'x_pos', 'y_pos', 'velocity'])
         touch_frame = touch_frame.set_index('time')
         delta = timedelta(seconds=-5)
         time_now = datetime.now()
@@ -630,14 +638,20 @@ class MetatoneClassifier:
         current_time = datetime.now()
         try:
             if ("/metatone/touch" in address) and (tags == "sfff"):
-                message = [current_time.isoformat(), "touch", get_device_name(contents[0]), contents[1], contents[2], contents[3]]
-                self.touch_messages.append([current_time, get_device_name(contents[0]), contents[1], contents[2], contents[3]])
+                message = [current_time.isoformat(), "touch",
+                           get_device_name(contents[0]), contents[1],
+                           contents[2], contents[3]]
+                self.touch_messages.append([current_time,
+                                            get_device_name(contents[0]), contents[1],
+                                            contents[2], contents[3]])
                 if self.visualiser_mode: 
                     self.send_touch_to_visualiser(contents)
             elif ("/metatone/touch/ended" in address) and (tags == "s"):
                 message = [current_time.isoformat(), "touch/ended", get_device_name(contents[0])]
             elif ("/metatone/switch" in address) and (tags == "sss"):
-                message = [current_time.isoformat(), "switch", get_device_name(contents[0]), contents[1], contents[2]]
+                message = [current_time.isoformat(), "switch",
+                           get_device_name(contents[0]), contents[1],
+                           contents[2]]
             elif ("/metatone/online" in address) and (tags == "ss"):
                 self.send_performance_start_message(get_device_name(contents[0]))
                 message = [current_time.isoformat(), address, get_device_name(contents[0]), contents[1]]
@@ -648,9 +662,13 @@ class MetatoneClassifier:
                 print(get_device_name(contents[0]) + " is offline with " + contents[1] + ".")
             elif ("/metatone/acceleration" in address) and (tags == "sfff"):
                 # Just logs message - no action.
-                message = [current_time.isoformat(), "accel", get_device_name(contents[0]), contents[1], contents[2], contents[3]]
+                message = [current_time.isoformat(), "accel",
+                           get_device_name(contents[0]), contents[1],
+                           contents[2], contents[3]]
             elif ("/metatone/app" in address) and (tags == "sss"):
-                message = [current_time.isoformat(), "metatone", get_device_name(contents[0]), contents[1], contents[2]]
+                message = [current_time.isoformat(), "metatone",
+                           get_device_name(contents[0]), contents[1],
+                           contents[2]]
                 if self.web_server_mode: # Repeat message back to Metatone Devices.
                     self.webserver_sendtoall_function(address, contents)
             elif "/metatone/targetgesture" in address:
