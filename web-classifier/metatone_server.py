@@ -21,7 +21,7 @@ import random
 
 define("port", default=8888, help="run on the given port", type=int)
 define("name", default='MetatoneWebProc', help="name for webserver application", type=str)
-define("type", default=0, help="Type of performance to start. 0 = Local, 1 = Remote, 2 = Both, 3 = None, 4 = Button, 5 = Server", type=int)
+define("type", default=0, help="Type of performance to start. 0 = Local, 1 = Remote, 2 = Both, 3 = None, 4 = Button, 5 = Server, 6 = ButtonFade", type=int)
 
 ##
 PERFORMANCE_TYPE_LOCAL = 0
@@ -30,9 +30,10 @@ EXPERIMENT_TYPE_BOTH = 2
 EXPERIMENT_TYPE_NONE = 3
 EXPERIMENT_TYPE_BUTTON = 4
 EXPERIMENT_TYPE_SERVER = 5
-PERFORMANCE_TYPE_NAMES = [
-    "Performance-Local", "Performance-Remote", "Experiment-Both",
-    "Experiment-None", "Experiment-Button", "Experiment-Server"]
+EXPERIMENT_TYPE_BUTTON_FADE = 6
+PERFORMANCE_TYPE_NAMES = [ "Performance-Local", "Performance-Remote",
+                           "Experiment-Both", "Experiment-None", "Experiment-Button",
+                           "Experiment-Server", "Experiment-ButtonFade"]
 METACLASSIFIER_SERVICE_TYPE = "_metatoneclassifier._tcp."
 FAKE_OSC_IP_ADDRESS = '127.0.0.1'
 FAKE_OSC_PORT = 9999
