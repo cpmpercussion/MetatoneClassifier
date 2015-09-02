@@ -22,7 +22,8 @@ import random
 define("port", default=8888, help="run on the given port", type=int)
 define("name", default='MetatoneWebProc', help="name for webserver application", type=str)
 define("type", default=0, help="Type of performance to start. 0 = Local, 1 = Remote, 2 = Both, 3 = None, 4 = Button, 5 = Server, 6 = ButtonFade", type=int)
-
+define("matplotlib") # so it will work with emacs iPython
+define("colors") # so it will work with emacs iPython
 ##
 PERFORMANCE_TYPE_LOCAL = 0
 PERFORMANCE_TYPE_REMOTE = 1
