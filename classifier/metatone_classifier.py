@@ -136,14 +136,12 @@ def load_classifier():
     except IOError:
         print("### IOError Loading Classifier.           ###")
         print("### Saving new pickled classifier object. ###")
-        cla =
-        generate_classifier.pickleClassifier(generate_classifier.INPUT_FILE,
+        cla = generate_classifier.pickleClassifier(generate_classifier.INPUT_FILE,
                                              generate_classifier.CLASSIFIER_NAME)
     except:
         print("### Exception Loading Classifier.         ###")
         print("### Generating new classifier object.     ###")
-        cla =
-        generate_classifier.pickleClassifier(generate_classifier.INPUT_FILE,
+        cla = generate_classifier.pickleClassifier(generate_classifier.INPUT_FILE,
                                              generate_classifier.CLASSIFIER_NAME)
     return cla
 
