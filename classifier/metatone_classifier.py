@@ -554,7 +554,7 @@ class MetatoneClassifier:
         try:
             classes = self.classify_touch_messages(self.touch_messages)
         except:
-            print("Couldn't classify messages.")
+            print("METATONE_CLASSIFIER: Error Classifying Messages.")
             classes = False
         try: 
             if classes:
@@ -562,7 +562,7 @@ class MetatoneClassifier:
                 self.record_latest_gestures(classes)
             gestures = self.make_gesture_frame(self.classified_gestures).fillna(0)
         except:
-            print("Couldn't update gestures.")
+            print("METATONE_CLASSIFIER: Error Making Gesture Frame.")
             raise
         try:
             latest_gestures = transitions.trim_gesture_frame(gestures)
@@ -573,7 +573,7 @@ class MetatoneClassifier:
             else:
                 state = False
         except:
-            print ("Couldn't perform transition calculations.")
+            print ("METATONE_CLASSIFIER: Couldn't perform transition calculations.")
             state = False
             raise # TODO - figure out why this fails sometimes.
 
