@@ -139,7 +139,10 @@ def one_step_transition(e1, e2):
     #print("Transition: " + str(e1) + " -> " + str(e2))
     matrix = np.zeros([NUMBER_GROUPS, NUMBER_GROUPS]) # Reduced Gesture Groups.
     # Reduced Gesture Groups.
-    matrix[GESTURE_GROUPS[e2]][GESTURE_GROUPS[e1]] += 1 
+    try:
+        matrix[GESTURE_GROUPS[e2]][GESTURE_GROUPS[e1]] += 1
+    except:
+        matrix = np.zeros([NUMBER_GROUPS, NUMBER_GROUPS])
     # old code.. # matrix[GESTURE_GROUPS[e2]][GESTURE_GROUPS[e1]] + 1
 	# matrix = np.zeros([NUMBER_GESTURES,NUMBER_GESTURES]) # Full gesture matrix
 	# matrix[e2][e1] += 1 # Full gesture matrix
@@ -187,6 +190,34 @@ def create_transition_dataframe(states):
             prev = index_loc
             dictionary_output[col] = matrices
     return pd.DataFrame(index=states.index, data=dictionary_output)
+
+def create_transition_dataframe_shift(states):
+    """
+    New version- see if this works and if it's faster.
+    """
+    output = states.copy()
+    for col in states:
+        output[col] = map(one_step_transition,states[col].shift(),states[col])
+    return output
+
+def compare_tm_dataframes(tm_1,tm_2):
+    if False not in (tm_1.index == tm_2.index).tolist():
+        print("Indexes the same")
+    else:
+        print("Indexes different :-(")
+        return False
+    try:
+        for col in tm_1:
+            if False not in map(np.array_equal,tm_1[col].tolist(),tm_2[col].tolist()):
+                print("col ok!")
+            else:
+                print("col fail!")
+                return False
+    except:
+        print("cols not equal!")
+        return False
+    print("seemed to pass!")
+    return True
 
 def transition_sum(tran_arr):
     """
@@ -437,6 +468,7 @@ def is_new_idea(flux_series):
     else:
         return False
 
+@profile
 def calculate_group_transitions_for_window(states_frame,window_size):
     """
     Calculates the (group) transition matrices for a given window size 
