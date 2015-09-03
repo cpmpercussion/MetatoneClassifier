@@ -12,6 +12,7 @@ import matplotlib.dates as dates
 from datetime import timedelta
 import argparse
 import metatone_classifier
+import transitions
 
 CLASSIFIER = metatone_classifier.MetatoneClassifier()
 
@@ -69,6 +70,34 @@ def generate_gesture_frame(touchlog_frame):
     gesture_pred = gesture_pred[names]
     gesture_pred[names] = gesture_pred[names].astype(int)
     return gesture_pred
+
+def generate_tm_frame(gesture_frame):
+    """
+    Generates tms at 1s intervals and calculates a rolling flux calculation.
+    """
+    window_size = "15s"
+    fluxes = pd.DataFrame(index = gesture_frame.index)
+    fluxes = gesture_frame.apply(flux_calculation_from_row, axis=1,frame=gesture_frame,window=window_size)
+    return fluxes
+
+#GESTURES_FILE = "/Users/charles/src/metatone-analysis/data/2015-04-29T18-34-58-MetatoneOSCLog-touches-posthoc-gestures.csv"
+#gestures = pd.read_csv(GESTURES_FILE, index_col='time', parse_dates=True)
+
+def flux_calculation_from_row(row,frame,window):
+    time = row.name
+    delta = timedelta(seconds=-60)
+    frame = frame.between_time((time + delta).time(), time.time())
+    transition_matrices = transitions.calculate_group_transitions_for_window(frame, window)
+    flux_series = transitions.calculate_flux_series(transition_matrices)
+    newidea = transitions.is_new_idea(flux_series)
+    flux_series = flux_series.dropna()
+    flux_latest = 0
+    if flux_series.count() > 0:
+        flux_latest = flux_series.tolist()[-1]
+    flux_diff = 0
+    if flux_series.count() > 1:
+        flux_diff = flux_series[-2:].diff().dropna().tolist()[0]
+    return flux_diff
 
 def generate_gesture_plot(names, gesture_frame):
     """
