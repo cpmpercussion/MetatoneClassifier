@@ -1,7 +1,9 @@
 boolean DEFAULT_INPUT = false; // change to true to use "input.csv"
 boolean SAVING_FRAMES = true; // change to true to save tga frames.
-boolean OUTPUT_MOVIE = false; // true to convert movie with ffmpeg after all frames processed.
+boolean OUTPUT_MOVIE = true; // true to convert movie with ffmpeg after all frames processed.
+boolean PLOT_METATONE_MESSAGES = true; // true to plot button presses.
 
+String metatoneFileName = "-metatone.csv";
 String eventsFileName = "-events.csv";
 String gestureFileName = "-gestures.csv";
 String transitionsFileName = "-transitions.csv";
@@ -27,6 +29,7 @@ int drawingPositionNumber;
 Table eventTable;
 Table gestureTable;
 Table transitionTable;
+Table metatoneTable;
 float currentFrameTime;
 float startTotalSeconds;
 float performanceLengthSeconds;
@@ -53,6 +56,7 @@ void prepareToDrawPerformance(String filePath) {
   eventTable = loadTable(fileDirectory + eventsFileName, "header");
   gestureTable = loadTable(fileDirectory + gestureFileName, "header");
   transitionTable = loadTable(fileDirectory + transitionsFileName, "header");
+  if (PLOT_METATONE_MESSAGES)   metatoneTable = loadTable(fileDirectory + metatoneFileName, "header");
   String firstGestureTime = gestureTable.getRow(0).getString("time");
   parsePerformanceDate(firstGestureTime);
 
@@ -72,6 +76,7 @@ void prepareToDrawPerformance(String filePath) {
 }
 
 void setup() {
+  //size(1280, 1080, P2D);
   size(1920, 540, P2D);
   //noLoop();
 
@@ -118,11 +123,23 @@ void drawGesturePlot() {
   // Plotting the Events Table
   for (TableRow row : eventTable.rows()) {
     gesturePlot.colorMode(RGB);
-    gesturePlot.stroke(178, 22, 57, 180);
+    gesturePlot.stroke(228, 26, 28, 180);
     gesturePlot.strokeWeight(4);
     float eventTime = parseDateToSeconds(row.getString("time")) - startTotalSeconds;
     gesturePlot.line(margins + (eventTime * widthPixelsPerSecond), margins-5, 
       margins + (eventTime * widthPixelsPerSecond), height-(margins-5));
+  }
+
+  // Plotting the Metatone Table
+  if (PLOT_METATONE_MESSAGES) {
+    for (TableRow row : metatoneTable.rows()) {
+      gesturePlot.colorMode(RGB);
+      gesturePlot.stroke(55, 126, 184, 180);
+      gesturePlot.strokeWeight(4);
+      float metatoneTime = parseDateToSeconds(row.getString("time")) - startTotalSeconds;
+      gesturePlot.line(margins + (metatoneTime * widthPixelsPerSecond), margins-5, 
+        margins + (metatoneTime * widthPixelsPerSecond), height-(margins-5));
+    }
   }
 
   // Plotting the Gesture Table
