@@ -21,6 +21,13 @@ DEVICE_NAMES = {
     '46D2EBCA-A5BD-448A-8DB5-69C39D5220EE':'jonathan_iPad2'
 }
 
+DEVICE_ID_TO_SEATS_FOLLOW_UP = { # measured 2015-09-09
+"B7116C0A-A6AE-48E3-AA63-81CFDD936EFA" : 4, # not in the old list
+"D346C530-BBC9-4C1E-9714-F17654BCC3BC" : 3, # still yvonne
+"35F73141-D3D5-4F00-9A28-EC5449A1A73D" : 2, # still christina - from a long time ago
+"30CB5985-FC54-43FC-8B77-C8BE24AA443C" : 1  # still charles.
+}
+
 # Testing reading file to strings version.
 def split_metatone_log_to_dataframes(input):
     """
