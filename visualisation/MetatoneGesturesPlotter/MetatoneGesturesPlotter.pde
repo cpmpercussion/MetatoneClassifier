@@ -2,7 +2,7 @@ boolean DEFAULT_INPUT = false; // change to true to use "input.csv"
 boolean SAVING_FRAMES = true; // change to true to save tga frames.
 boolean OUTPUT_MOVIE = true; // true to convert movie with ffmpeg after all frames processed.
 boolean PLOT_METATONE_MESSAGES = true; // true to plot button presses.
-boolean DELETE_FRAMES = true; // cleans up frames at end of process.
+boolean DELETE_FRAMES = false; // cleans up frames at end of process.
 
 String metatoneFileName = "-metatone.csv";
 String eventsFileName = "-events.csv";
