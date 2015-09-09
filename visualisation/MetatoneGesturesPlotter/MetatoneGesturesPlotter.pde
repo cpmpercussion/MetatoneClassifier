@@ -2,6 +2,7 @@ boolean DEFAULT_INPUT = false; // change to true to use "input.csv"
 boolean SAVING_FRAMES = true; // change to true to save tga frames.
 boolean OUTPUT_MOVIE = true; // true to convert movie with ffmpeg after all frames processed.
 boolean PLOT_METATONE_MESSAGES = true; // true to plot button presses.
+boolean DELETE_FRAMES = true; // cleans up frames at end of process.
 
 String metatoneFileName = "-metatone.csv";
 String eventsFileName = "-events.csv";
@@ -46,6 +47,7 @@ void fileSelected(File selection) {
   } else {
     println("User selected " + selection.getAbsolutePath());
     prepareToDrawPerformance(selection.getAbsolutePath());
+    loop();
   }
 }
 
@@ -76,23 +78,25 @@ void prepareToDrawPerformance(String filePath) {
 }
 
 void setup() {
-  //size(1280, 1080, P2D);
-  size(1920, 540, P2D);
-  //noLoop();
+  size(1920, 720, P2D);
+  //size(1920, 540, P2D);
+  noLoop();
 
   // Load file from default input or from a selection dialogue.
   if (DEFAULT_INPUT) {
     println("Default input file: input.csv");
     prepareToDrawPerformance("input.csv");
+    loop();
   } else {
     println("Asking for user selected file.");
     selectInput("Select a .log to process:", "fileSelected");
   }
 
-  gesturePlot = createGraphics(1920, 540);
+  gesturePlot = createGraphics(width, height);
   f = loadFont("HelveticaNeue-18.vlw");
   textFont(f, 18);
   gesturePlot.textFont(f, 18);
+  background(0);
 }
 
 // drawGesturePlot actually creates the plot that will be used in the animation.
@@ -173,7 +177,6 @@ void drawGesturePlot() {
     }
     previousGestureRow = gestureTable.matchRow(row.getString("time"), "time");
   }
-
   gesturePlot.endDraw();
 }
 
@@ -184,16 +187,11 @@ void drawFrameTime(float currentFrameTime) {
   image(gesturePlot, 0, 0);
 
   // Draw Transport Locator
-  stroke(255, 0, 0, 180);
-  strokeWeight(5);
+  //stroke(255, 0, 0, 180);
+  stroke(77, 175, 74, 180);
+  strokeWeight(7);
   line(margins + (currentFrameTime * widthPixelsPerSecond), margins-10, 
     margins + (currentFrameTime * widthPixelsPerSecond), height-(margins-10));
-
-  // Write Plot Title
-  //stroke(200);
-  //strokeWeight(1);
-  //fill(200);
-  //text("Gesture Plot with \"New Idea\" Events", 10, 20);
 
   // Write timestamp String on the screen.
   stroke(200);
@@ -362,7 +360,7 @@ void makeMovie() {
   println("Filename will be: " + movieName);
   String inputDir = "/Users/charles/Movies/framestga/";
   String outputDir = "/Users/charles/Movies/processing-output/";
-  String command = "/usr/local/bin/ffmpeg -f image2 -framerate 25 -i " + inputDir + "/%06d.tga -vcodec libx264 -r 25 -pix_fmt yuv420p -crf 16 " + outputDir + movieName;
+  String command = "/usr/local/bin/ffmpeg -f image2 -framerate 25 -i " + inputDir + "%06d.tga -vcodec libx264 -r 25 -pix_fmt yuv420p -crf 16 " + outputDir + movieName;
   println(command);
   Process p;
   try {
@@ -371,17 +369,22 @@ void makeMovie() {
   } 
   catch(Exception e) {
     e.printStackTrace();
+    DELETE_FRAMES = false; // don't delete the frames if ffmpeg fails.
   }
   println("done encoding.");
-  println("now removing tga files.");
-  command = "rm -r " + inputDir;
-  println(command);
-  try {
-    p = Runtime.getRuntime().exec(command);
-    p.waitFor();
-  } 
-  catch(Exception e) {
-    e.printStackTrace();
+  if (DELETE_FRAMES) {
+    println("now removing tga files.");
+    command = "rm -r " + inputDir;
+    println(command);
+    try {
+      p = Runtime.getRuntime().exec(command);
+      p.waitFor();
+    } 
+    catch(Exception e) {
+      e.printStackTrace();
+    }
+  } else {
+    println("frames not deleted.");
   }
   println("done.");
 }
