@@ -7,7 +7,8 @@ This script splits up Metatone Classifier logs into 6 CSV files according to the
 from __future__ import print_function
 import argparse
 
-DEVICE_NAMES = {
+# Older device_id to names ... no longer really useful.
+OLD_DEVICE_NAMES = {
     '2678456D-9AE7-4DCC-A561-688A4766C325':'charles', # old
     '97F37307-2A95-4796-BAC9-935BF417AC42':'christina', # old
     '6769FE40-5F64-455B-82D4-814E26986A99':'yvonne', # old
@@ -20,6 +21,9 @@ DEVICE_NAMES = {
     '16742ED0-5061-4FC8-9BF6-6F23FF76D767':'charles_ipadair',
     '46D2EBCA-A5BD-448A-8DB5-69C39D5220EE':'jonathan_iPad2'
 }
+
+#DEVICE_NAMES = OLD_DEVICE_NAMES
+DEVICE_NAMES = {}
 
 # Testing reading file to strings version.
 def split_metatone_log_to_dataframes(input):
