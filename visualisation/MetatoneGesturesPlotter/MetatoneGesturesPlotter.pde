@@ -1,7 +1,10 @@
 boolean DEFAULT_INPUT = false; // change to true to use "input.csv"
 boolean SAVING_FRAMES = true; // change to true to save tga frames.
-boolean OUTPUT_MOVIE = false; // true to convert movie with ffmpeg after all frames processed.
+boolean OUTPUT_MOVIE = true; // true to convert movie with ffmpeg after all frames processed.
+boolean PLOT_METATONE_MESSAGES = true; // true to plot button presses.
+boolean DELETE_FRAMES = true; // cleans up frames at end of process.
 
+String metatoneFileName = "-metatone.csv";
 String eventsFileName = "-events.csv";
 String gestureFileName = "-gestures.csv";
 String transitionsFileName = "-transitions.csv";
@@ -27,6 +30,7 @@ int drawingPositionNumber;
 Table eventTable;
 Table gestureTable;
 Table transitionTable;
+Table metatoneTable;
 float currentFrameTime;
 float startTotalSeconds;
 float performanceLengthSeconds;
@@ -43,6 +47,7 @@ void fileSelected(File selection) {
   } else {
     println("User selected " + selection.getAbsolutePath());
     prepareToDrawPerformance(selection.getAbsolutePath());
+    loop();
   }
 }
 
@@ -53,6 +58,7 @@ void prepareToDrawPerformance(String filePath) {
   eventTable = loadTable(fileDirectory + eventsFileName, "header");
   gestureTable = loadTable(fileDirectory + gestureFileName, "header");
   transitionTable = loadTable(fileDirectory + transitionsFileName, "header");
+  if (PLOT_METATONE_MESSAGES)   metatoneTable = loadTable(fileDirectory + metatoneFileName, "header");
   String firstGestureTime = gestureTable.getRow(0).getString("time");
   parsePerformanceDate(firstGestureTime);
 
@@ -72,22 +78,25 @@ void prepareToDrawPerformance(String filePath) {
 }
 
 void setup() {
-  size(1920, 540, P2D);
-  //noLoop();
+  size(1920, 720, P2D);
+  //size(1920, 540, P2D);
+  noLoop();
 
   // Load file from default input or from a selection dialogue.
   if (DEFAULT_INPUT) {
     println("Default input file: input.csv");
     prepareToDrawPerformance("input.csv");
+    loop();
   } else {
     println("Asking for user selected file.");
     selectInput("Select a .log to process:", "fileSelected");
   }
 
-  gesturePlot = createGraphics(1920, 540);
+  gesturePlot = createGraphics(width, height);
   f = loadFont("HelveticaNeue-18.vlw");
   textFont(f, 18);
   gesturePlot.textFont(f, 18);
+  background(0);
 }
 
 // drawGesturePlot actually creates the plot that will be used in the animation.
@@ -118,11 +127,23 @@ void drawGesturePlot() {
   // Plotting the Events Table
   for (TableRow row : eventTable.rows()) {
     gesturePlot.colorMode(RGB);
-    gesturePlot.stroke(178, 22, 57, 180);
+    gesturePlot.stroke(228, 26, 28, 180);
     gesturePlot.strokeWeight(4);
     float eventTime = parseDateToSeconds(row.getString("time")) - startTotalSeconds;
     gesturePlot.line(margins + (eventTime * widthPixelsPerSecond), margins-5, 
       margins + (eventTime * widthPixelsPerSecond), height-(margins-5));
+  }
+
+  // Plotting the Metatone Table
+  if (PLOT_METATONE_MESSAGES) {
+    for (TableRow row : metatoneTable.rows()) {
+      gesturePlot.colorMode(RGB);
+      gesturePlot.stroke(55, 126, 184, 180);
+      gesturePlot.strokeWeight(4);
+      float metatoneTime = parseDateToSeconds(row.getString("time")) - startTotalSeconds;
+      gesturePlot.line(margins + (metatoneTime * widthPixelsPerSecond), margins-5, 
+        margins + (metatoneTime * widthPixelsPerSecond), height-(margins-5));
+    }
   }
 
   // Plotting the Gesture Table
@@ -156,7 +177,6 @@ void drawGesturePlot() {
     }
     previousGestureRow = gestureTable.matchRow(row.getString("time"), "time");
   }
-
   gesturePlot.endDraw();
 }
 
@@ -167,16 +187,11 @@ void drawFrameTime(float currentFrameTime) {
   image(gesturePlot, 0, 0);
 
   // Draw Transport Locator
-  stroke(255, 0, 0, 180);
-  strokeWeight(5);
+  //stroke(255, 0, 0, 180);
+  stroke(77, 175, 74, 180);
+  strokeWeight(7);
   line(margins + (currentFrameTime * widthPixelsPerSecond), margins-10, 
     margins + (currentFrameTime * widthPixelsPerSecond), height-(margins-10));
-
-  // Write Plot Title
-  //stroke(200);
-  //strokeWeight(1);
-  //fill(200);
-  //text("Gesture Plot with \"New Idea\" Events", 10, 20);
 
   // Write timestamp String on the screen.
   stroke(200);
@@ -345,7 +360,7 @@ void makeMovie() {
   println("Filename will be: " + movieName);
   String inputDir = "/Users/charles/Movies/framestga/";
   String outputDir = "/Users/charles/Movies/processing-output/";
-  String command = "/usr/local/bin/ffmpeg -f image2 -framerate 25 -i " + inputDir + "/%06d.tga -vcodec libx264 -r 25 -pix_fmt yuv420p -crf 16 " + outputDir + movieName;
+  String command = "/usr/local/bin/ffmpeg -f image2 -framerate 25 -i " + inputDir + "%06d.tga -vcodec libx264 -r 25 -pix_fmt yuv420p -crf 16 " + outputDir + movieName;
   println(command);
   Process p;
   try {
@@ -354,17 +369,22 @@ void makeMovie() {
   } 
   catch(Exception e) {
     e.printStackTrace();
+    DELETE_FRAMES = false; // don't delete the frames if ffmpeg fails.
   }
   println("done encoding.");
-  println("now removing tga files.");
-  command = "rm -r " + inputDir;
-  println(command);
-  try {
-    p = Runtime.getRuntime().exec(command);
-    p.waitFor();
-  } 
-  catch(Exception e) {
-    e.printStackTrace();
+  if (DELETE_FRAMES) {
+    println("now removing tga files.");
+    command = "rm -r " + inputDir;
+    println(command);
+    try {
+      p = Runtime.getRuntime().exec(command);
+      p.waitFor();
+    } 
+    catch(Exception e) {
+      e.printStackTrace();
+    }
+  } else {
+    println("frames not deleted.");
   }
   println("done.");
 }
