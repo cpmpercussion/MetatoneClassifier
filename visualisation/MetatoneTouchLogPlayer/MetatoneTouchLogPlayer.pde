@@ -1,4 +1,4 @@
-boolean DEFAULT_INPUT = true; // change to true to use "input.csv" //<>//
+boolean DEFAULT_INPUT = false; // change to true to use "input.csv" //<>//
 boolean SAVING_FRAMES = true; // change to true to save tga frames.
 boolean OUTPUT_MOVIE = true; // true to convert movie with ffmpeg after all frames processed.
 boolean startedLog = false;

@@ -463,6 +463,38 @@ def calculate_group_transitions_for_window(states_frame,window_size):
     group_transitions = group_transitions.resample(window_size, how=transition_sum)
     return group_transitions
 
+
+def transition_sum_then_flux(transitions):
+    # do a transition sum, then output the flux.
+    sum_transition = transition_sum(transitions)
+    flux_value = flux_measure(sum_transition)
+    return flux_value
+
+def calculate_rolling_flux_for_window(states_frame):
+    """
+    Finally Working
+    """
+    if not isinstance(states_frame, pd.DataFrame) or states_frame.empty:
+        return None
+    transition_series = create_transition_dataframe(states_frame).dropna()
+    #if transition_series.empty:
+    #    return None
+    cols = [transition_series[n] for n in transition_series.columns]
+    for column in range(len(cols)):
+        if column == 0:
+            group_transitions = cols[column]
+        else:
+            group_transitions = group_transitions + cols[column]       
+    group_transitions = group_transitions.dropna()
+    window=15
+    flux_series = pd.concat([(
+            pd.Series(
+                transition_sum_then_flux(group_transitions.iloc[i:i+window]),
+                index=[group_transitions.index[i+window]])
+        ) for i in xrange(len(group_transitions)-window) ])
+    return flux_series
+    
+
 def calculate_group_transition_matrix(states_frame):
     """
     Returns the group's transition matrix for a whole performance.

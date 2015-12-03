@@ -10,8 +10,9 @@ import pandas as pd
 import transitions
 import matplotlib.pyplot as plt
 import matplotlib.dates as dates
+import matplotlib.cm as cm
 from datetime import timedelta
-from ggplot import *
+#from ggplot import *
 import time
 import argparse
 
@@ -38,7 +39,6 @@ TRANSITION_STATES = {
 # directory_path = '/Users/charles/Dropbox/Metatone/touch-point-performance-analysis/MetatoneAgentGen/logs/'
 # performance_name = '2014-07-07T15-06-02-MetatoneOSCLog'
 # input_filename = '/Users/charles/Dropbox/Metatone/touch-point-performance-analysis/MetatoneAgentGen/logs/2014-07-07T15-06-02-MetatoneOSCLog.log'
-
 
 def plot_gesture_score_and_transitions(plot_title, events, gestures, metatone, online, touches, transitions_frame):
     transitions_to_plot = transitions_frame.apply(lambda s: [TRANSITION_STATES[s[0]], s[1], s[2]], axis=1)
@@ -90,9 +90,12 @@ def plot_gesture_score_and_transitions(plot_title, events, gestures, metatone, o
     plt.savefig(plot_title.replace(":", "_") + '.pdf', dpi=150, format="pdf")
     plt.close()
 
+BW_PLOT = True
+    
 def plot_gesture_score(plot_title, events, gestures, metatone, online, touches, transitions_frame):
     transitions_to_plot = transitions_frame.apply(lambda s: [TRANSITION_STATES[s[0]], s[1], s[2]], axis=1)
     new_ideas = events.index
+    plt.style.use('grayscale')
 
     #Gesture Score:
     idx = gestures.index
@@ -116,10 +119,14 @@ def plot_gesture_score(plot_title, events, gestures, metatone, online, touches, 
         plt.plot_date(idx.to_pydatetime(), gestures[n], '-', label=n)
     # plt.legend(loc='upper right')
 
+    new_idea_colour = 'r'
+    if BW_PLOT:
+        new_idea_colour = 'black'
+        
     ## Plot Lines for each event.
     for n in range(len(new_ideas)):
         x_val = new_ideas[n].to_pydatetime()
-        ax.axvline(x=x_val, color='r', alpha=0.7, linestyle='--')
+        ax.axvline(x=x_val, color=new_idea_colour, alpha=0.7, linestyle='--')
     plt.savefig(plot_title.replace(":", "_") + '.pdf', dpi=150, format="pdf")
     plt.close()
 
@@ -142,23 +149,50 @@ def plot_gesture_only_score(plot_title, gestures):
     plt.savefig(plot_title.replace(":", "_") + '.pdf', dpi=150, format="pdf")
     plt.close()
 
-def plot_score_posthoc_flux(gestures_frame, window, threshold):
-    winlen = str(window) + "s"
-    new_idea_difference_threshold = threshold #0.15
+def plot_gestures_and_flux_score(plot_title, gestures, flux):
+    """
+    Plots a gesture score with flux values as well.
+    """
+    idx = gestures.index
+    # ax = plt.figure(figsize=(35,10),frameon=False,tight_layout=True).add_subplot(111)
+    ax = plt.figure(figsize=(14, 10), frameon=False, tight_layout=True).add_subplot(211)
+    # ax.xaxis.set_major_locator(dates.SecondLocator(bysecond=[0,30]))
+    ax.xaxis.set_major_locator(dates.SecondLocator(interval=60))
+    ax.xaxis.set_major_formatter(dates.DateFormatter("%H:%M"))
+    ax.yaxis.grid()
+    plt.ylim(-0.5, 8.5)
+    plt.yticks(np.arange(9), ['n', 'ft', 'st', 'fs', 'fsa', 'vss', 'bs', 'ss', 'c'])
+    for n in gestures.columns:
+        plt.plot_date(idx.to_pydatetime(), gestures[n], '-', label=n)
+    # plt.legend(loc='upper right')
+
+    ax2 = plt.subplot(212, sharex=ax)
+    idx = flux.index
+    plt.plot_date(idx.to_pydatetime(),flux,'-',label=flux.name)
+    plt.ylabel("Flux")
+    
+    plt.savefig(plot_title.replace(":", "_") + '.pdf', dpi=150, format="pdf")
+    plt.close()
+    
+
+def plot_score_posthoc_flux(gestures_frame):
+    winlen = "15s"
+    new_idea_difference_threshold = transitions.NEW_IDEA_THRESHOLD
 
     # Setup Data.    
-    transition_activity = transitions.calculate_transition_activity_for_window(gestures_frame, winlen)
-    new_ideas = transitions.calculate_new_ideas(transition_activity, new_idea_difference_threshold)    
+    transition_matrices = transitions.calculate_group_transitions_for_window(gestures_frame, winlen)
+    flux_series = transitions.calculate_flux_series(transition_matrices)
+    new_ideas = transitions.calculate_new_ideas(flux_series, new_idea_difference_threshold)    
 	
     #Plot and save the Gesture Score as a pdf:
     idx = gestures_frame.index
-    ax = plt.figure(figsize=(25,10),frameon=False,tight_layout=True).add_subplot(211)
+    ax = plt.figure(figsize=(14,6),frameon=False,tight_layout=True).add_subplot(211)
     ax.xaxis.set_major_locator(dates.SecondLocator(bysecond=[0,30]))
     ax.xaxis.set_major_formatter(dates.DateFormatter("%H:%M:%S"))
     ax.xaxis.set_minor_locator(dates.SecondLocator(bysecond=[0,10,20,30,40,50]))
     ax.xaxis.grid(True,which="minor")
     ax.yaxis.grid()
-    title = "Post-Hoc: Gestures and Group Flux " + transition_activity.index[0].isoformat()
+    title = "Post-Hoc: Gestures and Group Flux " + flux_series.index[0].isoformat()
      # + " " + str(len(new_ideas)) + " new ideas with threshold " + str(new_idea_difference_threshold)
     plt.title(title + " (" + winlen + ", " + str(new_idea_difference_threshold) + ")")
     plt.ylabel("Gesture")
@@ -169,10 +203,10 @@ def plot_score_posthoc_flux(gestures_frame, window, threshold):
         plt.plot_date(idx.to_pydatetime(),gestures_frame[n],'-',label=n)
     plt.legend(loc='upper right')
     
-    transition_activity = transition_activity.resample('1s', fill_method='ffill')
+    flux_series = flux_series.resample('1s', fill_method='ffill')
     ax2 = plt.subplot(212, sharex=ax)
-    idx = transition_activity.index
-    plt.plot_date(idx.to_pydatetime(),transition_activity,'-',label=transition_activity.name)
+    idx = flux_series.index
+    plt.plot_date(idx.to_pydatetime(),flux_series,'-',label=flux_series.name)
     plt.ylabel("Flux")
     
     for n in range(len(new_ideas)):
@@ -184,13 +218,13 @@ def plot_score_posthoc_flux(gestures_frame, window, threshold):
     plt.savefig(title.replace(":","_") +'.pdf', dpi=150, format="pdf")
     plt.close()
 
-# Testing ggplot (doesn't really work well)
-def testing_ggplot():
-    gestures['date'] = gestures.index
-    #gestures_lng = pd.melt(gestures, id_vars=['date'], var_name="performer", value_name="gesture")
-    gestures_lng = pd.melt(gestures, id_vars=['date'])
-    gestures_lng.columns = ['date','performer','gesture']
-    ggplot(aes(x='date', y='gesture', colour='performer'), data=gestures_lng) + geom_line() + ggtitle(plot_title) + scale_x_date(breaks=dates.SecondLocator(bysecond=[0]),labels="%H:%M:%S")
+# # Testing ggplot (doesn't really work well)
+# def testing_ggplot():
+#     gestures['date'] = gestures.index
+#     #gestures_lng = pd.melt(gestures, id_vars=['date'], var_name="performer", value_name="gesture")
+#     gestures_lng = pd.melt(gestures, id_vars=['date'])
+#     gestures_lng.columns = ['date','performer','gesture']
+#     ggplot(aes(x='date', y='gesture', colour='performer'), data=gestures_lng) + geom_line() + ggtitle(plot_title) + scale_x_date(breaks=dates.SecondLocator(bysecond=[0]),labels="%H:%M:%S")
 
 def main():
     """
@@ -226,11 +260,9 @@ def main():
 
     ## Do the plotting
     # plot_gesture_score_and_transitions(plot_title,events,gestures,metatone,online,touches,transitions_frame)
-    plot_gesture_score(plot_title,events,gestures,metatone,online,touches,transitions_frame)
-    # plot_score_posthoc_flux(gestures.fillna(0),5,0.25)
+    #plot_gesture_score(plot_title,events,gestures,metatone,online,touches,transitions_frame)
+    plot_score_posthoc_flux(gestures.fillna(0),15,0.3)
     print("Done! Plotted: " + plot_title)
-
-
 
 if __name__ == "__main__":
     main()
