@@ -154,7 +154,7 @@ def generate_gesture_plot(names, gesture_frame):
 
 def plot_gestures_and_flux_score(plot_title, gestures, flux, flux_diffs):
     """
-    Plots a gesture score with flux values as well.
+    Plots a gesture score with flux values as well - this one suffers the window bug
     """
     idx = gestures.index
     # ax = plt.figure(figsize=(35,10),frameon=False,tight_layout=True).add_subplot(111)
@@ -190,15 +190,18 @@ def plot_gestures_and_flux_score(plot_title, gestures, flux, flux_diffs):
     plt.close()
 
 def plot_score_posthoc_flux(title,gestures_frame):
+    """
+    No window bug, but doesn't do the flux difference
+    """
     # Setup Data.
     flux_series = transitions.calculate_rolling_flux_for_window(gestures_frame)
     # Setup Plot
     idx = gestures_frame.index
-    ax = plt.figure(figsize=(14,6),frameon=False,tight_layout=True).add_subplot(211)
+    ax = plt.figure(figsize=(14,10),frameon=False,tight_layout=True).add_subplot(211)
     ax.xaxis.set_major_locator(dates.SecondLocator(interval=60))
     ax.xaxis.set_major_formatter(dates.DateFormatter("%H:%M"))
-    ax.xaxis.set_minor_locator(dates.SecondLocator(bysecond=[0,15,30,45]))
-    ax.xaxis.grid(True, which="minor")
+    #ax.xaxis.set_minor_locator(dates.SecondLocator(bysecond=[0,15,30,45]))
+    #ax.xaxis.grid(True, which="minor")
     ax.yaxis.grid()
     plt.ylabel("gesture")
     plt.xlabel("time")
@@ -208,7 +211,7 @@ def plot_score_posthoc_flux(title,gestures_frame):
         plt.plot_date(idx.to_pydatetime(),gestures_frame[n],'-',label=n)    
     flux_series = flux_series.resample('1s', fill_method='ffill')
     ax2 = plt.subplot(212, sharex=ax)
-    ax2.xaxis.grid(True, which="minor")
+    #ax2.xaxis.grid(True, which="minor")
     idx = flux_series.index
     plt.plot_date(idx.to_pydatetime(),flux_series,'-',label=flux_series.name)
     plt.ylabel("flux")
@@ -223,16 +226,20 @@ def plot_score_posthoc_flux(title,gestures_frame):
     plt.close()
     
 #GESTURES_FILE = "/Users/charles/src/metatone-analysis/data/2015-04-29T18-34-58-MetatoneOSCLog-touches-posthoc-gestures.csv"
+# Colour Music Opening
 GESTURES_FILE = "/Users/charles/src/metatone-analysis/data/2014-08-14T18-40-57-MetatoneOSCLog-touches-posthoc-gestures.csv"
-#GESTURES_FILE = "/Users/charles/Dropbox/Metatone/20140814-ColourMusicOpening/2014-08-14T18-40-57-MetatoneOSCLog-gestures.csv"
 gestures = pd.read_csv(GESTURES_FILE, index_col='time', parse_dates=True)
-flux_values = generate_flux_frame(gestures)
-flux_values.name = "Flux"
-flux_diffs = generate_flux_diff_frame(gestures)
-flux_diffs.name = "Flux_Difference"
-plot_gestures_and_flux_score("2014-08-14T18-40-57-gestures-and-flux",gestures,flux_values,flux_diffs)
 plot_score_posthoc_flux("2014-08-14T18-40-57-gestures-and-flux",gestures)
+#flux_values = generate_flux_frame(gestures)
+#flux_values.name = "Flux"
+#flux_diffs = generate_flux_diff_frame(gestures)
+#flux_diffs.name = "Flux_Difference"
+#plot_gestures_and_flux_score("2014-08-14T18-40-57-gestures-and-flux",gestures,flux_values,flux_diffs)
 
+# An Interesting Study Quartet Improv
+GESTURES_FILE = "/Users/charles/src/metatone-analysis/data/2015-04-29T18-34-58-MetatoneOSCLog-touches-posthoc-gestures.csv"
+gestures = pd.read_csv(GESTURES_FILE, index_col='time', parse_dates=True)
+plot_score_posthoc_flux("2015-04-29T18-34-58-gestures-and-flux",gestures)
 
 
 def main():
