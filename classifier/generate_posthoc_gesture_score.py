@@ -110,6 +110,11 @@ def generate_flux_diff_frame(gesture_frame):
     """
     Calculates a rolling calculation of flux differences at the same interval as the gestures.
     """
+    # Should be able to do this by selecting two date ranges, and then
+    # using the direct group-transition / flux function. TODO -
+    # implement this idea, and make it work properly so that flux diff
+    # can be plotted and modelled for thesis.
+
     window_size = "15s"
     flux_diffs = pd.DataFrame(index = gesture_frame.index)
     flux_diffs = gesture_frame.apply(flux_diff_calculation_from_row, axis=1,frame=gesture_frame,window=window_size)
@@ -191,13 +196,15 @@ def plot_gestures_and_flux_score(plot_title, gestures, flux, flux_diffs):
 
 def plot_score_posthoc_flux(title,gestures_frame):
     """
-    No window bug, but doesn't do the flux difference
+    Plots gestures and generates post-hoc rolling flux on a 15s
+    (actually 15 sample) window.
     """
     # Setup Data.
     flux_series = transitions.calculate_rolling_flux_for_window(gestures_frame)
     # Setup Plot
     idx = gestures_frame.index
-    ax = plt.figure(figsize=(14,10),frameon=False,tight_layout=True).add_subplot(211)
+    # What's a good size for the figure? (14,10) seems like a nice proportion
+    ax = plt.figure(figsize=(10.5,7.5),frameon=False,tight_layout=True).add_subplot(211)
     ax.xaxis.set_major_locator(dates.SecondLocator(interval=60))
     ax.xaxis.set_major_formatter(dates.DateFormatter("%H:%M"))
     #ax.xaxis.set_minor_locator(dates.SecondLocator(bysecond=[0,15,30,45]))
@@ -222,7 +229,7 @@ def plot_score_posthoc_flux(title,gestures_frame):
     #     ax2.axvline(x=x_val, color='r', alpha=0.7, linestyle='--')
     #     print(x_val)
     # Output Stage
-    plt.savefig(title.replace(":","_") +'.pdf', dpi=150, format="pdf")
+    plt.savefig(title.replace(":","_") +'.pdf', dpi=300, format="pdf")
     plt.close()
     
 #GESTURES_FILE = "/Users/charles/src/metatone-analysis/data/2015-04-29T18-34-58-MetatoneOSCLog-touches-posthoc-gestures.csv"
