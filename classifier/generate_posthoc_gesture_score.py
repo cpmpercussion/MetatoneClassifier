@@ -154,7 +154,7 @@ def generate_gesture_plot(names, gesture_frame):
     for name in names:
         plt.plot_date(idx.to_pydatetime(), gesture_frame[name], '-', label=name)
     plt.legend(loc='upper right')
-    plt.savefig(outname + '.pdf', dpi=150, format="pdf")
+    plt.savefig(outname + '.pdf', dpi=300, format="pdf")
     plt.close()
 
 def plot_gestures_and_flux_score(plot_title, gestures, flux, flux_diffs):
@@ -231,22 +231,82 @@ def plot_score_posthoc_flux(title,gestures_frame):
     # Output Stage
     plt.savefig(title.replace(":","_") +'.pdf', dpi=300, format="pdf")
     plt.close()
-    
-#GESTURES_FILE = "/Users/charles/src/metatone-analysis/data/2015-04-29T18-34-58-MetatoneOSCLog-touches-posthoc-gestures.csv"
+
+def plot_score_and_new_ideas(gestures_frame):
+    winlen = "15s"
+    window = 15
+    new_idea_difference_threshold = 0.15
+    #transitions.NEW_IDEA_THRESHOLD
+    # Setup Data.    
+    transition_matrices = transitions.calculate_group_transitions_for_window(gestures_frame, winlen)
+    flux_series = transitions.calculate_flux_series(transition_matrices)
+    new_ideas = transitions.calculate_new_ideas(flux_series, new_idea_difference_threshold)    
+    #Plot and save the Gesture Score as a pdf:
+    idx = gestures_frame.index
+    ax = plt.figure(figsize=(10,5),frameon=False,tight_layout=True).add_subplot(211)
+    ax.xaxis.set_major_locator(dates.SecondLocator(interval=60))
+    ax.xaxis.set_major_formatter(dates.DateFormatter("%H:%M"))
+    ax.yaxis.grid()
+    title = "Post-Hoc: Gestures and Group Flux " + flux_series.index[0].isoformat()
+    plt.ylabel("gesture")
+    #plt.xlabel("Time")
+    plt.ylim(-0.5,8.5)
+    plt.yticks(np.arange(9),['n','ft','st','fs','fsa','vss','bs','ss','c'])
+    for n in gestures_frame.columns:
+        plt.plot_date(idx.to_pydatetime(),gestures_frame[n],'-',label=n)
+    #plt.legend(loc='upper right')
+    flux_series = flux_series.resample('1s', fill_method='ffill')
+    ax2 = plt.subplot(212, sharex=ax)
+    idx = flux_series.index
+    plt.plot_date(idx.to_pydatetime(),flux_series,'-',label=flux_series.name)
+    plt.ylabel("flux")
+    for n in range(len(new_ideas)):
+        x_val = new_ideas.index[n].to_pydatetime() + timedelta(seconds = window / 2)
+        ax.axvline(x=x_val, color='r', alpha=0.7, linestyle='--')
+        ax2.axvline(x=x_val, color='r', alpha=0.7, linestyle='--')
+        print(x_val)
+    plt.savefig(title.replace(":","_") +'.pdf', dpi=300, format="pdf")
+    plt.close()
+
+def post_hoc_transition_analysis_for_thesis(gesture_filename):
+    gestures = pd.read_csv(GESTURES_FILE, index_col='time', parse_dates=True)
+    gestures_first_time = str(gestures.index[0])
+    plot_score_posthoc_flux(gestures_first_time + "-gesture-and-flux",gestures)
+    transition_series = transitions.calculate_group_transitions_for_window(gestures,"15s")
+    flux_series = transitions.calculate_flux_series(transition_series)
+    new_ideas = transitions.calculate_new_ideas(flux_series,0.15)
+    print(new_ideas)
+    plot_score_and_new_ideas(gestures)
+    transitions.print_transition_plots(transition_series)
+
+    #GESTURES_FILE = "/Users/charles/src/metatone-analysis/data/2015-04-29T18-34-58-MetatoneOSCLog-touches-posthoc-gestures.csv"
 # Colour Music Opening
 GESTURES_FILE = "/Users/charles/src/metatone-analysis/data/2014-08-14T18-40-57-MetatoneOSCLog-touches-posthoc-gestures.csv"
-gestures = pd.read_csv(GESTURES_FILE, index_col='time', parse_dates=True)
-plot_score_posthoc_flux("2014-08-14T18-40-57-gestures-and-flux",gestures)
+
+#post_hoc_transition_analysis_for_thesis(GESTURES_FILE)
+
+
+# gestures = pd.read_csv(GESTURES_FILE, index_col='time', parse_dates=True)
+# plot_score_posthoc_flux("2014-08-14T18-40-57-gestures-and-flux",gestures)
 #flux_values = generate_flux_frame(gestures)
 #flux_values.name = "Flux"
 #flux_diffs = generate_flux_diff_frame(gestures)
 #flux_diffs.name = "Flux_Difference"
 #plot_gestures_and_flux_score("2014-08-14T18-40-57-gestures-and-flux",gestures,flux_values,flux_diffs)
+#flux_series = transitions.calculate_rolling_flux_for_window(gestures)
+#flux_series = transitions.calculate_rolling_flux_for_window(gestures)
 
 # An Interesting Study Quartet Improv
 GESTURES_FILE = "/Users/charles/src/metatone-analysis/data/2015-04-29T18-34-58-MetatoneOSCLog-touches-posthoc-gestures.csv"
-gestures = pd.read_csv(GESTURES_FILE, index_col='time', parse_dates=True)
-plot_score_posthoc_flux("2015-04-29T18-34-58-gestures-and-flux",gestures)
+post_hoc_transition_analysis_for_thesis(GESTURES_FILE)
+GESTURES_FILE = "/Users/charles/src/metatone-analysis/data/2014-07-19T13-58-10-MetatoneOSCLog-touches-posthoc-gestures.csv"
+post_hoc_transition_analysis_for_thesis(GESTURES_FILE)
+
+# An Interesting Study Trio Improv
+GESTURES_FILE = "/Users/charles/Desktop/flux-calculation-test/2014-07-19T15-18-35-MetatoneOSCLog-touches-posthoc-gestures.csv"
+post_hoc_transition_analysis_for_thesis(GESTURES_FILE)
+
+
 
 
 def main():
