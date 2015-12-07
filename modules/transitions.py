@@ -365,7 +365,7 @@ def dict_vecs_special_case_state(vecs):
 
 #####################
 #
-# Plotting Transition events --- time to retire this!
+# Plotting Transition events
 #
 #####################
 
@@ -382,10 +382,11 @@ def print_transition_plots(transitions):
         print(title)
         colours = plt.cm.Reds #plt.cm.hot # plt.cm.autumn # plt.cm.binary for black and white
         # plt.title(title + " " + state + " " + str(spread) + " " + str(ratio))
-        plt.figure(figsize=(4.5,4),dpi=300)
+        #plt.figure(figsize=(4.5,4),dpi=300)
+        plt.figure(figsize=(5.5,4),dpi=300)
         plt.title(title  + " flux: " + str(round(flux, 3)))
         plt.imshow(mat, cmap=colours, interpolation='nearest', vmin=0.0,vmax=1.0)
-        #plt.colorbar()
+        plt.colorbar() # shows the legend
         labels = ["none", "taps", "swipes", "swirls", "combo"]
         plt.xticks([0, 1, 2, 3, 4], labels)
         plt.yticks([0, 1, 2, 3, 4], labels)
