@@ -164,8 +164,7 @@ def plot_gestures_and_flux_score(plot_title, gestures, flux, flux_diffs):
     idx = gestures.index
     # ax = plt.figure(figsize=(35,10),frameon=False,tight_layout=True).add_subplot(111)
     ax = plt.figure(figsize=(14, 6), frameon=False, tight_layout=True).add_subplot(211)
-    # ax.xaxis.set_major_locator(dates.SecondLocator(bysecond=[0,30]))
-    ax.xaxis.set_major_locator(dates.SecondLocator(interval=60))
+    ax.xaxis.set_major_locator(dates.SecondLocator(bysecond=[0]))
     ax.xaxis.set_major_formatter(dates.DateFormatter("%H:%M"))
     #ax.xaxis.set_minor_locator(dates.SecondLocator(bysecond=[0,10,20,30,40,50]))
     #ax.xaxis.grid(True, which="minor")
@@ -205,9 +204,9 @@ def plot_score_posthoc_flux(title,gestures_frame):
     idx = gestures_frame.index
     # What's a good size for the figure? (14,10) seems like a nice proportion
     ax = plt.figure(figsize=(10.5,7.5),frameon=False,tight_layout=True).add_subplot(211)
-    ax.xaxis.set_major_locator(dates.SecondLocator(interval=60))
+    ax.xaxis.set_major_locator(dates.SecondLocator(bysecond=[0]))
     ax.xaxis.set_major_formatter(dates.DateFormatter("%H:%M"))
-    #ax.xaxis.set_minor_locator(dates.SecondLocator(bysecond=[0,15,30,45]))
+    ax.xaxis.set_minor_locator(dates.SecondLocator(bysecond=[0,15,30,45]))
     #ax.xaxis.grid(True, which="minor")
     ax.yaxis.grid()
     plt.ylabel("gesture")
@@ -244,8 +243,10 @@ def plot_score_and_new_ideas(gestures_frame):
     #Plot and save the Gesture Score as a pdf:
     idx = gestures_frame.index
     ax = plt.figure(figsize=(10,5),frameon=False,tight_layout=True).add_subplot(211)
-    ax.xaxis.set_major_locator(dates.SecondLocator(interval=60))
+    ax.xaxis.set_major_locator(dates.SecondLocator(bysecond=[0])) # right!
     ax.xaxis.set_major_formatter(dates.DateFormatter("%H:%M"))
+    ax.xaxis.set_minor_locator(dates.SecondLocator(bysecond=[0,15,30,45]))
+    #ax.xaxis.grid(True, which="minor")
     ax.yaxis.grid()
     title = "Post-Hoc: Gestures and Group Flux " + flux_series.index[0].isoformat()
     plt.ylabel("gesture")
@@ -262,8 +263,9 @@ def plot_score_and_new_ideas(gestures_frame):
     plt.ylabel("flux")
     for n in range(len(new_ideas)):
         x_val = new_ideas.index[n].to_pydatetime() + timedelta(seconds = window / 2)
-        ax.axvline(x=x_val, color='r', alpha=0.7, linestyle='--')
-        ax2.axvline(x=x_val, color='r', alpha=0.7, linestyle='--')
+        #x_val = new_ideas.index[0].to_pydatetime() + timedelta(seconds = window / 2) # just look at the first new-idea
+        ax.axvline(x=x_val, color='r', alpha=1, linestyle='--')
+        ax2.axvline(x=x_val, color='r', alpha=1, linestyle='--')
         print(x_val)
     plt.savefig(title.replace(":","_") +'.pdf', dpi=300, format="pdf")
     plt.close()
@@ -280,11 +282,6 @@ def post_hoc_transition_analysis_for_thesis(gesture_filename):
     transitions.print_transition_plots(transition_series)
 
     #GESTURES_FILE = "/Users/charles/src/metatone-analysis/data/2015-04-29T18-34-58-MetatoneOSCLog-touches-posthoc-gestures.csv"
-# Colour Music Opening
-GESTURES_FILE = "/Users/charles/src/metatone-analysis/data/2014-08-14T18-40-57-MetatoneOSCLog-touches-posthoc-gestures.csv"
-
-#post_hoc_transition_analysis_for_thesis(GESTURES_FILE)
-
 
 # gestures = pd.read_csv(GESTURES_FILE, index_col='time', parse_dates=True)
 # plot_score_posthoc_flux("2014-08-14T18-40-57-gestures-and-flux",gestures)
@@ -299,6 +296,7 @@ GESTURES_FILE = "/Users/charles/src/metatone-analysis/data/2014-08-14T18-40-57-M
 # An Interesting Study Quartet Improv
 GESTURES_FILE = "/Users/charles/src/metatone-analysis/data/2015-04-29T18-34-58-MetatoneOSCLog-touches-posthoc-gestures.csv"
 post_hoc_transition_analysis_for_thesis(GESTURES_FILE)
+
 GESTURES_FILE = "/Users/charles/src/metatone-analysis/data/2014-07-19T13-58-10-MetatoneOSCLog-touches-posthoc-gestures.csv"
 post_hoc_transition_analysis_for_thesis(GESTURES_FILE)
 
@@ -306,8 +304,13 @@ post_hoc_transition_analysis_for_thesis(GESTURES_FILE)
 GESTURES_FILE = "/Users/charles/Desktop/flux-calculation-test/2014-07-19T15-18-35-MetatoneOSCLog-touches-posthoc-gestures.csv"
 post_hoc_transition_analysis_for_thesis(GESTURES_FILE)
 
+# Colour Music Opening
+GESTURES_FILE = "/Users/charles/src/metatone-analysis/data/2014-08-14T18-40-57-MetatoneOSCLog-touches-posthoc-gestures.csv"
+post_hoc_transition_analysis_for_thesis(GESTURES_FILE)
 
-
+#Gesture Study You Are Here Premiere
+GESTURES_FILE = "/Users/charles/src/metatone-analysis/data/2014-03-17T18-09-46-MetatoneOSCLog-touches-posthoc-gestures.csv"
+post_hoc_transition_analysis_for_thesis(GESTURES_FILE)
 
 def main():
     """
