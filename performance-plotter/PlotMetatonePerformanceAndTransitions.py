@@ -102,15 +102,13 @@ def plot_gesture_score(plot_title, events, gestures, metatone, online, touches, 
     new_ideas = events.index
     if BW_PLOT:
         plt.style.use('grayscale')
-    figure_dimensions = (10,3.5) # good dimensions for curating the digital paper.
-    #figure_dimensions = (6,2.65) # could be good for thesis.
+    #figure_dimensions = (10,3.5) # good dimensions for curating the digital paper.
+    figure_dimensions = (10,4.2) # good dimensions for thesis at 0.75\texheight
     #Gesture Score:
     idx = gestures.index
     ax = plt.figure(figsize=figure_dimensions, frameon=False, tight_layout=True, dpi=300).add_subplot(111)
     ax.xaxis.set_major_locator(dates.SecondLocator(bysecond=[0]))
     ax.xaxis.set_major_formatter(dates.DateFormatter("%H:%M"))
-    # ax.xaxis.set_minor_locator(dates.SecondLocator(bysecond=[0,10,20,30,40,50]))
-    # ax.xaxis.grid(True,which="minor")
     ax.yaxis.grid()
     plt.ylim(-0.5, 8.5)
     plt.yticks(np.arange(9), ['n', 'ft', 'st', 'fs', 'fsa', 'vss', 'bs', 'ss', 'c'])
@@ -123,7 +121,8 @@ def plot_gesture_score(plot_title, events, gestures, metatone, online, touches, 
     for n in range(len(new_ideas)):
         x_val = new_ideas[n].to_pydatetime()
         ax.axvline(x=x_val, color=new_idea_colour, alpha=0.7, linestyle='--')
-    plt.savefig(plot_title.replace(":", "_") + '.pdf', dpi=300, format="pdf")
+    out_title = plot_title.replace(":", "_").replace(" ", "-")
+    plt.savefig(out_title + '.pdf', dpi=300, format="pdf")
     plt.close()
     print("Plot done.")
 
