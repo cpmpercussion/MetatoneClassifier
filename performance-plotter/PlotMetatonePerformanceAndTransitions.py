@@ -90,45 +90,42 @@ def plot_gesture_score_and_transitions(plot_title, events, gestures, metatone, o
     plt.savefig(plot_title.replace(":", "_") + '.pdf', dpi=150, format="pdf")
     plt.close()
 
-BW_PLOT = True
+BW_PLOT = False
     
 def plot_gesture_score(plot_title, events, gestures, metatone, online, touches, transitions_frame):
-    transitions_to_plot = transitions_frame.apply(lambda s: [TRANSITION_STATES[s[0]], s[1], s[2]], axis=1)
+    """
+    Plots the Gesture Score and New Idea events (dashed vertical lines).
+    This is the version for the curating the digital chapter.
+    Option to generate in black and white: (BW_PLOT)
+    """
+    print("Plotting Gestures and New-Ideas Only...")
     new_ideas = events.index
-    plt.style.use('grayscale')
-
+    if BW_PLOT:
+        plt.style.use('grayscale')
+    figure_dimensions = (10,3.5) # good dimensions for curating the digital paper.
+    #figure_dimensions = (6,2.65) # could be good for thesis.
     #Gesture Score:
     idx = gestures.index
-    # ax = plt.figure(figsize=(35,10),frameon=False,tight_layout=True).add_subplot(111)
-    ax = plt.figure(figsize=(14, 4), frameon=False, tight_layout=True).add_subplot(111)
-
-    # ax.xaxis.set_major_locator(dates.SecondLocator(bysecond=[0,30]))
-    ax.xaxis.set_major_locator(dates.SecondLocator(interval=60))
+    ax = plt.figure(figsize=figure_dimensions, frameon=False, tight_layout=True, dpi=300).add_subplot(111)
+    ax.xaxis.set_major_locator(dates.SecondLocator(bysecond=[0]))
     ax.xaxis.set_major_formatter(dates.DateFormatter("%H:%M"))
-
-    # ax.xaxis.set_major_formatter(dates.DateFormatter("%H:%M:%S"))
     # ax.xaxis.set_minor_locator(dates.SecondLocator(bysecond=[0,10,20,30,40,50]))
     # ax.xaxis.grid(True,which="minor")
     ax.yaxis.grid()
-    # plt.title(plot_title)
-    # plt.ylabel("gesture")
-    # plt.xlabel("time")
     plt.ylim(-0.5, 8.5)
     plt.yticks(np.arange(9), ['n', 'ft', 'st', 'fs', 'fsa', 'vss', 'bs', 'ss', 'c'])
     for n in gestures.columns:
         plt.plot_date(idx.to_pydatetime(), gestures[n], '-', label=n)
-    # plt.legend(loc='upper right')
-
     new_idea_colour = 'r'
     if BW_PLOT:
         new_idea_colour = 'black'
-        
     ## Plot Lines for each event.
     for n in range(len(new_ideas)):
         x_val = new_ideas[n].to_pydatetime()
         ax.axvline(x=x_val, color=new_idea_colour, alpha=0.7, linestyle='--')
-    plt.savefig(plot_title.replace(":", "_") + '.pdf', dpi=150, format="pdf")
+    plt.savefig(plot_title.replace(":", "_") + '.pdf', dpi=300, format="pdf")
     plt.close()
+    print("Plot done.")
 
 def plot_gesture_only_score(plot_title, gestures):
     """
@@ -137,8 +134,7 @@ def plot_gesture_only_score(plot_title, gestures):
     idx = gestures.index
     # ax = plt.figure(figsize=(35,10),frameon=False,tight_layout=True).add_subplot(111)
     ax = plt.figure(figsize=(14, 4), frameon=False, tight_layout=True).add_subplot(111)
-    # ax.xaxis.set_major_locator(dates.SecondLocator(bysecond=[0,30]))
-    ax.xaxis.set_major_locator(dates.SecondLocator(interval=60))
+    ax.xaxis.set_major_locator(dates.SecondLocator(bysecond=[0]))
     ax.xaxis.set_major_formatter(dates.DateFormatter("%H:%M"))
     ax.yaxis.grid()
     plt.ylim(-0.5, 8.5)
@@ -156,8 +152,7 @@ def plot_gestures_and_flux_score(plot_title, gestures, flux):
     idx = gestures.index
     # ax = plt.figure(figsize=(35,10),frameon=False,tight_layout=True).add_subplot(111)
     ax = plt.figure(figsize=(14, 10), frameon=False, tight_layout=True).add_subplot(211)
-    # ax.xaxis.set_major_locator(dates.SecondLocator(bysecond=[0,30]))
-    ax.xaxis.set_major_locator(dates.SecondLocator(interval=60))
+    ax.xaxis.set_major_locator(dates.SecondLocator(bysecond=[0]))
     ax.xaxis.set_major_formatter(dates.DateFormatter("%H:%M"))
     ax.yaxis.grid()
     plt.ylim(-0.5, 8.5)
@@ -218,14 +213,6 @@ def plot_score_posthoc_flux(gestures_frame):
     plt.savefig(title.replace(":","_") +'.pdf', dpi=150, format="pdf")
     plt.close()
 
-# # Testing ggplot (doesn't really work well)
-# def testing_ggplot():
-#     gestures['date'] = gestures.index
-#     #gestures_lng = pd.melt(gestures, id_vars=['date'], var_name="performer", value_name="gesture")
-#     gestures_lng = pd.melt(gestures, id_vars=['date'])
-#     gestures_lng.columns = ['date','performer','gesture']
-#     ggplot(aes(x='date', y='gesture', colour='performer'), data=gestures_lng) + geom_line() + ggtitle(plot_title) + scale_x_date(breaks=dates.SecondLocator(bysecond=[0]),labels="%H:%M:%S")
-
 def main():
     """
     Main Script.
@@ -260,8 +247,8 @@ def main():
 
     ## Do the plotting
     # plot_gesture_score_and_transitions(plot_title,events,gestures,metatone,online,touches,transitions_frame)
-    #plot_gesture_score(plot_title,events,gestures,metatone,online,touches,transitions_frame)
-    plot_score_posthoc_flux(gestures.fillna(0),15,0.3)
+    plot_gesture_score(plot_title,events,gestures,metatone,online,touches,transitions_frame)
+    #plot_score_posthoc_flux(gestures.fillna(0),15,0.3)
     print("Done! Plotted: " + plot_title)
 
 if __name__ == "__main__":
