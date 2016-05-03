@@ -10,9 +10,16 @@ You probably already have python on your system, but on OS X, I use homebrew to 
 
 Then I would install some Python packages:
     
-    pip install pybonjour pandas scikit-learn
+    pip install pandas scikit-learn scipy matplotlib tornado
+    pip install -e git+https://github.com/Eichhoernchen/pybonjour.git#egg=pybonjour
 
 ## Building
+
+For performing:
+
+    cd web-classifier
+    python metatone-server.py
+
 
 For debug:
 
@@ -20,16 +27,11 @@ For debug:
     python setup.app py2app -A
     dist/MetatoneClassifier.app/Contents/MacOS/MetatoneClassifier
 
-For running:
+For packaging:
 
     cd MetatoneClassifier/classifier
     python setup.app py2app
     open dist/MetatoneClassifier.app
-
-## Performing.
-
-    cd MetatoneClassifier
-    python ./classifier/metatoneLiveLoggingProcessor.py
 
 After the performance, you can check the logs in the "classifier/logs" directory.
 
