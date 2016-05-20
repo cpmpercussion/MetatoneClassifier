@@ -1,21 +1,26 @@
-import numpy as np
-import pandas as pd
+"""
+Evaluates three sets of training data from Metatone Classifier's
+gesture classifying system.
+
+This script performs 10-fold cross-validation 10 times of the 
+training data to determine the quality of each data set.
+Cross-validation data is saved to a data-frame for later application
+of ANOVA and paired t-tests to compare the different sets.
+Average confusion matrices are calculated and plotted for each set
+of data.
+"""
 from datetime import timedelta
 from datetime import datetime
-from sklearn.ensemble import RandomForestClassifier
 import pickle
-
+import numpy as np
+import pandas as pd
+from sklearn.ensemble import RandomForestClassifier
 from sklearn.cross_validation import StratifiedKFold
 import matplotlib.pyplot as plt
 
-##
-## Setup Classifier
-##
-
 TRAIN_PROPORTION = 0.8 # uses this much of the full set for training, remainder for testing.
-
-## Int values for Gesture codes.
-gesture_codes = {
+FOLDS = 10 # this is for K-fold cross-validation.
+GESTURE_CODES = { ## Int values for Gesture codes.
     'N': 0,
     'FT': 1,
     'ST': 2,
@@ -28,8 +33,6 @@ gesture_codes = {
 
 ## Column names in the feature vectors:
 feature_vector_columns = ['centroid_x','centroid_y','std_x','std_y','freq','movement_freq','touchdown_freq','velocity']
-
-
 
 def pickleClassifier(file_name):
     """
@@ -51,8 +54,6 @@ def pickleClassifier(file_name):
     pickle.dump(classifier, pickle_file)
     pickle_file.close()
 
-
-
 def evaluateClassifier(classifier,feature_vectors):
     """
     Evaluates a classifier using a set of feature vectors and target gesture
@@ -63,48 +64,41 @@ def evaluateClassifier(classifier,feature_vectors):
     ## Using stratified K-Folds validation
     vectors = np.array(feature_vectors[feature_vector_columns])
     targets = np.array(feature_vectors['gesture'])
-    folds = 10
 
-
-    skf = StratifiedKFold(targets,folds,shuffle=True)
+    skf = StratifiedKFold(targets,FOLDS,shuffle=True)
     scores = np.array([])
     confusion = np.zeros((9,9))
     for train, test in skf:
         X_train, X_test, y_train, y_test = vectors[train], vectors[test], targets[train], targets[test]
         classifier.fit(X_train,y_train)
         s = classifier.score(X_test,y_test)
-        #print("Score: " + str(s))
         scores = np.append(scores,s)
         y_pred = classifier.predict(X_test)
         for x in range(len(y_test)):
             confusion[y_test[x]][y_pred[x]] = confusion[y_test[x]][y_pred[x]] + 1
-        #c = confusion_matrix(y_test,y_pred)
-        #print(str(len(train)) + " " + str(len(test)))
-    confusion = confusion / 10.0
-    #print("Confusion Matrix:\n" + str(confusion))
     print("Accuracy: %0.2f (+/- %0.2f)" % (scores.mean(), scores.std() * 2))
     return scores, confusion
 
 def plot_confusion_matrix(cm, title='Confusion matrix', cmap=plt.cm.Blues):
-    plt.imshow(cm, interpolation='nearest', cmap=cmap)
+    plt.figure(figsize=(5.5,4.5),dpi=300)
     plt.title(title)
-    plt.colorbar()
-    tick_marks = np.arange(len(gesture_codes))
-    plt.xticks(tick_marks, gesture_codes)
-    plt.yticks(tick_marks, gesture_codes)
+    plt.imshow(cm, cmap=plt.cm.Blues, interpolation='nearest')
+    plt.colorbar() # shows the legend
+    labels =  ['N','FT','ST','FS','FSA','VSS','BS','SS','C']
+    plt.xticks([0, 1, 2, 3, 4, 5, 6, 7, 8], labels)
+    plt.yticks([0, 1, 2, 3, 4, 5, 6, 7, 8], labels)
     plt.tight_layout()
     plt.ylabel('True label')
     plt.xlabel('Predicted label')
+    plt.savefig(title.replace(":", "_") + '.pdf', dpi=300, format="pdf")
+    plt.close()
 
-#from sklearn import cross_validation
-#scores = cross_validation.cross_val_score(classifier,vectors,targets,cv=5)
-#print("Accuracy: %0.2f (+/- %0.2f)" % (scores.mean(), scores.std() * 2))
-
-##### Load some Data
-##
+##### Setting up the classifier training data
 data20130701_5s = '2013-07-01-TrainingData.csv' # 5s windowed data
 data20130701_1s = '2013-07-01-TrainingData1s.csv' # 1s windowed data
 data20141212_cpm = '2014-12-12T12-05-53-GestureTargetLog-CPM-FeatureVectors.csv' # new processing collected data
+
+short_names = {data20130701_5s:"Studio 5s Window",data20130701_1s:"Studio 1s Window",data20141212_cpm:"Formal Procedure"}
 
 data = [data20130701_5s,data20130701_1s,data20141212_cpm]
 data_scores = []
@@ -112,8 +106,6 @@ data_confusion_matrices = []
 tests = []
 confusions = {data20130701_5s:np.zeros((9,9)),data20130701_1s:np.zeros((9,9)),data20141212_cpm:np.zeros((9,9))}
 output = pd.DataFrame(index=pd.Series(range(100)))
-
-
 
 print("Testing Training Data...")
 
@@ -131,18 +123,15 @@ for n in range(10):
         test = test.join(pd.DataFrame({f:scores}))
     tests.append(test)
 
-for f in data:
-    confusions[f] = confusions[f] / 10.0
-
 print("Tests Complete.")
 
+print("Plotting Confusion Matrices")
+for f in data:
+    confusions[f] = confusions[f] / confusions[f].sum()
+    plot_confusion_matrix(confusions[f],short_names[f]+" Confusion Matrix")
 
 output = pd.concat(tests,ignore_index=True)
 output.columns = ['train2013-5s','train2013-1s','train2014-1s']
-# output_confusions = pd.concat(confusions,ignore_index=True)
-# output_confusions.columns = ['train2013-5s','train2013-1s','train2014-1s']
-
-
 # from scipy.stats import f_oneway
 # from scipy.stats import ttest_ind
 
@@ -158,12 +147,4 @@ print("Not working right now, do it in R")
 # print("1-2 " + str(t2))
 # print("0-2 " + str(t3))
 
-plt.figure(figsize=(5.5,4),dpi=300)
-plt.title("confusion matrix")
-plt.imshow(mat, cmap=plt.cm.Blues, interpolation='nearest', vmin=0.0,vmax=1.0)
-plt.colorbar() # shows the legend
-labels =  ['N','FT','ST','FS','FSA','VSS','BS','SS','C']
-plt.xticks([0, 1, 2, 3, 4, 5, 6, 7, 8], labels)
-plt.yticks([0, 1, 2, 3, 4], labels)
-plt.savefig(filename.replace(":", "_") + '.pdf', dpi=300, format="pdf")
-plt.close()
+
