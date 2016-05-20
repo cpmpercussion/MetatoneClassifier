@@ -2,6 +2,8 @@
 
 Python software for tracking musical performances on iPads with Charles Martin's Metatone apps. 
 
+[![DOI](https://zenodo.org/badge/20166/cpmpercussion/MetatoneClassifier.svg)](https://zenodo.org/badge/latestdoi/20166/cpmpercussion/MetatoneClassifier)
+
 ## Installing
 
 You probably already have python on your system, but on OS X, I use homebrew to get a better version. After [installing Homebrew](), I run:
