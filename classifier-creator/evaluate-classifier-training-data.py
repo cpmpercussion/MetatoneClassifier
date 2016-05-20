@@ -15,6 +15,8 @@ import pandas as pd
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.cross_validation import StratifiedKFold
 import matplotlib.pyplot as plt
+from scipy.stats import f_oneway
+from scipy.stats import ttest_ind
 
 TRAIN_PROPORTION = 0.8 # uses this much of the full set for training, remainder for testing.
 FOLDS = 10 # this is for K-fold cross-validation.
@@ -35,8 +37,8 @@ def pickleClassifier(file_name):
     """
     Trains a RandomForestClassifier and pickles the result
     """
-    feature_vectors = pd.read_csv(file_name,index_col=0,parse_dates=True)
-    feature_vectors = feature_vectors.rename(columns={'target':'gesture'})
+    feature_vectors = pd.read_csv(file_name,index_col = 0, parse_dates = True)
+    feature_vectors = feature_vectors.rename(columns = {'target':'gesture'})
     msk = np.random.rand(len(feature_vectors)) < TRAIN_PROPORTION
     train = feature_vectors[msk]
     test = feature_vectors[~msk]
@@ -47,7 +49,7 @@ def pickleClassifier(file_name):
     mean_accuracy = classifier.score(test[FEATURE_VECTOR_COLUMNS],test['gesture'])
     print('Mean Accuracy:' + str(mean_accuracy) + '\n')
     # save pickled classifier
-    pickle_file = open( file_name.replace('.csv','-classifier.p'), "wb" )
+    pickle_file = open( file_name.replace('.csv', '-classifier.p'), "wb")
     pickle.dump(classifier, pickle_file)
     pickle_file.close()
 
@@ -104,10 +106,10 @@ data = [data20130701_5s, data20130701_1s, data20141212_cpm]
 data_scores = []
 data_confusion_matrices = []
 tests = []
-confusions = {data20130701_5s:np.zeros((9,9)), data20130701_1s:np.zeros((9,9)), data20141212_cpm:np.zeros((9,9))}
+confusions = {data20130701_5s:np.zeros((9, 9)), data20130701_1s:np.zeros((9, 9)), data20141212_cpm:np.zeros((9, 9))}
 output = pd.DataFrame(index=pd.Series(range(100)))
 
-print("Testing Training Data...")
+print("Testing training data...")
 
 for n in range(10):
     test = pd.DataFrame(index=pd.Series(range(10)))
@@ -115,36 +117,35 @@ for n in range(10):
     for f in data:
         print("Evaluating: " + f)
         classifier = RandomForestClassifier(n_estimators=100, max_features=3)
-        feature_vectors = pd.read_csv(f,index_col=0,parse_dates=True)
-        feature_vectors = feature_vectors.rename(columns={'target':'gesture'})
+        feature_vectors = pd.read_csv(f, index_col=0, parse_dates = True)
+        feature_vectors = feature_vectors.rename(columns = {'target':'gesture'})
         scores, confusion = evaluateClassifier(classifier, feature_vectors)
         data_scores.append(scores)
         confusions[f] = confusions[f] + confusion
         test = test.join(pd.DataFrame({f:scores}))
     tests.append(test)
 
-print("Tests Complete.")
+print("Tests complete.")
 
-print("Plotting Confusion Matrices")
+print("Plotting confusion matrices.")
 for f in data:
     confusions[f] = confusions[f] / confusions[f].sum()
-    plot_confusion_matrix(confusions[f],short_names[f]+" Confusion Matrix")
+    plot_confusion_matrix(confusions[f], short_names[f] + " Confusion Matrix")
 
-output = pd.concat(tests,ignore_index=True)
-output.columns = ['train2013-5s','train2013-1s','train2014-1s']
-# from scipy.stats import f_oneway
-# from scipy.stats import ttest_ind
+print("Creating output dataframe.")
+output = pd.concat(tests, ignore_index = True)
+output.columns = ['train2013-5s', 'train2013-1s', 'train2014-1s']
 
 print("Stats evaluations:")
-print("Not working right now, do it in R")
-# aov = f_oneway(data_scores[0],data_scores[1],data_scores[2])
-# print("ANOVA: F:" + str(aov[0]) + " p:" + str(aov[1]))
-# print("Paired t-tests:")
-# t1 = ttest_ind(data_scores[0],data_scores[1])
-# t2 = ttest_ind(data_scores[1],data_scores[2])
-# t3 = ttest_ind(data_scores[0],data_scores[2])
-# print("0-1 " + str(t1))
-# print("1-2 " + str(t2))
-# print("0-2 " + str(t3))
+print("Load up the R file to do this properly.")
+aov = f_oneway(output['train2013-5s'],output['train2013-1s'],output['train2014-1s'])
+print("ANOVA: F:" + str(aov[0]) + " p:" + str(aov[1]))
+print("Paired t-tests:")
+t1 = ttest_ind(output['train2013-5s'],output['train2013-1s'])
+t2 = ttest_ind(output['train2013-1s'],output['train2014-1s'])
+t3 = ttest_ind(output['train2013-5s'],output['train2014-1s'])
+print("0-1 " + str(t1))
+print("1-2 " + str(t2))
+print("0-2 " + str(t3))
 
 
