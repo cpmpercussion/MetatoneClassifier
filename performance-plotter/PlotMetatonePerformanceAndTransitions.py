@@ -103,7 +103,8 @@ def plot_gesture_score(plot_title, events, gestures, metatone, online, touches, 
     if BW_PLOT:
         plt.style.use('grayscale')
     #figure_dimensions = (10,3.5) # good dimensions for curating the digital paper.
-    figure_dimensions = (10,4.2) # good dimensions for thesis at 0.75\texheight
+    figure_dimensions = (11,4)
+    #figure_dimensions = (10,4.2) # good dimensions for thesis at 0.75\texheight
     #Gesture Score:
     idx = gestures.index
     ax = plt.figure(figsize=figure_dimensions, frameon=False, tight_layout=True, dpi=300).add_subplot(111)
