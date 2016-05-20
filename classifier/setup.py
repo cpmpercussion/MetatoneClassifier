@@ -9,7 +9,7 @@ Usage:
 from setuptools import setup
 
 APP = ['MetatoneClassifierController.py']
-DATA_FILES = ['2013-07-01-TrainingData-classifier.p', 'MainMenu.xib']
+DATA_FILES = ['classifier.p', 'MainMenu.xib']
 OPTIONS = {
  'argv_emulation': True,
  'iconfile': 'metatone.icns',
