@@ -50,7 +50,11 @@ def trainClassifier(input_csv):
     """
     Trains a RandomForestClassifier and returns the result
     """
-    feature_vectors = pd.read_csv(input_csv,index_col=0,parse_dates=True)
+    try:
+        feature_vectors = pd.read_csv(input_csv,index_col=0,parse_dates=True)
+    except IOError:
+        print("Trying one directory level higher...")
+        feature_vectors = pd.read_csv("../" + input_csv,index_col=0,parse_dates=True)
     feature_vectors = feature_vectors.rename(columns={'target':'gesture'})
     msk = np.random.rand(len(feature_vectors)) < TRAIN_PROPORTION
     train = feature_vectors[msk]

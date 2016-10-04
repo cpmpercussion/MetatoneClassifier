@@ -293,24 +293,26 @@ def post_hoc_transition_analysis_for_thesis(gesture_filename):
 #flux_series = transitions.calculate_rolling_flux_for_window(gestures)
 #flux_series = transitions.calculate_rolling_flux_for_window(gestures)
 
-# An Interesting Study Quartet Improv
-GESTURES_FILE = "/Users/charles/src/metatone-analysis/data/2015-04-29T18-34-58-MetatoneOSCLog-touches-posthoc-gestures.csv"
-post_hoc_transition_analysis_for_thesis(GESTURES_FILE)
+def generate_phd_plots():
+    # An Interesting Study Quartet Improv
+    GESTURES_FILE = "/Users/charles/src/metatone-analysis/data/2015-04-29T18-34-58-MetatoneOSCLog-touches-posthoc-gestures.csv"
+    post_hoc_transition_analysis_for_thesis(GESTURES_FILE)
+    
+    GESTURES_FILE = "/Users/charles/src/metatone-analysis/data/2014-07-19T13-58-10-MetatoneOSCLog-touches-posthoc-gestures.csv"
+    post_hoc_transition_analysis_for_thesis(GESTURES_FILE)
 
-GESTURES_FILE = "/Users/charles/src/metatone-analysis/data/2014-07-19T13-58-10-MetatoneOSCLog-touches-posthoc-gestures.csv"
-post_hoc_transition_analysis_for_thesis(GESTURES_FILE)
+    # An Interesting Study Trio Improv
+    GESTURES_FILE = "/Users/charles/Desktop/flux-calculation-test/2014-07-19T15-18-35-MetatoneOSCLog-touches-posthoc-gestures.csv"
+    post_hoc_transition_analysis_for_thesis(GESTURES_FILE)
 
-# An Interesting Study Trio Improv
-GESTURES_FILE = "/Users/charles/Desktop/flux-calculation-test/2014-07-19T15-18-35-MetatoneOSCLog-touches-posthoc-gestures.csv"
-post_hoc_transition_analysis_for_thesis(GESTURES_FILE)
+    # Colour Music Opening
+    GESTURES_FILE = "/Users/charles/src/metatone-analysis/data/2014-08-14T18-40-57-MetatoneOSCLog-touches-posthoc-gestures.csv"
+    post_hoc_transition_analysis_for_thesis(GESTURES_FILE)
 
-# Colour Music Opening
-GESTURES_FILE = "/Users/charles/src/metatone-analysis/data/2014-08-14T18-40-57-MetatoneOSCLog-touches-posthoc-gestures.csv"
-post_hoc_transition_analysis_for_thesis(GESTURES_FILE)
+    #Gesture Study You Are Here Premiere
+    GESTURES_FILE = "/Users/charles/src/metatone-analysis/data/2014-03-17T18-09-46-MetatoneOSCLog-touches-posthoc-gestures.csv"
+    post_hoc_transition_analysis_for_thesis(GESTURES_FILE)
 
-#Gesture Study You Are Here Premiere
-GESTURES_FILE = "/Users/charles/src/metatone-analysis/data/2014-03-17T18-09-46-MetatoneOSCLog-touches-posthoc-gestures.csv"
-post_hoc_transition_analysis_for_thesis(GESTURES_FILE)
 
 def main():
     """
