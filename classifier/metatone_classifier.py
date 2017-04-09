@@ -562,6 +562,11 @@ class MetatoneClassifier:
         except:
             print("METATONE_CLASSIFIER: Error Classifying Messages.")
             classes = False
+
+        ## Extract class and get ensemble classes
+        
+        ## Send ensemble classes to touch performance players
+
         try: 
             if classes:
                 self.send_gestures(classes)
