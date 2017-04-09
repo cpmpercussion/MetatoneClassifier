@@ -43,6 +43,36 @@ def feature_vector_from_row_time(row, frame, name):
     }
     return feature_vector
 
+def feature_vector_from_frame(frame):
+    """
+    Return one feature vector from a complete dataframe.
+    """
+    if frame.empty:
+        return [-1, -1, name, 0, 0, 0, 0, 0, 0]
+    frame_touchdowns = frame.ix[frame.velocity == 0]
+    frame_mvmt = frame.ix[frame.velocity != 0]
+    frame_centroid = frame[['x_pos', 'y_pos']].mean()
+    frame_std = frame[['x_pos', 'y_pos']].std().fillna(0)
+    feature_vector = {
+        'freq':frame.device_id.count(),
+        'device_id':frame.device_id.ix[0],
+        'touchdown_freq':frame_touchdowns.device_id.count(),
+        'movement_freq':frame_mvmt.device_id.count(),
+        'centroid_x':frame_centroid[0],
+        'centroid_y':frame_centroid[1],
+        'std_x':frame_std[0],
+        'std_y':frame_std[1],
+        'velocity':frame.velocity.mean()
+    }
+    return feature_vector
+
+def gesture_prediction_from_frame(frame):
+    """
+    Return one gesture prediction from a dataframe
+    """
+    feature_vector = feature_vector_from_frame(frame)
+    return CLASSIFIER.classifier.predict(feature_vector[metatone_classifier.FEATURE_VECTOR_COLUMNS])
+
 def generate_rolling_feature_frame(messages, name):
     """
     Takes a message frame and creates a gesture frame with calculations every 1s.
