@@ -1,6 +1,8 @@
 """Class for playing back sound objects on metatone apps."""
 import OSC
 import random
+import pickle
+import logging
 import pandas as pd
 from threading import Timer
 
@@ -40,7 +42,7 @@ class TouchPerformancePlayer:
     def startPlaying(self):
         """Start sending sound objects to the performer."""
         if not self.playing:
-            print("Starting Playback with gesture:", self.current_gesture)
+            print("Starting Playback")
             self.continuePlaying();
             
     def stopPlaying(self):
@@ -53,7 +55,7 @@ class TouchPerformancePlayer:
         
     def continuePlaying(self):
         """Continue playing the gesture previously set."""
-        print("Playing perf-object with gesture:", self.current_gesture, "on:", self.name)
+        #logging.info("Playing perf-object with gesture:", self.current_gesture, "on:", self.name)
         self.scheduleSoundObject(self.current_gesture)
         
     def updateGesture(self,new_gesture):
@@ -77,7 +79,7 @@ class TouchPerformancePlayer:
     def scheduleSoundObject(self,gesture):
         """Schedule a random sound object from a given gesture."""
         if gesture not in self.available_gestures:
-            print("Sound object for gesture",gesture,"is not available.")
+            logging.warning("Sound object for gesture " + str(gesture) + "is not available.")
             return
         if gesture == 0:
             perf = self.empty_object
@@ -98,6 +100,34 @@ class TouchPerformancePlayer:
             self.timers.append(Timer(row[1]['time'],self.sendTouch,args=[performer,row[1]['x'],row[1]['y'],row[1]['velocity']]))
         for t in self.timers:    
             t.start()
+
+
+performers = {'charles':('192.168.0.36',51200)}
+num_performers = 0
+players = []
+
+gesture_to_object_filename = "./gesture_to_sound_object_dataframe.pickle"
+pickle_file = open(gesture_to_object_filename, "rb")
+sound_objects_corpus = pickle.load(pickle_file)
+pickle_file.close()
+print("### Classified sound objects successfully loaded.  ###")
+
+def start_ensemble_performance():
+    """Create TouchPerformancePlayers for each ensemble member and start playback"""
+    for name in performers.keys():
+        player = TouchPerformancePlayer(name,performers[name][0],performers[name][1])
+        player.setPerformances(sound_objects_corpus)
+        players.append(player)
+
+def update_gestures(gestures):
+    """Send updated gestures to each player"""
+    for i,g in enumerate(gestures):
+        players[i].updateGesture(g)
+
+def stop_performance(players_list):
+    """Stop Performances"""
+    for p in players_list:
+        p.stopPlaying()
 
 # @"/metatone/playback/touch"
 # 0: device
