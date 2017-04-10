@@ -127,11 +127,11 @@ def generate_gesture_for_current_and_prev_ensemble_given_state(lead_player,prev_
     with tf.Session() as sess:
         # Setup the model
         sess.run(tf.global_variables_initializer())
-        saver.restore(sess, "./"+model_name)
+        saver.restore(sess, model_name)
         # Apply the 
         gesture_inputs = list(prev_ensemble)
         gesture_inputs.insert(0,lead_player)
-        print("Inputs are:",gesture_inputs)
+        print("LSTM inputs are:",gesture_inputs)
         if state is not None:
             feed_dict = {x: [[encode_ensemble_gestures(gesture_inputs)]], init_state: state}
         else:
@@ -142,7 +142,7 @@ def generate_gesture_for_current_and_prev_ensemble_given_state(lead_player,prev_
         return output_gestures,state    
 
 ## Try Evaluating the model for one input gesture
-current_player_gesture = 5
-output_gestures, state = generate_gesture_for_current_and_prev_ensemble_given_state(current_player_gesture,output_gestures,state)
-print(output_gestures)
+# current_player_gesture = 5
+# output_gestures, state = generate_gesture_for_current_and_prev_ensemble_given_state(current_player_gesture,output_gestures,state)
+# print(output_gestures)
 

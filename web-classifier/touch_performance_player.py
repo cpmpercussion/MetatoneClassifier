@@ -5,9 +5,25 @@ import pickle
 import logging
 import pandas as pd
 from threading import Timer
+import evaluate_ensemble_LSTM_model
 
 PLAYBACK_TOUCH_PATTERN = "/metatone/playback/touch"
 PLAYBACK_GESTURE_PATTERN = "/metatone/playback/gesture"
+
+performers = {
+    'epec-ipad-1':('192.168.1.4',51200),
+    'epec-ipad-2':('192.168.1.5',51200)
+    }
+num_performers = 0
+players = []
+ensemble_gestures = [0,0,0]
+lstm_state = None
+
+gesture_to_object_filename = "./gesture_to_sound_object_dataframe.pickle"
+pickle_file = open(gesture_to_object_filename, "rb")
+sound_objects_corpus = pickle.load(pickle_file)
+pickle_file.close()
+print("### Classified sound objects successfully loaded.  ###")
 
 class TouchPerformancePlayer:
     """Sends sound objects to an iPad for concatenative performance."""
@@ -102,22 +118,11 @@ class TouchPerformancePlayer:
             t.start()
 
 
-performers = {
-    'epec-ipad-1':('192.168.0.36',51200),
-    'epec-ipad-2':('192.168.0.36',51200)
-    }
-num_performers = 0
-players = []
-previous_ensemble_gestures = []
 
-gesture_to_object_filename = "./gesture_to_sound_object_dataframe.pickle"
-pickle_file = open(gesture_to_object_filename, "rb")
-sound_objects_corpus = pickle.load(pickle_file)
-pickle_file.close()
-print("### Classified sound objects successfully loaded.  ###")
 
 def start_ensemble_performance():
     """Create TouchPerformancePlayers for each ensemble member and start playback"""
+    global players
     for name in performers.keys():
         player = TouchPerformancePlayer(name,performers[name][0],performers[name][1])
         player.setPerformances(sound_objects_corpus)
@@ -126,12 +131,15 @@ def start_ensemble_performance():
 def update_gestures(gestures):
     """Send updated gestures to each player"""
     #for i,g in enumerate(gestures):
+    print("New ensemble gestures:",gestures)
     for i in range(min(len(gestures),len(players))):
         g = gestures[i]
+        print("Setting Player",i,"to gesture",g)
         players[i].updateGesture(g)
 
 def stop_performance(players_list):
     """Stop Performances"""
+    global players
     for p in players_list:
         p.stopPlaying()
 
@@ -139,10 +147,12 @@ def generate_ensemble_gestures(lead_player_gesture):
     """Generate Ensemble Gestures from a Lead Player Gesture and send to performers"""
     ## Step through the network to obtain gestures
     #previous_ensemble_gestures = step_network_for_gestures(lead_gesture,previous_ensemble_gestures)
+    global ensemble_gestures
+    global lstm_state
+    ensemble_gestures, lstm_state = evaluate_ensemble_LSTM_model.generate_gesture_for_current_and_prev_ensemble_given_state(lead_player_gesture,ensemble_gestures,lstm_state)
     ## Fake Gestures for testing
-    previous_ensemble_gestures = [lead_gesture,lead_gesture,lead_gesture]
-    update_gestures(previous_ensemble_gestures)
-
+    #ensemble_gestures = [lead_gesture,lead_gesture,lead_gesture]
+    update_gestures(ensemble_gestures)
 
 ## Automatically start the ensemble performance.
 start_ensemble_performance()
