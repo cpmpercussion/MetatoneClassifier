@@ -102,9 +102,13 @@ class TouchPerformancePlayer:
             t.start()
 
 
-performers = {'charles':('192.168.0.36',51200)}
+performers = {
+    'epec-ipad-1':('192.168.0.36',51200),
+    'epec-ipad-2':('192.168.0.36',51200)
+    }
 num_performers = 0
 players = []
+previous_ensemble_gestures = []
 
 gesture_to_object_filename = "./gesture_to_sound_object_dataframe.pickle"
 pickle_file = open(gesture_to_object_filename, "rb")
@@ -121,13 +125,27 @@ def start_ensemble_performance():
 
 def update_gestures(gestures):
     """Send updated gestures to each player"""
-    for i,g in enumerate(gestures):
+    #for i,g in enumerate(gestures):
+    for i in range(min(len(gestures),len(players))):
+        g = gestures[i]
         players[i].updateGesture(g)
 
 def stop_performance(players_list):
     """Stop Performances"""
     for p in players_list:
         p.stopPlaying()
+
+def generate_ensemble_gestures(lead_player_gesture):
+    """Generate Ensemble Gestures from a Lead Player Gesture and send to performers"""
+    ## Step through the network to obtain gestures
+    #previous_ensemble_gestures = step_network_for_gestures(lead_gesture,previous_ensemble_gestures)
+    ## Fake Gestures for testing
+    previous_ensemble_gestures = [lead_gesture,lead_gesture,lead_gesture]
+    update_gestures(previous_ensemble_gestures)
+
+
+## Automatically start the ensemble performance.
+start_ensemble_performance()
 
 # @"/metatone/playback/touch"
 # 0: device
