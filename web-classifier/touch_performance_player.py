@@ -5,7 +5,7 @@ import pickle
 import logging
 import pandas as pd
 from threading import Timer
-import evaluate_ensemble_LSTM_model
+#import evaluate_ensemble_LSTM_model
 
 PLAYBACK_TOUCH_PATTERN = "/metatone/playback/touch"
 PLAYBACK_GESTURE_PATTERN = "/metatone/playback/gesture"
@@ -16,8 +16,8 @@ performers = {
     }
 num_performers = 0
 players = []
-ensemble_gestures = [0,0,0]
-lstm_state = None
+#ensemble_gestures = [0,0,0]
+#lstm_state = None
 
 gesture_to_object_filename = "./gesture_to_sound_object_dataframe.pickle"
 pickle_file = open(gesture_to_object_filename, "rb")
@@ -117,9 +117,6 @@ class TouchPerformancePlayer:
         for t in self.timers:    
             t.start()
 
-
-
-
 def start_ensemble_performance():
     """Create TouchPerformancePlayers for each ensemble member and start playback"""
     global players
@@ -137,22 +134,22 @@ def update_gestures(gestures):
         print("Setting Player",i,"to gesture",g)
         players[i].updateGesture(g)
 
-def stop_performance(players_list):
+def stop_performance():
     """Stop Performances"""
     global players
-    for p in players_list:
+    for p in players:
         p.stopPlaying()
 
-def generate_ensemble_gestures(lead_player_gesture):
-    """Generate Ensemble Gestures from a Lead Player Gesture and send to performers"""
-    ## Step through the network to obtain gestures
-    #previous_ensemble_gestures = step_network_for_gestures(lead_gesture,previous_ensemble_gestures)
-    global ensemble_gestures
-    global lstm_state
-    ensemble_gestures, lstm_state = evaluate_ensemble_LSTM_model.generate_gesture_for_current_and_prev_ensemble_given_state(lead_player_gesture,ensemble_gestures,lstm_state)
-    ## Fake Gestures for testing
-    #ensemble_gestures = [lead_gesture,lead_gesture,lead_gesture]
-    update_gestures(ensemble_gestures)
+# def generate_ensemble_gestures(lead_player_gesture):
+#     """Generate Ensemble Gestures from a Lead Player Gesture and send to performers"""
+#     ## Step through the network to obtain gestures
+#     #previous_ensemble_gestures = step_network_for_gestures(lead_gesture,previous_ensemble_gestures)
+#     global ensemble_gestures
+#     global lstm_state
+#     ensemble_gestures, lstm_state = evaluate_ensemble_LSTM_model.generate_gesture_for_current_and_prev_ensemble_given_state(lead_player_gesture,ensemble_gestures,lstm_state)
+#     ## Fake Gestures for testing
+#     #ensemble_gestures = [lead_gesture,lead_gesture,lead_gesture]
+#     update_gestures(ensemble_gestures)
 
 ## Automatically start the ensemble performance.
 start_ensemble_performance()

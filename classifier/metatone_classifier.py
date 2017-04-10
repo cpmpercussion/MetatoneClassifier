@@ -35,7 +35,9 @@ import generate_classifier
 import os
 import random
 import touch_performance_player # handles sound object playback and lstm sampling.
+import evaluate_ensemble_LSTM_model
 
+LEAD_PLAYER_DEVICE_ID = "gravitas"
 ##
 SERVER_NAME = "MetatoneLiveProc"
 SERVER_PORT = 9000
@@ -269,6 +271,7 @@ class MetatoneClassifier:
         self.performance_composition = random.randint(0, 100)
         self.visualiser_mode = VISUALISER_MODE_ON
         self.logging_filename = ""
+        
 
     #@profile
     def classify_touch_messages(self, messages):
@@ -384,9 +387,6 @@ class MetatoneClassifier:
     #
     ######################################
 
-    LEAD_PLAYER_DEVICE_ID = "charles"
-    previous_ensemble_gestures = [0,0,0]
-
     def send_gestures(self, classes):
         """
         Send gesture classes to the relevant active devices.
@@ -410,11 +410,16 @@ class MetatoneClassifier:
                 class_strings[name] = GESTURE_CLASS_NAMES[classes[name]]
             self.webserver_sendindividual_function("/metatone/classifier/gesture", class_strings)
         ## Code for generating ensemble gesture classes:
+        #print(classes.keys())
         if LEAD_PLAYER_DEVICE_ID in classes.keys():
-            lead_gesture = classes[LEAD_PLAYER_DEVICE_ID]
+            lead_gesture = int(classes[LEAD_PLAYER_DEVICE_ID])
             ## Retrieve ensemble gestures
-            print("Generating Ensemble Gestures in response to:",lead_gesture)
-            #touch_performance_player.generate_ensemble_gestures(lead_gesture)
+            #print("Generating Ensemble Gestures in response to:",lead_gesture)
+            try:
+                self.ensemble_gestures = self.network.generate_gestures(lead_gesture,self.ensemble_gestures)
+            except Exception as e:
+                print("Couldn't generate ensemble gestures:", e)
+            touch_performance_player.update_gestures(self.ensemble_gestures)
 
     def send_message_to_sources(self, msg):
         """
@@ -611,6 +616,10 @@ class MetatoneClassifier:
         Starts a classification process that repeats every second.
         This blocks the thread.
         """
+        ## Vars for LSTM Evaluation
+        self.network = evaluate_ensemble_LSTM_model.EnsembleLSTMNetwork()
+        self.ensemble_gestures = [0,0,0]
+        ## Classify forever code.
         self.classifying_forever = True
         while self.classifying_forever:
             try:
@@ -634,7 +643,8 @@ class MetatoneClassifier:
         Stops the classification process and also shuts down the server.
         """
         self.classifying_forever = False
-        time.sleep(1)
+        time.sleep(2)
+        touch_performance_player.stop_performance()
         self.clear_all_sources()
 
     def handle_client_message(self, address, tags, contents, source):
