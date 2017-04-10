@@ -34,6 +34,7 @@ import transitions
 import generate_classifier
 import os
 import random
+import touch_performance_player # handles sound object playback and lstm sampling.
 
 ##
 SERVER_NAME = "MetatoneLiveProc"
@@ -383,6 +384,9 @@ class MetatoneClassifier:
     #
     ######################################
 
+    LEAD_PLAYER_DEVICE_ID = "charles"
+    previous_ensemble_gestures = [0,0,0]
+
     def send_gestures(self, classes):
         """
         Send gesture classes to the relevant active devices.
@@ -405,6 +409,12 @@ class MetatoneClassifier:
             for name in classes.keys():
                 class_strings[name] = GESTURE_CLASS_NAMES[classes[name]]
             self.webserver_sendindividual_function("/metatone/classifier/gesture", class_strings)
+        ## Code for generating ensemble gesture classes:
+        if LEAD_PLAYER_DEVICE_ID in classes.keys():
+            lead_gesture = classes[LEAD_PLAYER_DEVICE_ID]
+            ## Retrieve ensemble gestures
+            print("Generating Ensemble Gestures in response to:",lead_gesture)
+            #touch_performance_player.generate_ensemble_gestures(lead_gesture)
 
     def send_message_to_sources(self, msg):
         """
@@ -562,11 +572,6 @@ class MetatoneClassifier:
         except:
             print("METATONE_CLASSIFIER: Error Classifying Messages.")
             classes = False
-
-        ## Extract class and get ensemble classes
-        
-        ## Send ensemble classes to touch performance players
-
         try: 
             if classes:
                 self.send_gestures(classes)
