@@ -37,7 +37,7 @@ def decode_ensemble_gestures(num_perfs,code):
 
 ## Evaluating Network
 MODEL_DIR = "/Users/charles/src/ensemble-performance-deep-models/"
-MODEL_NAME = MODEL_DIR + "quartet-lstm-model-512-5-epochs.tfsave"
+MODEL_NAME = MODEL_DIR + "quartet-lstm-model-512-30-epochs.tfsave"
 
 class EnsembleLSTMNetwork:
 

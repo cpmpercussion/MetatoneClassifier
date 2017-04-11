@@ -11,8 +11,8 @@ PLAYBACK_TOUCH_PATTERN = "/metatone/playback/touch"
 PLAYBACK_GESTURE_PATTERN = "/metatone/playback/gesture"
 
 performers = {
-    'epec-ipad-1':('192.168.1.4',51200),
-    'epec-ipad-2':('192.168.1.5',51200)
+    'epec-ipad-1':('192.168.1.5',51200),
+    'epec-ipad-2':('192.168.1.2',51200)
     }
 num_performers = 0
 players = []
