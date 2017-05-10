@@ -11,13 +11,12 @@ PLAYBACK_TOUCH_PATTERN = "/metatone/playback/touch"
 PLAYBACK_GESTURE_PATTERN = "/metatone/playback/gesture"
 
 performers = {
-    'epec-ipad-1':('192.168.1.5',51200),
-    'epec-ipad-2':('192.168.1.4',51200)
+    'epec-ipad-1':('192.168.1.3',51200),
+    'epec-ipad-2':('192.168.1.2',51200)
     }
 num_performers = 0
 players = []
 #ensemble_gestures = [0,0,0]
-#lstm_state = None
 
 gesture_to_object_filename = "./gesture_to_sound_object_dataframe.pickle"
 pickle_file = open(gesture_to_object_filename, "rb")
@@ -139,17 +138,6 @@ def stop_performance():
     global players
     for p in players:
         p.stopPlaying()
-
-# def generate_ensemble_gestures(lead_player_gesture):
-#     """Generate Ensemble Gestures from a Lead Player Gesture and send to performers"""
-#     ## Step through the network to obtain gestures
-#     #previous_ensemble_gestures = step_network_for_gestures(lead_gesture,previous_ensemble_gestures)
-#     global ensemble_gestures
-#     global lstm_state
-#     ensemble_gestures, lstm_state = evaluate_ensemble_LSTM_model.generate_gesture_for_current_and_prev_ensemble_given_state(lead_player_gesture,ensemble_gestures,lstm_state)
-#     ## Fake Gestures for testing
-#     #ensemble_gestures = [lead_gesture,lead_gesture,lead_gesture]
-#     update_gestures(ensemble_gestures)
 
 ## Automatically start the ensemble performance.
 start_ensemble_performance()

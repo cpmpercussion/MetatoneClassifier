@@ -39,7 +39,7 @@ import touch_performance_player # handles sound object playback and lstm samplin
 import tensorflow as tf
 import gesture_rnn # LSTM RNN for gesture calculation.
 
-LEAD_PLAYER_DEVICE_ID = "gravitas"
+LEAD_PLAYER_DEVICE_ID = "epec-ipad-3"
 ##
 SERVER_NAME = "MetatoneLiveProc"
 SERVER_PORT = 9000
@@ -416,9 +416,10 @@ class MetatoneClassifier:
         if LEAD_PLAYER_DEVICE_ID in classes.keys():
             lead_gesture = int(classes[LEAD_PLAYER_DEVICE_ID])
             ## Retrieve ensemble gestures
-            #print("Generating Ensemble Gestures in response to:",lead_gesture)
+            print("Generating Ensemble Gestures in response to:",lead_gesture)
             try:
                 self.ensemble_gestures = self.network.generate_gestures(lead_gesture,self.ensemble_gestures,self.tf_session)
+                print("RNN Ensemble:",self.ensemble_gestures)
             except Exception as e:
                 print("Couldn't generate ensemble gestures:", e)
             touch_performance_player.update_gestures(self.ensemble_gestures)
