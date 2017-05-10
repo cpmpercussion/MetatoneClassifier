@@ -37,7 +37,7 @@ import random
 import touch_performance_player # handles sound object playback and lstm sampling.
 #import evaluate_ensemble_LSTM_model
 import tensorflow as tf
-import gesture_RNN # LSTM RNN for gesture calculation.
+import gesture_rnn # LSTM RNN for gesture calculation.
 
 LEAD_PLAYER_DEVICE_ID = "gravitas"
 ##
@@ -620,7 +620,7 @@ class MetatoneClassifier:
         """
         ## Vars for LSTM Evaluation
         #self.network = evaluate_ensemble_LSTM_model.EnsembleLSTMNetwork()
-        self.network = gesture_RNN.GestureRNN(mode = "run")
+        self.network = gesture_rnn.GestureRNN(mode = "run")
         self.tf_session = tf.Session()
         self.network.prepare_model_for_running(self.tf_session)
         self.ensemble_gestures = [0,0,0]
