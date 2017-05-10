@@ -35,7 +35,9 @@ import generate_classifier
 import os
 import random
 import touch_performance_player # handles sound object playback and lstm sampling.
-import evaluate_ensemble_LSTM_model
+#import evaluate_ensemble_LSTM_model
+import tensorflow as tf
+import gesture_RNN # LSTM RNN for gesture calculation.
 
 LEAD_PLAYER_DEVICE_ID = "gravitas"
 ##
@@ -416,7 +418,7 @@ class MetatoneClassifier:
             ## Retrieve ensemble gestures
             #print("Generating Ensemble Gestures in response to:",lead_gesture)
             try:
-                self.ensemble_gestures = self.network.generate_gestures(lead_gesture,self.ensemble_gestures)
+                self.ensemble_gestures = self.network.generate_gestures(lead_gesture,self.ensemble_gestures,self.tf_session)
             except Exception as e:
                 print("Couldn't generate ensemble gestures:", e)
             touch_performance_player.update_gestures(self.ensemble_gestures)
@@ -617,7 +619,10 @@ class MetatoneClassifier:
         This blocks the thread.
         """
         ## Vars for LSTM Evaluation
-        self.network = evaluate_ensemble_LSTM_model.EnsembleLSTMNetwork()
+        #self.network = evaluate_ensemble_LSTM_model.EnsembleLSTMNetwork()
+        self.network = gesture_RNN.GestureRNN(mode = "run")
+        self.tf_session = tf.Session()
+        self.network.prepare_model_for_running(self.tf_session)
         self.ensemble_gestures = [0,0,0]
         ## Classify forever code.
         self.classifying_forever = True
