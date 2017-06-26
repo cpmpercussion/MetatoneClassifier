@@ -22,8 +22,8 @@ import random
 define("port", default=8888, help="run on the given port", type=int)
 define("name", default='MetatoneWebProc', help="name for webserver application", type=str)
 define("type", default=0, help="Type of performance to start. 0 = Local, 1 = Remote, 2 = Both, 3 = None, 4 = Button, 5 = Server, 6 = ButtonFade", type=int)
-define("matplotlib") # so it will work with emacs iPython
-define("colors") # so it will work with emacs iPython
+define("matplotlib")  # so it will work with emacs iPython
+define("colors")  # so it will work with emacs iPython
 ##
 PERFORMANCE_TYPE_LOCAL = 0
 PERFORMANCE_TYPE_REMOTE = 1
@@ -32,13 +32,14 @@ EXPERIMENT_TYPE_NONE = 3
 EXPERIMENT_TYPE_BUTTON = 4
 EXPERIMENT_TYPE_SERVER = 5
 EXPERIMENT_TYPE_BUTTON_FADE = 6
-PERFORMANCE_TYPE_NAMES = [ "Performance-Local", "Performance-Remote",
-                           "Experiment-Both", "Experiment-None", "Experiment-Button",
-                           "Experiment-Server", "Experiment-ButtonFade"]
+PERFORMANCE_TYPE_NAMES = ["Performance-Local", "Performance-Remote",
+                          "Experiment-Both", "Experiment-None", "Experiment-Button",
+                          "Experiment-Server", "Experiment-ButtonFade"]
 METACLASSIFIER_SERVICE_TYPE = "_metatoneclassifier._tcp."
 FAKE_OSC_IP_ADDRESS = '127.0.0.1'
 FAKE_OSC_PORT = 9999
 FAKE_OSC_SOURCE = (FAKE_OSC_IP_ADDRESS, FAKE_OSC_PORT)
+
 
 class MetatoneWebApplication(tornado.web.Application):
     """
@@ -139,7 +140,6 @@ class MetatoneWebApplication(tornado.web.Application):
         self.classifier.clear_all_sources()
 
 
-
 class MetatoneWebsiteHandler(tornado.web.RequestHandler):
     """
     Handler class for web requests.
@@ -147,7 +147,6 @@ class MetatoneWebsiteHandler(tornado.web.RequestHandler):
     def get(self):
         self.render("index.html")
 
-##############################################
 
 class MetatoneAppConnectionHandler(tornado.websocket.WebSocketHandler):
     """
@@ -188,7 +187,8 @@ class MetatoneAppConnectionHandler(tornado.websocket.WebSocketHandler):
             logging.error("Error sending OSC message to client", exc_info=True)
 
 ##############################################
-## Top level functions... should get some of these into the Application class.
+# Top level functions... should get some of these into the Application class.
+
 
 def bonjour_callback(sdref, flags, error_code, name, regtype, domain):
     """
@@ -202,6 +202,7 @@ def bonjour_callback(sdref, flags, error_code, name, regtype, domain):
         print(str(sdref))
         print(str(flags))
 
+
 def main():
     """
     Main function loads classifier and sets up bonjour service and web server.
@@ -211,25 +212,20 @@ def main():
     classifier.start_log()
     print("Metatone Classifier Ready.")
     logging.info("WebServer Logging started - " + classifier.logging_filename)
-    print ("Classifier WebServer Started - logging to: "
-           + classifier.logging_filename)
+    print("Classifier WebServer Started - logging to: " + classifier.logging_filename)
 
     tornado.options.parse_command_line()
     app = MetatoneWebApplication(classifier)
     app.listen(options.port)
     classifier.name = options.name
     classifier.performance_type = options.type
-    logging.info("WebServer Performance type is: " + str(options.type)
-                 + ": " + PERFORMANCE_TYPE_NAMES[options.type])
-    print("WebServer Performance type is: " + str(options.type)
-          + ": " + PERFORMANCE_TYPE_NAMES[options.type])
+    logging.info("WebServer Performance type is: " + str(options.type) + ": " + PERFORMANCE_TYPE_NAMES[options.type])
+    print("WebServer Performance type is: " + str(options.type) + ": " + PERFORMANCE_TYPE_NAMES[options.type])
     classifier.performance_composition = random.randint(0, 100)
     classifier.web_server_mode = True
     classifier.webserver_sendtoall_function = app.send_osc_to_all_clients
     classifier.webserver_sendindividual_function = app.send_osc_to_individual_clients
-
     classification_thread = threading.Thread(target=classifier.classify_forever, name="Classification-Thread")
-
     print("Starting Bonjour Service.")
     bonjour_service_register = pybonjour.DNSServiceRegister(
         name=options.name,
@@ -246,6 +242,7 @@ def main():
         app.clear_metatone_apps()
         bonjour_service_register.close()
         print("Closed down. Bye!")
+
 
 if __name__ == "__main__":
     main()
