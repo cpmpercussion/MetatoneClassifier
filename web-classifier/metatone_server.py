@@ -11,6 +11,8 @@ import tornado.escape
 import tornado.ioloop
 import tornado.options
 from tornado.options import define, options
+from tornado.concurrent import Future
+from tornado import gen
 import tornado.web
 import tornado.websocket
 import os.path
@@ -18,6 +20,9 @@ import OSC
 import pybonjour
 from datetime import datetime
 import random
+import matplotlib.pyplot as plt, mpld3
+import numpy as np
+
 
 define("port", default=8888, help="run on the given port", type=int)
 define("name", default='MetatoneWebProc', help="name for webserver application", type=str)
@@ -41,6 +46,66 @@ FAKE_OSC_PORT = 9999
 FAKE_OSC_SOURCE = (FAKE_OSC_IP_ADDRESS, FAKE_OSC_PORT)
 
 
+class PerformanceBuffer(object):
+    def __init__(self):
+        self.waiters = set()
+        self.cache = []
+        self.cache_size = 1200
+
+    def wait_for_gestures(self, cursor=None):
+        # Construct a Future to return to our caller.  This allows
+        # wait_for_messages to be yielded from a coroutine even though
+        # it is not a coroutine itself.  We will set the result of the
+        # Future when results are available.
+        result_future = Future()
+        if cursor:
+            new_count = 0
+            for msg in reversed(self.cache):
+                if msg["id"] == cursor:
+                    break
+                new_count += 1
+            if new_count:
+                result_future.set_result(self.cache[-new_count:])
+                return result_future
+        self.waiters.add(result_future)
+        return result_future
+
+    def cancel_wait(self, future):
+        self.waiters.remove(future)
+        # Set an empty result to unblock any coroutines waiting.
+        future.set_result([])
+
+    def new_gestures(self, gestures):
+        logging.info("Updating new gestures to %r listeners", len(self.waiters))
+        for future in self.waiters:
+            future.set_result(gestures)
+        self.waiters = set()
+        self.cache.extend(gestures)
+        if len(self.cache) > self.cache_size:
+            self.cache = self.cache[-self.cache_size:]
+
+
+global_performance_buffer = PerformanceBuffer()
+
+test_gestures = [[0,1,2,3],[4,5,6,7],[8,0,1,2]]
+
+
+class GesturesUpdatesHandler(tornado.web.RequestHandler):
+    @gen.coroutine
+    def post(self):
+        cursor = self.get_argument("cursor", None)
+        # Save the future returned by wait_for_messages so we can cancel
+        # it in wait_for_messages
+        self.future = global_performance_buffer.wait_for_gestures(cursor=cursor)
+        gestures = yield self.future
+        if self.request.connection.stream.closed():
+            return
+        self.write(dict(gestures=gestures))
+
+    def on_connection_close(self):
+        global_performance_buffer.cancel_wait(self.future)
+
+
 class MetatoneWebApplication(tornado.web.Application):
     """
     Main Web Application Class.
@@ -52,6 +117,7 @@ class MetatoneWebApplication(tornado.web.Application):
         handlers = [
             (r"/", MetatoneWebsiteHandler),
             (r"/classifier", MetatoneAppConnectionHandler),
+            (r"/a/message/updates", GesturesUpdatesHandler),
         ]
         settings = dict(
             cookie_secret="__TODO:_GENERATE_YOUR_OWN_RANDOM_VALUE_HERE__",
@@ -123,6 +189,12 @@ class MetatoneWebApplication(tornado.web.Application):
         except():
             print("Message did not decode to a non-empty list.")
 
+    def update_performance_gestures(self, gestures):
+        """
+        Updates the performance buffer with a new list of gestures (e.g., [2, 3, 0, 1])
+        """
+        global_performance_buffer.new_gestures(gestures)
+
     def remove_metatone_app(self, device_id):
         """
         Instructs the Classifier to remove an app with a particular deviceID
@@ -145,7 +217,8 @@ class MetatoneWebsiteHandler(tornado.web.RequestHandler):
     Handler class for web requests.
     """
     def get(self):
-        self.render("index.html")
+        self.render("index.html", gestures=test_gestures, plot=generate_gesture_plot(test_gestures))  # gestures = global_performance_buffer.cache
+
 
 
 class MetatoneAppConnectionHandler(tornado.websocket.WebSocketHandler):
@@ -186,6 +259,7 @@ class MetatoneAppConnectionHandler(tornado.websocket.WebSocketHandler):
         except:
             logging.error("Error sending OSC message to client", exc_info=True)
 
+
 ##############################################
 # Top level functions... should get some of these into the Application class.
 
@@ -201,6 +275,17 @@ def bonjour_callback(sdref, flags, error_code, name, regtype, domain):
         print('  domain  =', domain)
         print(str(sdref))
         print(str(flags))
+
+
+def generate_gesture_plot(gestures):
+    """
+    Generates an HTML plot of the current gestures.
+    """
+    fig, ax = plt.subplots()
+    plt.yticks(np.arange(9), ['n', 'ft', 'st', 'fs', 'fsa', 'vss', 'bs', 'ss', 'c'])
+    plt.xticks(np.arange(len(gestures)))
+    plt.plot(gestures, marker='o', markersize=20, lw=5, alpha=0.7)
+    return mpld3.fig_to_html(fig)
 
 
 def main():
