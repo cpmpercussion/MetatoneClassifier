@@ -203,7 +203,7 @@ def calculate_new_ideas(transition_activity, threshold):
 # Returns True if current transitions suggest a "new_idea" event according to the current threshold.
 #
 def is_new_idea_with_threshold(transitions, threshold):
-    if not isinstance(transitions, pd.TimeSeries):
+    if not isinstance(transitions, pd.Series):
         return None
     measure = transitions[-2:].diff().dropna()
     #new_idea_difference_threshold = 0.15
@@ -217,7 +217,7 @@ def is_new_idea_with_threshold(transitions, threshold):
 # Shortcut for is_new_idea_with_threshold with built in threshold
 #
 def is_new_idea(transitions):
-    if not isinstance(transitions, pd.TimeSeries):
+    if not isinstance(transitions, pd.Series):
         return None
     #new_idea_difference_threshold = 0.15
     #new_idea_difference_threshold = 0.5 # 1-norm version (experimental)
@@ -233,7 +233,7 @@ def is_new_idea(transitions):
 def current_transition_state(states_frame):
     # Returns the current transition state as a string
     transitions = calculate_group_transitions_for_window(states_frame,'15s')
-    if(not isinstance(transitions,pd.TimeSeries)):
+    if(not isinstance(transitions,pd.Series)):
         return None
     state, spread, ratio = transition_state_measure(transitions[-1])
     return state, spread, ratio

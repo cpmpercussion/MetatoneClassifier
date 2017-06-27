@@ -82,7 +82,7 @@ class MetatonePerformanceLog:
                 last_time = index
             else: 
                 screen_changed_column[index] = False
-        screen_changed = pd.TimeSeries(screen_changed_column)
+        screen_changed = pd.Series(screen_changed_column)
         self.events["screen_changed"] = screen_changed
         return screen_changed[screen_changed == True].count()
 

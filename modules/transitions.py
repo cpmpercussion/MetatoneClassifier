@@ -424,7 +424,7 @@ def is_new_idea_with_threshold(flux_series, threshold):
     has increased above the given threshold. This suggests that a
     "new idea" has occured in the ensemble.
     """
-    if not isinstance(flux_series, pd.TimeSeries):
+    if not isinstance(flux_series, pd.Series):
         return False
     measure = flux_series[-2:].diff().dropna()
     # if (not measure.empty):
@@ -438,7 +438,7 @@ def is_new_idea(flux_series):
     """
     Shortcut for is_new_idea_with_threshold with built in threshold.
     """
-    if not isinstance(flux_series, pd.TimeSeries):
+    if not isinstance(flux_series, pd.Series):
         return False
     if is_new_idea_with_threshold(flux_series, NEW_IDEA_THRESHOLD):
         return True
