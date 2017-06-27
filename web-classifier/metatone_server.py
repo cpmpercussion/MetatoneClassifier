@@ -229,6 +229,9 @@ class MetatoneAppConnectionHandler(tornado.websocket.WebSocketHandler):
     deviceID = ''
     app = ''
 
+    def check_origin(self, origin):
+        return True
+
     def open(self):
         print("Client opened WebSocket")
         # print(str(self.application))
