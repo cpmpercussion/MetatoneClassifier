@@ -268,14 +268,15 @@ class MetatoneClassifier:
         self.classified_gestures = []
         self.webserver_sendtoall_function = dummy_websocket_sender
         self.webserver_sendindividual_function = dummy_websocket_sender
+        self.update_gestures_function = dummy_websocket_sender
         self.name = SERVER_NAME
         self.performance_type = PERFORMANCE_TYPE_LOCAL
         self.performance_composition = random.randint(0, 100)
         self.visualiser_mode = VISUALISER_MODE_ON
         self.logging_filename = ""
-        
 
-    #@profile
+
+    # @profile
     def classify_touch_messages(self, messages):
         """
         Given a list of touch messages, generates a gesture class for each
@@ -632,6 +633,7 @@ class MetatoneClassifier:
                 start_time = datetime.now()
                 current_state = self.classify_performance()
                 print_performance_state(current_state)
+                self.update_gestures_function(current_state[0].values())
                 self.trim_touch_messages()
                 self.trim_gesture_log()
                 # self.process_source_removal()
