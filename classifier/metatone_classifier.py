@@ -172,13 +172,13 @@ def feature_frame(frame):
     window_size = '5s'
     count_zeros = lambda s: len([x for x in s if x == 0])
 
-    frame_deviceid = frame['device_id'].resample(window_size, how='first').fillna(method='ffill')
-    frame_freq = frame['device_id'].resample(window_size, how='count').fillna(0)
+    frame_deviceid = frame['device_id'].resample(window_size).first().fillna(method='ffill')
+    frame_freq = frame['device_id'].resample(window_size).count().fillna(0)
     frame_touchdowns = frame['velocity'].resample(window_size, how=count_zeros).fillna(0)
-    frame_vel = frame['velocity'].resample(window_size, how='mean').fillna(0)
-    frame_centroid = frame[['x_pos', 'y_pos']].resample(window_size, how='mean').fillna(-1)
-    frame_std = frame[['x_pos', 'y_pos']].resample(window_size, how='std').fillna(0)
-    
+    frame_vel = frame['velocity'].resample(window_size).mean().fillna(0)
+    frame_centroid = frame[['x_pos', 'y_pos']].resample(window_size).mean().fillna(-1)
+    frame_std = frame[['x_pos', 'y_pos']].resample(window_size).std().fillna(0)
+
     fframe = pd.DataFrame({
         'freq':frame_freq,
         'device_id':frame_deviceid,
