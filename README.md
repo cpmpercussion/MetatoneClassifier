@@ -22,7 +22,6 @@ For performing:
     cd web-classifier
     python metatone-server.py
 
-
 For debug:
 
     cd MetatoneClassifier/classifier
