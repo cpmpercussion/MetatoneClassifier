@@ -230,7 +230,7 @@ def print_performance_state(state_tuple):
     #     print(pretty_print_state(state))
     # Print Flux Increase:
     flux_series = state_tuple[3]
-    if isinstance(flux_series, pd.TimeSeries):
+    if isinstance(flux_series, pd.Series):  # check if it is a time series
         flux_series = flux_series.dropna()
         if flux_series.count() > 0:
             flux_latest = flux_series.tolist()[-1]
@@ -592,14 +592,14 @@ class MetatoneClassifier:
             latest_gestures = transitions.trim_gesture_frame(gestures)
             transition_matrices = transitions.calculate_group_transitions_for_window(latest_gestures, '15s')
             flux_series = transitions.calculate_flux_series(transition_matrices)
-            if isinstance(transition_matrices, pd.TimeSeries):
+            if isinstance(transition_matrices, pd.Series):  # .index.is_all_dates:  # check that transition_matrices is a time series
                 state = transitions.transition_state_measure(transition_matrices[-1])
             else:
                 state = False
         except:
-            print ("METATONE_CLASSIFIER: Couldn't perform transition calculations.")
+            print("METATONE_CLASSIFIER: Couldn't perform transition calculations.")
             state = False
-            raise # TODO - figure out why this fails sometimes.
+            raise  # TODO - figure out why this fails sometimes.
 
         if state:
             # print(state)
