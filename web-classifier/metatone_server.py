@@ -50,7 +50,7 @@ class PerformanceBuffer(object):
     def __init__(self):
         self.waiters = set()
         self.cache = []
-        self.cache_size = 1200
+        self.cache_size = 20
 
     def wait_for_gestures(self, cursor=None):
         # Construct a Future to return to our caller.  This allows
@@ -83,6 +83,7 @@ class PerformanceBuffer(object):
         self.cache.extend(gestures)
         if len(self.cache) > self.cache_size:
             self.cache = self.cache[-self.cache_size:]
+        print(self.cache)
 
 
 global_performance_buffer = PerformanceBuffer()
@@ -106,6 +107,10 @@ class GesturesUpdatesHandler(tornado.web.RequestHandler):
         global_performance_buffer.cancel_wait(self.future)
 
 
+class GesturePlotHandler(tornado.web.RequestHandler):
+    def get(self):
+        self.render("gestureplot.html", plot=generate_gesture_plot(global_performance_buffer.cache))  # gestures = global_performance_buffer.cache
+
 class MetatoneWebApplication(tornado.web.Application):
     """
     Main Web Application Class.
@@ -118,6 +123,7 @@ class MetatoneWebApplication(tornado.web.Application):
             (r"/", MetatoneWebsiteHandler),
             (r"/classifier", MetatoneAppConnectionHandler),
             (r"/a/message/updates", GesturesUpdatesHandler),
+            (r"/gestureplot", GesturePlotHandler)
         ]
         settings = dict(
             cookie_secret="__TODO:_GENERATE_YOUR_OWN_RANDOM_VALUE_HERE__",
@@ -217,9 +223,7 @@ class MetatoneWebsiteHandler(tornado.web.RequestHandler):
     Handler class for web requests.
     """
     def get(self):
-        self.render("index.html", gestures=test_gestures, plot=generate_gesture_plot(test_gestures))  # gestures = global_performance_buffer.cache
-
-
+        self.render("index.html", gestures=global_performance_buffer.cache, plot=generate_gesture_plot(global_performance_buffer.cache))  # gestures = global_performance_buffer.cache
 
 class MetatoneAppConnectionHandler(tornado.websocket.WebSocketHandler):
     """
@@ -313,6 +317,7 @@ def main():
     classifier.web_server_mode = True
     classifier.webserver_sendtoall_function = app.send_osc_to_all_clients
     classifier.webserver_sendindividual_function = app.send_osc_to_individual_clients
+    classifier.update_gestures_function = global_performance_buffer.new_gestures
     classification_thread = threading.Thread(target=classifier.classify_forever, name="Classification-Thread")
     print("Starting Bonjour Service.")
     bonjour_service_register = pybonjour.DNSServiceRegister(
