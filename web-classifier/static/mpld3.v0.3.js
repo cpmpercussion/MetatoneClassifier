@@ -287,8 +287,8 @@
     tickvalues: null,
     tickformat: null,
     fontsize: "11px",
-    fontcolor: "black",
-    axiscolor: "black",
+    fontcolor: "white",
+    axiscolor: "white",
     scale: "linear",
     grid: {},
     zorder: 0
