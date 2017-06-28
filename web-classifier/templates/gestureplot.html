@@ -1,2 +1,6 @@
 {% autoescape None %}
-{{ plot }}
+<div id="gestureplot"></div>
+<script type="text/javascript">
+var plotjson = {{ plot }}
+mpld3.draw_figure("gestureplot", plotjson)
+</script>
