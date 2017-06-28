@@ -21,7 +21,7 @@ import pybonjour
 from datetime import datetime
 import random
 import matplotlib.pyplot as plt, mpld3
-import matplotlib
+import matplotlib as mpl
 import numpy as np
 import json
 
@@ -290,13 +290,11 @@ def generate_gesture_plot(gestures):
     Generates an HTML plot of the current gestures.
     """
     fig, ax = plt.subplots(figsize=(16, 10))
-    # ax.set_facecolor("#002B36")
-    #ax.grid(color='w')
     plt.yticks(np.arange(9), ['n', 'ft', 'st', 'fs', 'fsa', 'vss', 'bs', 'ss', 'c'], fontsize=36, color='w')
     plt.xticks(np.arange(len(gestures)), color='w')
     plt.plot(gestures, marker='o', markersize=20, lw=5, alpha=0.7)
-    # return mpld3.fig_to_html(fig, figid="gestureplot")
     return json.dumps(mpld3.fig_to_dict(fig))
+
 
 def main():
     """
@@ -364,7 +362,7 @@ def set_matplotlib_style_solarized():
             "2": "#EEE8D5",
             "3": "#FDF6E3"}
 
-    matplotlib.rcParams.update({"ytick.color": DARK["0"],  # 'k'
+    mpl.rcParams.update({"ytick.color": DARK["0"],  # 'k'
                          "xtick.color": DARK["0"],  # 'k'
                          "text.color": DARK["0"],  # 'k'
                          "savefig.facecolor": DARK["03"],  # 'w'
@@ -373,7 +371,7 @@ def set_matplotlib_style_solarized():
                          "grid.color": DARK["0"],  # 'k'
                          "figure.edgecolor": DARK["03"],  # 'w'
                          "figure.facecolor": DARK["02"],  # '0.75'
-                         "axes.prop_cycle": matplotlib.cycler('color', [COLOR["blue"], COLOR["green"], COLOR["red"],
+                         "axes.prop_cycle": mpl.cycler('color', [COLOR["blue"], COLOR["green"], COLOR["red"],
                                                    COLOR["cyan"], COLOR["magenta"],
                                                    COLOR["yellow"], DARK["0"]]),
                          # ['b', 'g', 'r', 'c', 'm', 'y', 'k']
