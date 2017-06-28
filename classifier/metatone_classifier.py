@@ -24,31 +24,23 @@ import socket
 from datetime import timedelta
 from datetime import datetime
 import pandas as pd
-import numpy as np
-from sklearn.ensemble import RandomForestClassifier
-import threading
-import pybonjour
 import pickle
 import logging
 import transitions
 import generate_classifier
 import os
 import random
-import touch_performance_player # handles sound object playback and lstm sampling.
-#import evaluate_ensemble_LSTM_model
+import touch_performance_player  # handles sound object playback for generative ensemble cases
 import tensorflow as tf
-import gesture_rnn # LSTM RNN for gesture calculation.
+import gesture_rnn  # LSTM RNN for gesture calculation.
 
 LEAD_PLAYER_DEVICE_ID = "epec-ipad-3"
 ##
 SERVER_NAME = "MetatoneLiveProc"
 SERVER_PORT = 9000
 CLOUD_SERVER_IP = "107.170.207.234"
-
 ##
 METATONE_RECEIVING_PORT = 51200
-# PICKLED_CLASSIFIER_FILE = '2013-07-01-TrainingData-classifier.p'
-#PICKLED_CLASSIFIER_FILE = '2014-12-12T12-05-53-GestureTargetLog-CPM-FeatureVectors-classifier.p'
 PICKLED_CLASSIFIER_FILE = 'classifier.p'
 CLASSIFIER_TRAINING_FILE = "data/2014-12-12T12-05-53-GestureTargetLog-CPM-FeatureVectors.csv"
 ##
@@ -59,13 +51,13 @@ EXPERIMENT_TYPE_NONE = 3
 EXPERIMENT_TYPE_BUTTON = 4
 EXPERIMENT_TYPE_SERVER = 5
 ##
-PERFORMANCE_TYPE = 4 # this can be 0-5
-PERFORMANCE_COMPOSITION = 4 # this can be any random int.
+PERFORMANCE_TYPE = 4  # this can be 0-5
+PERFORMANCE_COMPOSITION = 4  # this can be any random int.
 PERFORMANCE_EVENT_NAME = "MetatonePerformanceStart"
 VISUALISER_MODE_ON = True
 VISUALISER_PORT = 61200
 VISUALISER_HOST = 'localhost'
-MAX_GESTURE_LENGTH = 300 # Corresponds to five minutes of performance time.
+MAX_GESTURE_LENGTH = 300  # Corresponds to five minutes of performance time.
 DEVICE_NAMES = {
     # '2678456D-9AE7-4DCC-A561-688A4766C325':'charles', # old
     # '95585C5C-C1C1-4612-9836-BFC68B0DC36F':'charles',
@@ -95,6 +87,7 @@ GESTURE_CLASS_NAMES = ['n', 'ft', 'st', 'fs', 'fsa', 'vss', 'bs',
 # Utility Functions
 # # # # #
 
+
 def ensure_dir(file_name):
     """
     Checks if a directory exists in the local directory,
@@ -104,6 +97,7 @@ def ensure_dir(file_name):
     if not os.path.exists(dir_to_make):
         os.makedirs(dir_to_make)
 
+
 def dummy_websocket_sender(address, arguments):
     """
     Dummy function: when running in webserver mode, the server replaces this with functions
@@ -111,6 +105,7 @@ def dummy_websocket_sender(address, arguments):
     """
     return
     # do nothing
+
 
 def get_device_name(device_id):
     """
@@ -128,6 +123,7 @@ def get_device_name(device_id):
 ##
 ###########################
 
+
 def load_classifier():
     """
     Loads the pickled RandomForestClassifier object.
@@ -142,15 +138,15 @@ def load_classifier():
         print("### IOError Loading Classifier.           ###")
         print("### Saving new pickled classifier object. ###")
         cla = generate_classifier.pickleClassifier(generate_classifier.INPUT_FILE,
-                                             generate_classifier.CLASSIFIER_NAME)
+                                                   generate_classifier.CLASSIFIER_NAME)
     except:
         print("### Exception Loading Classifier.         ###")
         print("### Generating new classifier object.     ###")
         cla = generate_classifier.pickleClassifier(generate_classifier.INPUT_FILE,
-                                             generate_classifier.CLASSIFIER_NAME)
+                                                   generate_classifier.CLASSIFIER_NAME)
     return cla
 
-#@profile
+
 def feature_frame(frame):
     """
     Calculates feature vectors for a dataframe of touch messages
@@ -191,6 +187,7 @@ def feature_frame(frame):
         'velocity':frame_vel})
     return fframe.fillna(0)
 
+
 def pretty_print_classes(classes):
     """
     Returns a string of each active device matched to a human
@@ -205,6 +202,7 @@ def pretty_print_classes(classes):
     # return pretty_classes
     return result
 
+
 def pretty_print_state(state):
     """
     Returns a string of each part of the performance state
@@ -214,6 +212,7 @@ def pretty_print_state(state):
     result += "Spread: " + str(state[1]) + "\n"
     result += "Ratio: " + str(state[2])
     return result
+
 
 def print_performance_state(state_tuple):
     """
@@ -249,9 +248,10 @@ def print_performance_state(state_tuple):
 ##
 ###########################
 
+
 class MetatoneClassifier:
-    """ 
-    A classifier that mediates Metatone touch-screen performances. 
+    """
+    A classifier that mediates Metatone touch-screen performances.
     """
 
     def __init__(self):
@@ -355,15 +355,15 @@ class MetatoneClassifier:
         if not classes:
             return
         current_time = datetime.now()
-        ## First add to the file log.
+        # First add to the file log.
         message_log_line = [current_time.isoformat()]
         message_log_line.append("/classifier/gestures")
         for key in classes.keys():
             message_log_line.append(key)
             message_log_line.append(classes[key])
         self.log_messages(message_log_line)
-        ## Now add to the gesture log.
-        ## TODO: add the whole classes dict! Not just the list of gestures! how stupid!
+        # Now add to the gesture log.
+        # TODO: add the whole classes dict! Not just the list of gestures! how stupid!
         classes = [classes[n] for n in classes.keys()]
         classes.insert(0, current_time)
         self.classified_gestures.append(classes)
@@ -378,7 +378,7 @@ class MetatoneClassifier:
 
     def trim_gesture_log(self):
         """
-        Trims the global gesture list to the length defined in MAX_GESTURE_LENGTH. 
+        Trims the global gesture list to the length defined in MAX_GESTURE_LENGTH.
         This runs after every classification step.
         """
         if len(self.classified_gestures) > MAX_GESTURE_LENGTH:
@@ -412,15 +412,15 @@ class MetatoneClassifier:
             for name in classes.keys():
                 class_strings[name] = GESTURE_CLASS_NAMES[classes[name]]
             self.webserver_sendindividual_function("/metatone/classifier/gesture", class_strings)
-        ## Code for generating ensemble gesture classes:
-        #print(classes.keys())
+        # Code for generating ensemble gesture classes when running as neural ensemble:
+        # print(classes.keys())
         if LEAD_PLAYER_DEVICE_ID in classes.keys():
             lead_gesture = int(classes[LEAD_PLAYER_DEVICE_ID])
-            ## Retrieve ensemble gestures
+            # Retrieve ensemble gestures
             print("Generating Ensemble Gestures in response to:",lead_gesture)
             try:
-                self.ensemble_gestures = self.network.generate_gestures(lead_gesture,self.ensemble_gestures,self.tf_session)
-                print("RNN Ensemble:",self.ensemble_gestures)
+                self.ensemble_gestures = self.network.generate_gestures(lead_gesture, self.ensemble_gestures, self.tf_session)
+                print("RNN Ensemble:", self.ensemble_gestures)
             except Exception as e:
                 print("Couldn't generate ensemble gestures:", e)
             touch_performance_player.update_gestures(self.ensemble_gestures)
