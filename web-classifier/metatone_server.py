@@ -81,15 +81,12 @@ class PerformanceBuffer(object):
         for future in self.waiters:
             future.set_result(gestures)
         self.waiters = set()
-        self.cache.extend(gestures)
+        self.cache.append(gestures)
         if len(self.cache) > self.cache_size:
             self.cache = self.cache[-self.cache_size:]
-        print(self.cache)
 
 
 global_performance_buffer = PerformanceBuffer()
-
-test_gestures = [[0,1,2,3],[4,5,6,7],[8,0,1,2]]
 
 
 class GesturesUpdatesHandler(tornado.web.RequestHandler):

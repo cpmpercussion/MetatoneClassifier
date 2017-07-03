@@ -34,7 +34,7 @@ import touch_performance_player  # handles sound object playback for generative 
 import tensorflow as tf
 import gesture_rnn  # LSTM RNN for gesture calculation.
 
-LEAD_PLAYER_DEVICE_ID = "epec-ipad-3"
+LEAD_PLAYER_DEVICE_ID = "epec-ipad-4"
 ##
 SERVER_NAME = "MetatoneLiveProc"
 SERVER_PORT = 9000
@@ -412,18 +412,6 @@ class MetatoneClassifier:
             for name in classes.keys():
                 class_strings[name] = GESTURE_CLASS_NAMES[classes[name]]
             self.webserver_sendindividual_function("/metatone/classifier/gesture", class_strings)
-        # Code for generating ensemble gesture classes when running as neural ensemble:
-        # print(classes.keys())
-        if LEAD_PLAYER_DEVICE_ID in classes.keys():
-            lead_gesture = int(classes[LEAD_PLAYER_DEVICE_ID])
-            # Retrieve ensemble gestures
-            print("Generating Ensemble Gestures in response to:",lead_gesture)
-            try:
-                self.ensemble_gestures = self.network.generate_gestures(lead_gesture, self.ensemble_gestures, self.tf_session)
-                print("RNN Ensemble:", self.ensemble_gestures)
-            except Exception as e:
-                print("Couldn't generate ensemble gestures:", e)
-            touch_performance_player.update_gestures(self.ensemble_gestures)
 
     def send_message_to_sources(self, msg):
         """
@@ -569,7 +557,26 @@ class MetatoneClassifier:
     #
     ######################################
 
-    #@profile
+    def generate_neural_gestures(self, classes):
+        """ Code for generating ensemble gesture classes when running as neural ensemble.
+        """
+        if LEAD_PLAYER_DEVICE_ID in classes.keys():
+            lead_gesture = int(classes[LEAD_PLAYER_DEVICE_ID])
+            # Retrieve ensemble gestures
+            print("Generating Ensemble Gestures in response to:", lead_gesture)
+            try:
+                self.ensemble_gestures = self.network.generate_gestures(lead_gesture, self.ensemble_gestures, self.tf_session)
+                print("RNN Ensemble:", self.ensemble_gestures)
+            except Exception as e:
+                print("Couldn't generate ensemble gestures:", e)
+            touch_performance_player.update_gestures(self.ensemble_gestures)
+            ensemble = list(self.active_names)  # make copy while editing.
+            ensemble.remove(LEAD_PLAYER_DEVICE_ID)
+            ensemble_size = min(len(self.ensemble_gestures), len(ensemble))
+            for i in range(ensemble_size):
+                classes[ensemble[i]] = self.ensemble_gestures[i]
+        return classes
+
     def classify_performance(self):
         """
         Classifies the current performance state.
@@ -583,6 +590,7 @@ class MetatoneClassifier:
             classes = False
         try: 
             if classes:
+                classes = self.generate_neural_gestures(classes)  # includes RNN gesture generation.
                 self.send_gestures(classes)
                 self.record_latest_gestures(classes)
             gestures = self.make_gesture_frame(self.classified_gestures).fillna(0)
@@ -603,13 +611,11 @@ class MetatoneClassifier:
             raise  # TODO - figure out why this fails sometimes.
 
         if state:
-            # print(state)
             msg = OSC.OSCMessage("/metatone/classifier/ensemble/state")
             msg.extend([state[0], state[1], state[2]])
             self.send_message_to_sources(msg)
         newidea = transitions.is_new_idea(flux_series)
         if newidea:
-            # print("New Idea Detected!")
             msg = OSC.OSCMessage("/metatone/classifier/ensemble/event/new_idea")
             msg.extend([SERVER_NAME, "new_idea"])
             self.send_message_to_sources(msg)
@@ -620,9 +626,8 @@ class MetatoneClassifier:
         Starts a classification process that repeats every second.
         This blocks the thread.
         """
-        ## Vars for LSTM Evaluation
-        #self.network = evaluate_ensemble_LSTM_model.EnsembleLSTMNetwork()
-        self.network = gesture_rnn.GestureRNN(mode = "run")
+        # Vars for LSTM Evaluation
+        self.network = gesture_rnn.GestureRNN(mode="run")
         self.tf_session = tf.Session()
         self.network.prepare_model_for_running(self.tf_session)
         self.ensemble_gestures = [0,0,0]
@@ -633,15 +638,16 @@ class MetatoneClassifier:
                 start_time = datetime.now()
                 current_state = self.classify_performance()
                 print_performance_state(current_state)
-                self.update_gestures_function(current_state[0].values())
+                if current_state[0] is not False:  # used in error condition
+                    self.update_gestures_function(current_state[0].values())  # Update with classified gestures.
                 self.trim_touch_messages()
                 self.trim_gesture_log()
                 # self.process_source_removal()
                 end_time = datetime.now()
-                delta_seconds = (end_time-start_time).total_seconds() # process as timedelta
+                delta_seconds = (end_time - start_time).total_seconds()  # process as timedelta
                 print("(Classification took: " + str(delta_seconds) + "s)")
                 print("Length of global gesture list: " + str(len(self.classified_gestures)) + "\n")
-                time.sleep(max(0, 1-delta_seconds))
+                time.sleep(max(0, 1 - delta_seconds))
             except:
                 print("### Couldn't perform analysis - exception. ###")
                 raise
@@ -670,7 +676,7 @@ class MetatoneClassifier:
                 self.touch_messages.append([current_time,
                                             get_device_name(contents[0]), contents[1],
                                             contents[2], contents[3]])
-                if self.visualiser_mode: 
+                if self.visualiser_mode:
                     self.send_touch_to_visualiser(contents)
             elif ("/metatone/touch/ended" in address) and (tags == "s"):
                 message = [current_time.isoformat(), "touch/ended", get_device_name(contents[0])]

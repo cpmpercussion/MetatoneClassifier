@@ -1,4 +1,5 @@
 """Class for playing back sound objects on metatone apps."""
+from __future__ import print_function
 import OSC
 import pickle
 import logging
@@ -11,7 +12,10 @@ PLAYBACK_GESTURE_PATTERN = "/metatone/playback/gesture"
 
 performers = {
     'epec-ipad-1': ('192.168.1.3', 51200),
-    'epec-ipad-2': ('192.168.1.2', 51200)}
+    'epec-ipad-2': ('192.168.1.2', 51200),
+    'epec-ipad-3': ('192.168.1.5', 51200),
+    # 'epec-ipad-4': ('192.168.1.11', 51200)
+}
 num_performers = 0
 players = []
 # ensemble_gestures = [0,0,0]
@@ -113,7 +117,10 @@ class TouchPerformancePlayer:
         for row in perf.iterrows():
             self.timers.append(Timer(row[1]['time'], self.sendTouch, args=[performer, row[1]['x'], row[1]['y'], row[1]['velocity']]))
         for t in self.timers:
-            t.start()
+            try:
+                t.start()
+            except Exception as e:
+                print("PerformancePlayer: couldn't start a touch timer", e)
 
 
 def start_ensemble_performance():
@@ -127,11 +134,11 @@ def start_ensemble_performance():
 
 def update_gestures(gestures):
     """Send updated gestures to each player"""
-    # for i,g in enumerate(gestures):
-    print("New ensemble gestures:", gestures)
+    # sfor i,g in enumerate(gestures):
+    # print("New ensemble gestures:", gestures)
     for i in range(min(len(gestures), len(players))):
         g = gestures[i]
-        print("Setting Player", i, "to gesture", g)
+        # print("Setting Player", i, "to gesture", g)
         players[i].updateGesture(g)
 
 
