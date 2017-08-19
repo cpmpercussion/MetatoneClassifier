@@ -103,7 +103,7 @@ class QuartetDataManager(object):
             self.validation_set = np.array(self.validation_set)
             with h5py.File(self.examples_file, 'w') as data_file:
                 data_file.create_dataset('examples', data=self.dataset)
-                data_file.create_dataset('validation', data= self.validation_set)
+                data_file.create_dataset('validation', data=self.validation_set)
         print("Loaded", str(len(self.dataset)), "Training Examples.")
 
     def setup_test_data(self):

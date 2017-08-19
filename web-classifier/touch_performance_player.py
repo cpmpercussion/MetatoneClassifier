@@ -10,12 +10,13 @@ from threading import Timer
 PLAYBACK_TOUCH_PATTERN = "/metatone/playback/touch"
 PLAYBACK_GESTURE_PATTERN = "/metatone/playback/gesture"
 
-performers = {
-    'epec-ipad-1': ('192.168.1.3', 51200),
-    'epec-ipad-2': ('192.168.1.2', 51200),
-    'epec-ipad-3': ('192.168.1.5', 51200),
-    # 'epec-ipad-4': ('192.168.1.11', 51200)
-}
+# {
+#     'epec-ipad-1': ('192.168.1.3', 51200),
+#     'epec-ipad-2': ('192.168.1.2', 51200),
+#     'epec-ipad-3': ('192.168.1.5', 51200),
+#     # 'epec-ipad-4': ('192.168.1.11', 51200)
+# }
+performers = {} # initial performer not used right now.
 num_performers = 0
 players = []
 # ensemble_gestures = [0,0,0]
@@ -132,6 +133,12 @@ def start_ensemble_performance():
         players.append(player)
 
 
+def add_new_performer(name, address):
+    player = TouchPerformancePlayer(name, address, 51200)
+    player.setPerformances(sound_objects_corpus)
+    players.append(player)
+
+
 def update_gestures(gestures):
     """Send updated gestures to each player"""
     # sfor i,g in enumerate(gestures):
@@ -147,6 +154,7 @@ def stop_performance():
     global players
     for p in players:
         p.stopPlaying()
+
 
 # Automatically start the ensemble performance.
 start_ensemble_performance()

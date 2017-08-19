@@ -8,7 +8,7 @@ Copyright 2015 Charles Martin
 http://metatone.net
 http://charlesmartin.com.au
 
-This file can be executed by itself (python metatone_classifier.py) or used as a module 
+This file can be executed by itself (python metatone_classifier.py) or used as a module
 by another python process.
 
 If using as a module, call the main() function to initiate the normal run loop.
@@ -34,7 +34,6 @@ import touch_performance_player  # handles sound object playback for generative 
 import tensorflow as tf
 import gesture_rnn  # LSTM RNN for gesture calculation.
 
-LEAD_PLAYER_DEVICE_ID = "epec-ipad-4"
 ##
 SERVER_NAME = "MetatoneLiveProc"
 SERVER_PORT = 9000
@@ -254,8 +253,11 @@ class MetatoneClassifier:
     A classifier that mediates Metatone touch-screen performances.
     """
 
-    def __init__(self):
+    def __init__(self, lead_player_device_id=""):
         """ Initialise the MetatoneClassifier """
+        self.lead_player_device_id = lead_player_device_id
+        if self.lead_player_device_id is not "":
+            print("Following lead player:", self.lead_player_device_id)
         self.classifying_forever = False
         self.web_server_mode = False
         self.sources_to_remove = []
@@ -560,8 +562,8 @@ class MetatoneClassifier:
     def generate_neural_gestures(self, classes):
         """ Code for generating ensemble gesture classes when running as neural ensemble.
         """
-        if LEAD_PLAYER_DEVICE_ID in classes.keys():
-            lead_gesture = int(classes[LEAD_PLAYER_DEVICE_ID])
+        if self.lead_player_device_id in classes.keys():
+            lead_gesture = int(classes[self.lead_player_device_id])
             # Retrieve ensemble gestures
             print("Generating Ensemble Gestures in response to:", lead_gesture)
             try:
@@ -571,7 +573,7 @@ class MetatoneClassifier:
                 print("Couldn't generate ensemble gestures:", e)
             touch_performance_player.update_gestures(self.ensemble_gestures)
             ensemble = list(self.active_names)  # make copy while editing.
-            ensemble.remove(LEAD_PLAYER_DEVICE_ID)
+            ensemble.remove(self.lead_player_device_id)
             ensemble_size = min(len(self.ensemble_gestures), len(ensemble))
             for i in range(ensemble_size):
                 classes[ensemble[i]] = self.ensemble_gestures[i]
@@ -661,6 +663,11 @@ class MetatoneClassifier:
         touch_performance_player.stop_performance()
         self.clear_all_sources()
 
+    def start_remote_performer(self, name, address):
+        """ Starts a remote performer as a touch_performance_player """
+        print("Starting remote performer:", name, ",", address)
+        touch_performance_player.add_new_performer(name, address)
+
     def handle_client_message(self, address, tags, contents, source):
         """
         Handles messages from Metatone clients.
@@ -701,7 +708,7 @@ class MetatoneClassifier:
                 message = [current_time.isoformat(), "metatone",
                            get_device_name(contents[0]), contents[1],
                            contents[2]]
-                if self.web_server_mode: # Repeat message back to Metatone Devices.
+                if self.web_server_mode:  # Repeat message back to Metatone Devices.
                     self.webserver_sendtoall_function(address, contents)
             elif "/metatone/targetgesture" in address:
                 message = [current_time.isoformat(), address, contents[0]]

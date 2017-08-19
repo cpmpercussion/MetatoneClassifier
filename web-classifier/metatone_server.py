@@ -25,6 +25,8 @@ import matplotlib as mpl
 import numpy as np
 import json
 
+LEAD_PLAYER_DEVICE_ID = "epec-ipad-4"
+
 define("port", default=8888, help="run on the given port", type=int)
 define("name", default='MetatoneWebProc', help="name for webserver application", type=str)
 define("type", default=0, help="Type of performance to start. 0 = Local, 1 = Remote, 2 = Both, 3 = None, 4 = Button, 5 = Server, 6 = ButtonFade", type=int)
@@ -109,6 +111,7 @@ class GesturePlotHandler(tornado.web.RequestHandler):
     def get(self):
         self.render("gestureplot.html", plot=generate_gesture_plot(global_performance_buffer.cache))  # gestures = global_performance_buffer.cache
 
+
 class MetatoneWebApplication(tornado.web.Application):
     """
     Main Web Application Class.
@@ -186,6 +189,8 @@ class MetatoneWebApplication(tornado.web.Application):
                 self.classifier.handle_client_message(message[0], message[1][1:], message[2:], FAKE_OSC_SOURCE)
             elif "/metatone/targetgesture" in message[0]:
                 self.classifier.handle_client_message(message[0], message[1][1:], message[2:], FAKE_OSC_SOURCE)
+            elif "/metatone/remote" in message[0]:
+                self.classifier.start_remote_performer(message[2], message[3])
             else:
                 print("Got an unknown message! Address was: " + message[0])
                 print("Time was: " + str(time))
@@ -222,6 +227,7 @@ class MetatoneWebsiteHandler(tornado.web.RequestHandler):
     """
     def get(self):
         self.render("index.html", gestures=global_performance_buffer.cache, plot=generate_gesture_plot(global_performance_buffer.cache))  # gestures = global_performance_buffer.cache
+
 
 class MetatoneAppConnectionHandler(tornado.websocket.WebSocketHandler):
     """
@@ -293,13 +299,15 @@ def generate_gesture_plot(gestures):
     return json.dumps(mpld3.fig_to_dict(fig))
 
 
+
+
 def main():
     """
     Main function loads classifier and sets up bonjour service and web server.
     """
     set_matplotlib_style_solarized()  # set matplotlib style for website.
     print("Loading Metatone Classifier.")
-    classifier = metatone_classifier.MetatoneClassifier()
+    classifier = metatone_classifier.MetatoneClassifier(lead_player_device_id=LEAD_PLAYER_DEVICE_ID)
     classifier.start_log()
     print("Metatone Classifier Ready.")
     logging.info("WebServer Logging started - " + classifier.logging_filename)
