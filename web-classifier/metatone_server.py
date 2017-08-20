@@ -25,7 +25,7 @@ import matplotlib as mpl
 import numpy as np
 import json
 
-LEAD_PLAYER_DEVICE_ID = "epec-ipad-4"
+LEAD_PLAYER_DEVICE_ID = "gravitas" # "epec-ipad-4"
 
 define("port", default=8888, help="run on the given port", type=int)
 define("name", default='MetatoneWebProc', help="name for webserver application", type=str)
