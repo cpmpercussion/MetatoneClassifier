@@ -14,6 +14,7 @@ Then I would install some Python packages:
     
     pip install pandas scikit-learn scipy matplotlib tornado
     pip install -e git+https://github.com/Eichhoernchen/pybonjour.git#egg=pybonjour
+    pip install -U https://storage.googleapis.com/tensorflow/mac/cpu/tensorflow-1.1.0-py2-none-any.whl
 
 ## Building
 
