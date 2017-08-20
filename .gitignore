@@ -10,6 +10,7 @@ classifier/classifier.p
 web-classifier/classifier.p
 web-classifier/logs
 web-classifier/output-logs
+web-classifier/src
 gesture-score/classifier.p
 visualisation/MetatoneTouchLogPlayer/data/input.csv
 visualisation/MetatoneTouchLogPlayer/application.macosx
