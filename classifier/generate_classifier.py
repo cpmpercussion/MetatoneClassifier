@@ -17,9 +17,9 @@ import pickle
 
 CLASSIFIER_NAME = "classifier.p"
 INPUT_FILE = "data/2014-12-12T12-05-53-GestureTargetLog-CPM-FeatureVectors.csv"
-TRAIN_PROPORTION = 1.0 # uses this much of the full set for training, remainder for testing.
+TRAIN_PROPORTION = 1.0  # uses this much of the full set for training, remainder for testing.
 
-## Int values for Gesture codes.
+# Int values for Gesture codes.
 gesture_codes = {
     'N': 0,
     'FT': 1,
@@ -32,19 +32,21 @@ gesture_codes = {
     'C': 8,
     '?': 9}
 
-## Column names in the feature vectors:
-feature_vector_columns = ['centroid_x','centroid_y','std_x','std_y','freq','movement_freq','touchdown_freq','velocity']
+# Column names in the feature vectors:
+feature_vector_columns = ['centroid_x', 'centroid_y', 'std_x', 'std_y', 'freq', 'movement_freq', 'touchdown_freq', 'velocity']
 
-def pickleClassifier(input_csv,output_file):
+
+def pickleClassifier(input_csv, output_file):
     """
     Trains a RandomForestClassifier and pickles (and returns) the result
     """
     classifier = trainClassifier(input_csv)
     # save pickled classifier
-    pickle_file = open(output_file, "wb" )
+    pickle_file = open(output_file, "wb")
     pickle.dump(classifier, pickle_file)
     pickle_file.close()
     return classifier
+
 
 def trainClassifier(input_csv):
     """
