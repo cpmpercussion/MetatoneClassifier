@@ -24,10 +24,6 @@ import socket
 from datetime import timedelta
 from datetime import datetime
 import pandas as pd
-import numpy as np
-from sklearn.ensemble import RandomForestClassifier
-import threading
-import pybonjour
 import pickle
 import logging
 import transitions
@@ -43,7 +39,7 @@ CLOUD_SERVER_IP = "107.170.207.234"
 ##
 METATONE_RECEIVING_PORT = 51200
 # PICKLED_CLASSIFIER_FILE = '2013-07-01-TrainingData-classifier.p'
-#PICKLED_CLASSIFIER_FILE = '2014-12-12T12-05-53-GestureTargetLog-CPM-FeatureVectors-classifier.p'
+# PICKLED_CLASSIFIER_FILE = '2014-12-12T12-05-53-GestureTargetLog-CPM-FeatureVectors-classifier.p'
 PICKLED_CLASSIFIER_FILE = 'classifier.p'
 CLASSIFIER_TRAINING_FILE = "data/2014-12-12T12-05-53-GestureTargetLog-CPM-FeatureVectors.csv"
 ##
@@ -54,13 +50,13 @@ EXPERIMENT_TYPE_NONE = 3
 EXPERIMENT_TYPE_BUTTON = 4
 EXPERIMENT_TYPE_SERVER = 5
 ##
-PERFORMANCE_TYPE = 4 # this can be 0-5
-PERFORMANCE_COMPOSITION = 4 # this can be any random int.
+PERFORMANCE_TYPE = 4  # this can be 0-5
+PERFORMANCE_COMPOSITION = 4  # this can be any random int.
 PERFORMANCE_EVENT_NAME = "MetatonePerformanceStart"
 VISUALISER_MODE_ON = True
 VISUALISER_PORT = 61200
 VISUALISER_HOST = 'localhost'
-MAX_GESTURE_LENGTH = 300 # Corresponds to five minutes of performance time.
+MAX_GESTURE_LENGTH = 300  # Corresponds to five minutes of performance time.
 DEVICE_NAMES = {
     # '2678456D-9AE7-4DCC-A561-688A4766C325':'charles', # old
     # '95585C5C-C1C1-4612-9836-BFC68B0DC36F':'charles',
@@ -90,6 +86,7 @@ GESTURE_CLASS_NAMES = ['n', 'ft', 'st', 'fs', 'fsa', 'vss', 'bs',
 # Utility Functions
 # # # # #
 
+
 def ensure_dir(file_name):
     """
     Checks if a directory exists in the local directory,
@@ -99,6 +96,7 @@ def ensure_dir(file_name):
     if not os.path.exists(dir_to_make):
         os.makedirs(dir_to_make)
 
+
 def dummy_websocket_sender(address, arguments):
     """
     Dummy function: when running in webserver mode, the server replaces this with functions
@@ -106,6 +104,7 @@ def dummy_websocket_sender(address, arguments):
     """
     return
     # do nothing
+
 
 def get_device_name(device_id):
     """
@@ -119,9 +118,10 @@ def get_device_name(device_id):
 
 ###########################
 ##
-## Classification Module Functions
+# Classification Module Functions
 ##
 ###########################
+
 
 def load_classifier():
     """
@@ -137,15 +137,15 @@ def load_classifier():
         print("### IOError Loading Classifier.           ###")
         print("### Saving new pickled classifier object. ###")
         cla = generate_classifier.pickleClassifier(generate_classifier.INPUT_FILE,
-                                             generate_classifier.CLASSIFIER_NAME)
+                                                   generate_classifier.CLASSIFIER_NAME)
     except:
         print("### Exception Loading Classifier.         ###")
         print("### Generating new classifier object.     ###")
         cla = generate_classifier.pickleClassifier(generate_classifier.INPUT_FILE,
-                                             generate_classifier.CLASSIFIER_NAME)
+                                                   generate_classifier.CLASSIFIER_NAME)
     return cla
 
-#@profile
+
 def feature_frame(frame):
     """
     Calculates feature vectors for a dataframe of touch messages
@@ -153,15 +153,15 @@ def feature_frame(frame):
     """
     if frame.empty:
         fframe = pd.DataFrame({
-            'freq':pd.Series(0, index=range(1)),
-            'device_id':'nobody',
-            'touchdown_freq':0,
-            'movement_freq':0,
-            'centroid_x':-1,
-            'centroid_y':-1,
-            'std_x':0,
-            'std_y':0,
-            'velocity':0})
+            'freq': pd.Series(0, index=range(1)),
+            'device_id': 'nobody',
+            'touchdown_freq': 0,
+            'movement_freq': 0,
+            'centroid_x': -1,
+            'centroid_y': -1,
+            'std_x': 0,
+            'std_y': 0,
+            'velocity': 0})
         return fframe
 
     window_size = '5s'
@@ -173,18 +173,19 @@ def feature_frame(frame):
     frame_vel = frame['velocity'].resample(window_size, how='mean').fillna(0)
     frame_centroid = frame[['x_pos', 'y_pos']].resample(window_size, how='mean').fillna(-1)
     frame_std = frame[['x_pos', 'y_pos']].resample(window_size, how='std').fillna(0)
-    
+
     fframe = pd.DataFrame({
-        'freq':frame_freq,
-        'device_id':frame_deviceid,
-        'touchdown_freq':frame_touchdowns,
-        'movement_freq':frame_freq,
-        'centroid_x':frame_centroid['x_pos'],
-        'centroid_y':frame_centroid['y_pos'],
-        'std_x':frame_std['x_pos'],
-        'std_y':frame_std['y_pos'],
-        'velocity':frame_vel})
+        'freq': frame_freq,
+        'device_id': frame_deviceid,
+        'touchdown_freq': frame_touchdowns,
+        'movement_freq': frame_freq,
+        'centroid_x': frame_centroid['x_pos'],
+        'centroid_y': frame_centroid['y_pos'],
+        'std_x': frame_std['x_pos'],
+        'std_y': frame_std['y_pos'],
+        'velocity': frame_vel})
     return fframe.fillna(0)
+
 
 def pretty_print_classes(classes):
     """
@@ -200,6 +201,7 @@ def pretty_print_classes(classes):
     # return pretty_classes
     return result
 
+
 def pretty_print_state(state):
     """
     Returns a string of each part of the performance state
@@ -209,6 +211,7 @@ def pretty_print_state(state):
     result += "Spread: " + str(state[1]) + "\n"
     result += "Ratio: " + str(state[2])
     return result
+
 
 def print_performance_state(state_tuple):
     """
@@ -244,9 +247,9 @@ def print_performance_state(state_tuple):
 ##
 ###########################
 
+
 class MetatoneClassifier:
-    """ 
-    A classifier that mediates Metatone touch-screen performances. 
+    """ A classifier that mediates Metatone touch-screen performances.
     """
 
     def __init__(self):
@@ -269,7 +272,6 @@ class MetatoneClassifier:
         self.visualiser_mode = VISUALISER_MODE_ON
         self.logging_filename = ""
 
-    #@profile
     def classify_touch_messages(self, messages):
         """
         Given a list of touch messages, generates a gesture class for each
@@ -278,7 +280,7 @@ class MetatoneClassifier:
         """
         if not messages:
             return self.classify_empty_touch_messages()
-        ## This line can fail with a ValueError exception
+        # This line can fail with a ValueError exception
         touch_frame = pd.DataFrame(messages, columns=['time',
                                                       'device_id', 'x_pos', 'y_pos', 'velocity'])
         touch_frame = touch_frame.set_index('time')
@@ -304,7 +306,7 @@ class MetatoneClassifier:
 
     def make_gesture_frame(self, gesture_log):
         """
-        Takes a log of gestures and returns a time series 
+        Takes a log of gestures and returns a time series
         with columns for each active device.
         """
         if not gesture_log:
@@ -348,15 +350,15 @@ class MetatoneClassifier:
         if not classes:
             return
         current_time = datetime.now()
-        ## First add to the file log.
+        # First add to the file log.
         message_log_line = [current_time.isoformat()]
         message_log_line.append("/classifier/gestures")
         for key in classes.keys():
             message_log_line.append(key)
             message_log_line.append(classes[key])
         self.log_messages(message_log_line)
-        ## Now add to the gesture log.
-        ## TODO: add the whole classes dict! Not just the list of gestures! how stupid!
+        # Now add to the gesture log.
+        # TODO: add the whole classes dict! Not just the list of gestures! how stupid!
         classes = [classes[n] for n in classes.keys()]
         classes.insert(0, current_time)
         self.classified_gestures.append(classes)
@@ -371,7 +373,7 @@ class MetatoneClassifier:
 
     def trim_gesture_log(self):
         """
-        Trims the global gesture list to the length defined in MAX_GESTURE_LENGTH. 
+        Trims the global gesture list to the length defined in MAX_GESTURE_LENGTH.
         This runs after every classification step.
         """
         if len(self.classified_gestures) > MAX_GESTURE_LENGTH:
@@ -473,7 +475,7 @@ class MetatoneClassifier:
         """
         msg = OSC.OSCMessage("/metatone/touch")
         msg.extend(touch_data)
-        try: 
+        try:
             self.osc_client.sendto(msg, (VISUALISER_HOST, VISUALISER_PORT))
         except:
             msg = ""
@@ -508,30 +510,28 @@ class MetatoneClassifier:
         The sources are removed by process_source_removal() which only
         runs inside the classification thread.
         """
-        self.sources_to_remove.append(name) 
+        self.sources_to_remove.append(name)
 
     def process_source_removal(self):
-        """ 
-        Removes the touch data sources in the global list.
-        Should only be run inside the classification thread. 
+        """ Removes the touch data sources in the global list.
+        Should only be run inside the classification thread.
         """
         for name in self.sources_to_remove:
             print("CLASSIFIER: Removing a source: " + name)
-            print("Sources: "+ repr(self.osc_sources))
-            print("Active Names: "+ repr(self.active_names))
-            if name in self.osc_sources: 
+            print("Sources: " + repr(self.osc_sources))
+            print("Active Names: " + repr(self.active_names))
+            if name in self.osc_sources:
                 del self.osc_sources[name]
-            if name in self.active_names: 
-                self.active_names.remove(name) # can't do this until I fix gesture logging... needs to be dictionary not list. 
+            if name in self.active_names:
+                self.active_names.remove(name)  # can't do this until I fix gesture logging... needs to be dictionary not list. 
         self.sources_to_remove = []
-
 
     def clear_all_sources(self):
         """
-        Sends a performance end message to all connected apps and then removes them all. 
+        Sends a performance end message to all connected apps and then removes them all.
         """
         for name in self.osc_sources.keys():
-            self.send_performance_end_message(name) # send performance end messages.
+            self.send_performance_end_message(name)  # send performance end messages.
         self.osc_sources = {}
         self.active_names = []
         self.active_apps = []
@@ -550,7 +550,6 @@ class MetatoneClassifier:
     #
     ######################################
 
-    #@profile
     def classify_performance(self):
         """
         Classifies the current performance state.
@@ -562,7 +561,7 @@ class MetatoneClassifier:
         except:
             print("METATONE_CLASSIFIER: Error Classifying Messages.")
             classes = False
-        try: 
+        try:
             if classes:
                 self.send_gestures(classes)
                 self.record_latest_gestures(classes)
@@ -579,9 +578,9 @@ class MetatoneClassifier:
             else:
                 state = False
         except:
-            print ("METATONE_CLASSIFIER: Couldn't perform transition calculations.")
+            print("METATONE_CLASSIFIER: Couldn't perform transition calculations.")
             state = False
-            raise # TODO - figure out why this fails sometimes.
+            raise  # TODO - figure out why this fails sometimes.
 
         if state:
             # print(state)
@@ -611,10 +610,10 @@ class MetatoneClassifier:
                 self.trim_gesture_log()
                 # self.process_source_removal()
                 end_time = datetime.now()
-                delta_seconds = (end_time-start_time).total_seconds() # process as timedelta
+                delta_seconds = (end_time - start_time).total_seconds()  # process as timedelta
                 print("(Classification took: " + str(delta_seconds) + "s)")
                 print("Length of global gesture list: " + str(len(self.classified_gestures)) + "\n")
-                time.sleep(max(0, 1-delta_seconds))
+                time.sleep(max(0, 1 - delta_seconds))
             except:
                 print("### Couldn't perform analysis - exception. ###")
                 raise
@@ -642,7 +641,7 @@ class MetatoneClassifier:
                 self.touch_messages.append([current_time,
                                             get_device_name(contents[0]), contents[1],
                                             contents[2], contents[3]])
-                if self.visualiser_mode: 
+                if self.visualiser_mode:
                     self.send_touch_to_visualiser(contents)
             elif ("/metatone/touch/ended" in address) and (tags == "s"):
                 message = [current_time.isoformat(), "touch/ended", get_device_name(contents[0])]
@@ -667,7 +666,7 @@ class MetatoneClassifier:
                 message = [current_time.isoformat(), "metatone",
                            get_device_name(contents[0]), contents[1],
                            contents[2]]
-                if self.web_server_mode: # Repeat message back to Metatone Devices.
+                if self.web_server_mode:  # Repeat message back to Metatone Devices.
                     self.webserver_sendtoall_function(address, contents)
             elif "/metatone/targetgesture" in address:
                 message = [current_time.isoformat(), address, contents[0]]
