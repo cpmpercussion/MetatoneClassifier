@@ -10,10 +10,9 @@ http://charlesmartin.com.au
 
 import numpy as np
 import pandas as pd
-from datetime import timedelta
-from datetime import datetime
-from sklearn.ensemble import RandomForestClassifier
 import pickle
+from sklearn.ensemble import RandomForestClassifier
+
 
 CLASSIFIER_NAME = "classifier.p"
 INPUT_FILE = "data/2014-12-12T12-05-53-GestureTargetLog-CPM-FeatureVectors.csv"
@@ -53,22 +52,22 @@ def trainClassifier(input_csv):
     Trains a RandomForestClassifier and returns the result
     """
     try:
-        feature_vectors = pd.read_csv(input_csv,index_col=0,parse_dates=True)
+        feature_vectors = pd.read_csv(input_csv, index_col=0, parse_dates=True)
     except IOError:
         print("Trying one directory level higher...")
-        feature_vectors = pd.read_csv("../" + input_csv,index_col=0,parse_dates=True)
-    feature_vectors = feature_vectors.rename(columns={'target':'gesture'})
+        feature_vectors = pd.read_csv("../" + input_csv, index_col=0, parse_dates=True)
+    feature_vectors = feature_vectors.rename(columns={'target': 'gesture'})
     msk = np.random.rand(len(feature_vectors)) < TRAIN_PROPORTION
     train = feature_vectors[msk]
     test = feature_vectors[~msk]
     # build classifier
     classifier = RandomForestClassifier(n_estimators=100, max_features=3)
-    classifier = classifier.fit(train[feature_vector_columns],train['gesture'])
+    classifier = classifier.fit(train[feature_vector_columns], train['gesture'])
     print('Classifier Trained. Testing...')
     print('Feature importances:' + str(classifier.feature_importances_))
     # score classifier
     if not test.empty:
-        mean_accuracy = classifier.score(test[feature_vector_columns],test['gesture'])
+        mean_accuracy = classifier.score(test[feature_vector_columns], test['gesture'])
         print('Mean Accuracy:' + str(mean_accuracy) + '\n')
     else:
         print("Can't test accuracy of classifier using whole dataset.")
@@ -77,4 +76,4 @@ def trainClassifier(input_csv):
 
 if __name__ == "__main__":
     print("Creating Default Classifier File")
-    classifier = pickleClassifier(INPUT_FILE,CLASSIFIER_NAME)
+    classifier = pickleClassifier(INPUT_FILE, CLASSIFIER_NAME)
