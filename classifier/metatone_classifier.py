@@ -557,8 +557,8 @@ class MetatoneClassifier:
         self.network = gesture_rnn.GestureRNN(mode="run")
         self.tf_session = tf.Session()
         self.network.prepare_model_for_running(self.tf_session)
-        self.ensemble_gestures = [0,0,0]
-        ## Classify forever code.
+        self.ensemble_gestures = [0, 0, 0]
+        # Classify forever code.
         self.classifying_forever = True
         while self.classifying_forever:
             try:
