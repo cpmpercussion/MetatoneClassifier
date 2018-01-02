@@ -11,10 +11,11 @@ import matplotlib.pyplot as plt
 import matplotlib.dates as dates
 from datetime import timedelta
 import argparse
-import metatone_classifier
+import generate_classifier
 import transitions
 
-CLASSIFIER = metatone_classifier.MetatoneClassifier()
+
+CLASSIFIER = generate_classifier.load_classifier()
 
 
 def feature_vector_from_row_time(row, frame, name):
@@ -74,7 +75,7 @@ def gesture_prediction_from_frame(frame):
     Return one gesture prediction from a dataframe
     """
     feature_vector = feature_vector_from_frame(frame)
-    return CLASSIFIER.classifier.predict(feature_vector[metatone_classifier.FEATURE_VECTOR_COLUMNS])
+    return CLASSIFIER.predict(feature_vector[generate_classifier.FEATURE_VECTOR_COLUMNS])
 
 
 def generate_rolling_feature_frame(messages, name):
@@ -82,7 +83,7 @@ def generate_rolling_feature_frame(messages, name):
     Takes a message frame and creates a gesture frame with calculations every 1s.
     Returns the generated gesture frame.
     """
-    features = metatone_classifier.feature_frame(messages)
+    features = generate_classifier.feature_frame(messages)
     features = features.resample('1s')
     # is it possible to make this next step faster?
     features = features.apply(feature_vector_from_row_time, axis=1, frame=messages, name=name)
@@ -99,7 +100,7 @@ def generate_gesture_frame(touchlog_frame):
     for name in names:
         print("Processing Performer data for: " + name)
         performer_features = generate_rolling_feature_frame(touchlog_frame.ix[touchlog_frame['device_id'] == name], name)
-        performer_features['pred'] = CLASSIFIER.classifier.predict(performer_features[metatone_classifier.FEATURE_VECTOR_COLUMNS])
+        performer_features['pred'] = CLASSIFIER.predict(performer_features[generate_classifier.FEATURE_VECTOR_COLUMNS])
         gesture_pred[name] = performer_features['pred']
     gesture_pred = gesture_pred.fillna(0)
     gesture_pred = gesture_pred[names]
@@ -113,11 +114,11 @@ def generate_flux_frame(gesture_frame):
     """
     window_size = "15s"
     fluxes = pd.DataFrame(index=gesture_frame.index)
-    fluxes = gesture_frame.apply(flux_calculation_from_row, axis=1,frame=gesture_frame,window=window_size)
+    fluxes = gesture_frame.apply(flux_calculation_from_row, axis=1, frame=gesture_frame, window=window_size)
     return fluxes
 
 
-def flux_calculation_from_row(row,frame,window):
+def flux_calculation_from_row(row, frame, window):
     window = "15s"
     time = row.name
     delta = timedelta(seconds=-37)
@@ -160,7 +161,7 @@ def generate_flux_diff_frame(gesture_frame):
     return flux_diffs
 
 
-def flux_diff_calculation_from_row(row,frame,window):
+def flux_diff_calculation_from_row(row, frame, window):
     time = row.name
     delta = timedelta(seconds=-37)
     frame = frame.between_time((time + delta).time(), time.time())
@@ -217,7 +218,7 @@ def plot_gestures_and_flux_score(plot_title, gestures, flux, flux_diffs):
     # Plot Flux Data
     ax2 = plt.subplot(212, sharex=ax)
     idx = flux.index
-    plt.plot_date(idx.to_pydatetime(),flux,'-',label=flux.name)
+    plt.plot_date(idx.to_pydatetime(), flux, '-', label=flux.name)
     plt.ylabel("flux")
     # Possible New Ideas Stage
     # new_ideas = flux_diffs.ix[flux_diffs > transitions.NEW_IDEA_THRESHOLD]
@@ -242,18 +243,18 @@ def plot_score_posthoc_flux(title, gestures_frame):
     # Setup Plot
     idx = gestures_frame.index
     # What's a good size for the figure? (14,10) seems like a nice proportion
-    ax = plt.figure(figsize=(10.5,7.5),frameon=False,tight_layout=True).add_subplot(211)
+    ax = plt.figure(figsize=(10.5, 7.5), frameon=False, tight_layout=True).add_subplot(211)
     ax.xaxis.set_major_locator(dates.SecondLocator(bysecond=[0]))
     ax.xaxis.set_major_formatter(dates.DateFormatter("%H:%M"))
-    ax.xaxis.set_minor_locator(dates.SecondLocator(bysecond=[0,15,30,45]))
+    ax.xaxis.set_minor_locator(dates.SecondLocator(bysecond=[0, 15, 30, 45]))
     # ax.xaxis.grid(True, which="minor")
     ax.yaxis.grid()
     plt.ylabel("gesture")
     plt.xlabel("time")
-    plt.ylim(-0.5,8.5)
+    plt.ylim(-0.5, 8.5)
     plt.yticks(np.arange(9), ['n', 'ft', 'st', 'fs', 'fsa', 'vss', 'bs', 'ss', 'c'])
     for n in gestures_frame.columns:
-        plt.plot_date(idx.to_pydatetime(), gestures_frame[n], '-', label=n)   
+        plt.plot_date(idx.to_pydatetime(), gestures_frame[n], '-', label=n)
     flux_series = flux_series.resample('1s', fill_method='ffill')
     ax2 = plt.subplot(212, sharex=ax)
     # ax2.xaxis.grid(True, which="minor")
@@ -275,39 +276,39 @@ def plot_score_and_new_ideas(gestures_frame):
     winlen = "15s"
     window = 15
     new_idea_difference_threshold = 0.15
-    #transitions.NEW_IDEA_THRESHOLD
-    # Setup Data.    
+    # transitions.NEW_IDEA_THRESHOLD
+    # Setup Data.
     transition_matrices = transitions.calculate_group_transitions_for_window(gestures_frame, winlen)
     flux_series = transitions.calculate_flux_series(transition_matrices)
-    new_ideas = transitions.calculate_new_ideas(flux_series, new_idea_difference_threshold)    
-    #Plot and save the Gesture Score as a pdf:
+    new_ideas = transitions.calculate_new_ideas(flux_series, new_idea_difference_threshold)
+    # Plot and save the Gesture Score as a pdf:
     idx = gestures_frame.index
-    ax = plt.figure(figsize=(10,5),frameon=False,tight_layout=True).add_subplot(211)
-    ax.xaxis.set_major_locator(dates.SecondLocator(bysecond=[0])) # right!
+    ax = plt.figure(figsize=(10, 5), frameon=False, tight_layout=True).add_subplot(211)
+    ax.xaxis.set_major_locator(dates.SecondLocator(bysecond=[0]))  # right!
     ax.xaxis.set_major_formatter(dates.DateFormatter("%H:%M"))
-    ax.xaxis.set_minor_locator(dates.SecondLocator(bysecond=[0,15,30,45]))
-    #ax.xaxis.grid(True, which="minor")
+    ax.xaxis.set_minor_locator(dates.SecondLocator(bysecond=[0, 15, 30, 45]))
+    # ax.xaxis.grid(True, which="minor")
     ax.yaxis.grid()
     title = "Post-Hoc: Gestures and Group Flux " + flux_series.index[0].isoformat()
     plt.ylabel("gesture")
-    #plt.xlabel("Time")
-    plt.ylim(-0.5,8.5)
-    plt.yticks(np.arange(9),['n','ft','st','fs','fsa','vss','bs','ss','c'])
+    # plt.xlabel("Time")
+    plt.ylim(-0.5, 8.5)
+    plt.yticks(np.arange(9), ['n', 'ft', 'st', 'fs', 'fsa', 'vss', 'bs', 'ss', 'c'])
     for n in gestures_frame.columns:
-        plt.plot_date(idx.to_pydatetime(),gestures_frame[n],'-',label=n)
-    #plt.legend(loc='upper right')
+        plt.plot_date(idx.to_pydatetime(), gestures_frame[n], '-', label=n)
+    # plt.legend(loc='upper right')
     flux_series = flux_series.resample('1s', fill_method='ffill')
     ax2 = plt.subplot(212, sharex=ax)
     idx = flux_series.index
-    plt.plot_date(idx.to_pydatetime(),flux_series,'-',label=flux_series.name)
+    plt.plot_date(idx.to_pydatetime(), flux_series, '-', label=flux_series.name)
     plt.ylabel("flux")
     for n in range(len(new_ideas)):
-        x_val = new_ideas.index[n].to_pydatetime() + timedelta(seconds = window / 2)
-        #x_val = new_ideas.index[0].to_pydatetime() + timedelta(seconds = window / 2) # just look at the first new-idea
+        x_val = new_ideas.index[n].to_pydatetime() + timedelta(seconds=window / 2)
+        # x_val = new_ideas.index[0].to_pydatetime() + timedelta(seconds = window / 2) # just look at the first new-idea
         ax.axvline(x=x_val, color='r', alpha=1, linestyle='--')
         ax2.axvline(x=x_val, color='r', alpha=1, linestyle='--')
         print(x_val)
-    plt.savefig(title.replace(":","_") +'.pdf', dpi=300, format="pdf")
+    plt.savefig(title.replace(":", "_") + '.pdf', dpi=300, format="pdf")
     plt.close()
 
 
