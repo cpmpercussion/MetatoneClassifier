@@ -8,8 +8,11 @@ Copyright 2015 Charles Martin
 http://metatone.net
 http://charlesmartin.com.au
 
-This file can be executed by itself (python metatone_classifier.py) or used as a module 
+This file can be executed by itself (python metatone_classifier.py) or used as a module
 by another python process.
+
+This file contains the MetatoneClassifier class which defines what MetatoneClassifier does at each run-step
+during a performance. The classification features and training is done in the generate_classifier module.
 
 If using as a module, call the main() function to initiate the normal run loop.
 
@@ -146,47 +149,6 @@ def load_classifier():
     return cla
 
 
-def feature_frame(frame):
-    """
-    Calculates feature vectors for a dataframe of touch messages
-    containing one device_id.
-    """
-    if frame.empty:
-        fframe = pd.DataFrame({
-            'freq': pd.Series(0, index=range(1)),
-            'device_id': 'nobody',
-            'touchdown_freq': 0,
-            'movement_freq': 0,
-            'centroid_x': -1,
-            'centroid_y': -1,
-            'std_x': 0,
-            'std_y': 0,
-            'velocity': 0})
-        return fframe
-
-    window_size = '5s'
-    count_zeros = lambda s: len([x for x in s if x == 0])
-
-    frame_deviceid = frame['device_id'].resample(window_size, how='first').fillna(method='ffill')
-    frame_freq = frame['device_id'].resample(window_size, how='count').fillna(0)
-    frame_touchdowns = frame['velocity'].resample(window_size, how=count_zeros).fillna(0)
-    frame_vel = frame['velocity'].resample(window_size, how='mean').fillna(0)
-    frame_centroid = frame[['x_pos', 'y_pos']].resample(window_size, how='mean').fillna(-1)
-    frame_std = frame[['x_pos', 'y_pos']].resample(window_size, how='std').fillna(0)
-
-    fframe = pd.DataFrame({
-        'freq': frame_freq,
-        'device_id': frame_deviceid,
-        'touchdown_freq': frame_touchdowns,
-        'movement_freq': frame_freq,
-        'centroid_x': frame_centroid['x_pos'],
-        'centroid_y': frame_centroid['y_pos'],
-        'std_x': frame_std['x_pos'],
-        'std_y': frame_std['y_pos'],
-        'velocity': frame_vel})
-    return fframe.fillna(0)
-
-
 def pretty_print_classes(classes):
     """
     Returns a string of each active device matched to a human
@@ -242,9 +204,9 @@ def print_performance_state(state_tuple):
     print("# # # # # # # # # # # #")
 
 ###########################
-##
-## Classifier Class
-##
+#
+# Classifier Class
+#
 ###########################
 
 
@@ -289,7 +251,7 @@ class MetatoneClassifier:
         touch_frame = touch_frame.between_time((time_now + delta).time(), time_now.time())
         classes = {}
         for name in self.active_names:
-            features = feature_frame(touch_frame.ix[touch_frame['device_id'] == name])
+            features = generate_classifier.feature_frame(touch_frame.ix[touch_frame['device_id'] == name])
             gesture = self.classifier.predict(features[FEATURE_VECTOR_COLUMNS][-1:])
             classes[name] = list(gesture)[0]
         return classes
@@ -523,7 +485,7 @@ class MetatoneClassifier:
             if name in self.osc_sources:
                 del self.osc_sources[name]
             if name in self.active_names:
-                self.active_names.remove(name)  # can't do this until I fix gesture logging... needs to be dictionary not list. 
+                self.active_names.remove(name)  # can't do this until I fix gesture logging... needs to be dictionary not list.
         self.sources_to_remove = []
 
     def clear_all_sources(self):

@@ -34,17 +34,51 @@ gesture_codes = {
 # Column names in the feature vectors:
 feature_vector_columns = ['centroid_x', 'centroid_y', 'std_x', 'std_y', 'freq', 'movement_freq', 'touchdown_freq', 'velocity']
 
+# Feature Vector Generation
 
-def pickleClassifier(input_csv, output_file):
+
+def feature_frame(frame):
     """
-    Trains a RandomForestClassifier and pickles (and returns) the result
+    Calculates feature vectors for a dataframe of touch messages
+    containing one device_id.
     """
-    classifier = trainClassifier(input_csv)
-    # save pickled classifier
-    pickle_file = open(output_file, "wb")
-    pickle.dump(classifier, pickle_file)
-    pickle_file.close()
-    return classifier
+    if frame.empty:
+        fframe = pd.DataFrame({
+            'freq': pd.Series(0, index=range(1)),
+            'device_id': 'nobody',
+            'touchdown_freq': 0,
+            'movement_freq': 0,
+            'centroid_x': -1,
+            'centroid_y': -1,
+            'std_x': 0,
+            'std_y': 0,
+            'velocity': 0})
+        return fframe
+
+    window_size = '5s'
+    count_zeros = lambda s: len([x for x in s if x == 0])  # Count Zero.
+
+    frame_deviceid = frame['device_id'].resample(window_size, how='first').fillna(method='ffill')
+    frame_freq = frame['device_id'].resample(window_size, how='count').fillna(0)
+    frame_touchdowns = frame['velocity'].resample(window_size, how=count_zeros).fillna(0)
+    frame_vel = frame['velocity'].resample(window_size, how='mean').fillna(0)
+    frame_centroid = frame[['x_pos', 'y_pos']].resample(window_size, how='mean').fillna(-1)
+    frame_std = frame[['x_pos', 'y_pos']].resample(window_size, how='std').fillna(0)
+
+    fframe = pd.DataFrame({
+        'freq': frame_freq,
+        'device_id': frame_deviceid,
+        'touchdown_freq': frame_touchdowns,
+        'movement_freq': frame_freq,
+        'centroid_x': frame_centroid['x_pos'],
+        'centroid_y': frame_centroid['y_pos'],
+        'std_x': frame_std['x_pos'],
+        'std_y': frame_std['y_pos'],
+        'velocity': frame_vel})
+    return fframe.fillna(0)
+
+
+# Train Classifier from CSV of feature vectors
 
 
 def trainClassifier(input_csv):
@@ -72,6 +106,24 @@ def trainClassifier(input_csv):
     else:
         print("Can't test accuracy of classifier using whole dataset.")
     return classifier
+
+
+# Save a trained classifier.
+
+
+def pickleClassifier(input_csv, output_file):
+    """
+    Trains a RandomForestClassifier and pickles (and returns) the result
+    """
+    classifier = trainClassifier(input_csv)
+    # save pickled classifier
+    pickle_file = open(output_file, "wb")
+    pickle.dump(classifier, pickle_file)
+    pickle_file.close()
+    return classifier
+
+
+# Some default script behaviour: Creates a default classifier.
 
 
 if __name__ == "__main__":
