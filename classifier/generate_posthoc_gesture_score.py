@@ -11,10 +11,12 @@ import matplotlib.pyplot as plt
 import matplotlib.dates as dates
 from datetime import timedelta
 import argparse
-import metatone_classifier
+import generate_classifier
 import transitions
 
-CLASSIFIER = metatone_classifier.MetatoneClassifier()
+
+CLASSIFIER = generate_classifier.load_classifier()
+
 
 def feature_vector_from_row_time(row, frame, name):
     """
@@ -31,58 +33,62 @@ def feature_vector_from_row_time(row, frame, name):
     frame_std = frame[['x_pos', 'y_pos']].std().fillna(0)
 
     feature_vector = {
-        'freq':frame['device_id'].count(),
-        'device_id':name,
-        'touchdown_freq':frame_touchdowns['device_id'].count(),
-        'movement_freq':frame_mvmt['device_id'].count(),
-        'centroid_x':frame_centroid[0],
-        'centroid_y':frame_centroid[1],
-        'std_x':frame_std[0],
-        'std_y':frame_std[1],
-        'velocity':frame['velocity'].mean()
+        'freq': frame['device_id'].count(),
+        'device_id': name,
+        'touchdown_freq': frame_touchdowns['device_id'].count(),
+        'movement_freq': frame_mvmt['device_id'].count(),
+        'centroid_x': frame_centroid[0],
+        'centroid_y': frame_centroid[1],
+        'std_x': frame_std[0],
+        'std_y': frame_std[1],
+        'velocity': frame['velocity'].mean()
     }
     return feature_vector
+
 
 def feature_vector_from_frame(frame):
     """
     Return one feature vector from a complete dataframe.
     """
     if frame.empty:
-        return [-1, -1, name, 0, 0, 0, 0, 0, 0]
+        return [-1, -1, "name", 0, 0, 0, 0, 0, 0]
     frame_touchdowns = frame.ix[frame.velocity == 0]
     frame_mvmt = frame.ix[frame.velocity != 0]
     frame_centroid = frame[['x_pos', 'y_pos']].mean()
     frame_std = frame[['x_pos', 'y_pos']].std().fillna(0)
     feature_vector = {
-        'freq':frame.device_id.count(),
-        'device_id':frame.device_id.ix[0],
-        'touchdown_freq':frame_touchdowns.device_id.count(),
-        'movement_freq':frame_mvmt.device_id.count(),
-        'centroid_x':frame_centroid[0],
-        'centroid_y':frame_centroid[1],
-        'std_x':frame_std[0],
-        'std_y':frame_std[1],
-        'velocity':frame.velocity.mean()
+        'freq': frame.device_id.count(),
+        'device_id': frame.device_id.ix[0],
+        'touchdown_freq': frame_touchdowns.device_id.count(),
+        'movement_freq': frame_mvmt.device_id.count(),
+        'centroid_x': frame_centroid[0],
+        'centroid_y': frame_centroid[1],
+        'std_x': frame_std[0],
+        'std_y': frame_std[1],
+        'velocity': frame.velocity.mean()
     }
     return feature_vector
+
 
 def gesture_prediction_from_frame(frame):
     """
     Return one gesture prediction from a dataframe
     """
     feature_vector = feature_vector_from_frame(frame)
-    return CLASSIFIER.classifier.predict(feature_vector[metatone_classifier.FEATURE_VECTOR_COLUMNS])
+    return CLASSIFIER.predict(feature_vector[generate_classifier.FEATURE_VECTOR_COLUMNS])
+
 
 def generate_rolling_feature_frame(messages, name):
     """
     Takes a message frame and creates a gesture frame with calculations every 1s.
     Returns the generated gesture frame.
     """
-    features = metatone_classifier.feature_frame(messages)
+    features = generate_classifier.feature_frame(messages)
     features = features.resample('1s')
     # is it possible to make this next step faster?
     features = features.apply(feature_vector_from_row_time, axis=1, frame=messages, name=name)
     return features
+
 
 def generate_gesture_frame(touchlog_frame):
     """
@@ -92,25 +98,27 @@ def generate_gesture_frame(touchlog_frame):
     gesture_pred = pd.DataFrame(touchlog_frame['device_id'].resample('1s', how='count'))
     # ticks = gesture_pred.resample('10s').index.to_pydatetime()
     for name in names:
-        print ("Processing Performer data for: " + name)
+        print("Processing Performer data for: " + name)
         performer_features = generate_rolling_feature_frame(touchlog_frame.ix[touchlog_frame['device_id'] == name], name)
-        performer_features['pred'] = CLASSIFIER.classifier.predict(performer_features[metatone_classifier.FEATURE_VECTOR_COLUMNS])
+        performer_features['pred'] = CLASSIFIER.predict(performer_features[generate_classifier.FEATURE_VECTOR_COLUMNS])
         gesture_pred[name] = performer_features['pred']
     gesture_pred = gesture_pred.fillna(0)
     gesture_pred = gesture_pred[names]
     gesture_pred[names] = gesture_pred[names].astype(int)
     return gesture_pred
 
+
 def generate_flux_frame(gesture_frame):
     """
     Generates tms at 1s intervals and calculates a rolling flux calculation.
     """
     window_size = "15s"
-    fluxes = pd.DataFrame(index = gesture_frame.index)
-    fluxes = gesture_frame.apply(flux_calculation_from_row, axis=1,frame=gesture_frame,window=window_size)
+    fluxes = pd.DataFrame(index=gesture_frame.index)
+    fluxes = gesture_frame.apply(flux_calculation_from_row, axis=1, frame=gesture_frame, window=window_size)
     return fluxes
 
-def flux_calculation_from_row(row,frame,window):
+
+def flux_calculation_from_row(row, frame, window):
     window = "15s"
     time = row.name
     delta = timedelta(seconds=-37)
@@ -123,6 +131,7 @@ def flux_calculation_from_row(row,frame,window):
     if flux_series.count() > 0:
         flux_latest = flux_series.tolist()[-1]
     return flux_latest
+
 
 def flux_calculation_from_row_roll(frame):
     window = "15s"
@@ -136,6 +145,7 @@ def flux_calculation_from_row_roll(frame):
         flux_latest = flux_series.tolist()[-1]
     return flux_latest
 
+
 def generate_flux_diff_frame(gesture_frame):
     """
     Calculates a rolling calculation of flux differences at the same interval as the gestures.
@@ -146,11 +156,12 @@ def generate_flux_diff_frame(gesture_frame):
     # can be plotted and modelled for thesis.
 
     window_size = "15s"
-    flux_diffs = pd.DataFrame(index = gesture_frame.index)
-    flux_diffs = gesture_frame.apply(flux_diff_calculation_from_row, axis=1,frame=gesture_frame,window=window_size)
+    flux_diffs = pd.DataFrame(index=gesture_frame.index)
+    flux_diffs = gesture_frame.apply(flux_diff_calculation_from_row, axis=1, frame=gesture_frame, window=window_size)
     return flux_diffs
 
-def flux_diff_calculation_from_row(row,frame,window):
+
+def flux_diff_calculation_from_row(row, frame, window):
     time = row.name
     delta = timedelta(seconds=-37)
     frame = frame.between_time((time + delta).time(), time.time())
@@ -162,6 +173,7 @@ def flux_diff_calculation_from_row(row,frame,window):
     if flux_series.count() > 1:
         flux_diff = flux_series[-2:].diff().dropna().tolist()[0]
     return flux_diff
+
 
 def generate_gesture_plot(names, gesture_frame):
     """
@@ -180,12 +192,13 @@ def generate_gesture_plot(names, gesture_frame):
     plt.ylabel("gesture")
     plt.xlabel("time")
     plt.ylim(-0.5, 8.5)
-    plt.yticks(np.arange(9),['n', 'ft', 'st', 'fs', 'fsa', 'vss', 'bs', 'ss', 'c'])
+    plt.yticks(np.arange(9), ['n', 'ft', 'st', 'fs', 'fsa', 'vss', 'bs', 'ss', 'c'])
     for name in names:
         plt.plot_date(idx.to_pydatetime(), gesture_frame[name], '-', label=name)
     plt.legend(loc='upper right')
     plt.savefig(outname + '.pdf', dpi=300, format="pdf")
     plt.close()
+
 
 def plot_gestures_and_flux_score(plot_title, gestures, flux, flux_diffs):
     """
@@ -196,8 +209,6 @@ def plot_gestures_and_flux_score(plot_title, gestures, flux, flux_diffs):
     ax = plt.figure(figsize=(14, 6), frameon=False, tight_layout=True).add_subplot(211)
     ax.xaxis.set_major_locator(dates.SecondLocator(bysecond=[0]))
     ax.xaxis.set_major_formatter(dates.DateFormatter("%H:%M"))
-    #ax.xaxis.set_minor_locator(dates.SecondLocator(bysecond=[0,10,20,30,40,50]))
-    #ax.xaxis.grid(True, which="minor")
     ax.yaxis.grid()
     plt.ylim(-0.5, 8.5)
     plt.yticks(np.arange(9), ['n', 'ft', 'st', 'fs', 'fsa', 'vss', 'bs', 'ss', 'c'])
@@ -206,10 +217,8 @@ def plot_gestures_and_flux_score(plot_title, gestures, flux, flux_diffs):
         plt.plot_date(idx.to_pydatetime(), gestures[n], '-', label=n)
     # Plot Flux Data
     ax2 = plt.subplot(212, sharex=ax)
-    #ax2.xaxis.grid(True, which="minor")
     idx = flux.index
-    plt.plot_date(idx.to_pydatetime(),flux,'-',label=flux.name)
-    #plt.plot_date(idx.to_pydatetime(),flux_diffs,'-',label=flux_diffs.name)
+    plt.plot_date(idx.to_pydatetime(), flux, '-', label=flux.name)
     plt.ylabel("flux")
     # Possible New Ideas Stage
     # new_ideas = flux_diffs.ix[flux_diffs > transitions.NEW_IDEA_THRESHOLD]
@@ -223,7 +232,8 @@ def plot_gestures_and_flux_score(plot_title, gestures, flux, flux_diffs):
     plt.savefig(plot_title.replace(":", "_") + '.pdf', dpi=300, format="pdf")
     plt.close()
 
-def plot_score_posthoc_flux(title,gestures_frame):
+
+def plot_score_posthoc_flux(title, gestures_frame):
     """
     Plots gestures and generates post-hoc rolling flux on a 15s
     (actually 15 sample) window.
@@ -233,23 +243,23 @@ def plot_score_posthoc_flux(title,gestures_frame):
     # Setup Plot
     idx = gestures_frame.index
     # What's a good size for the figure? (14,10) seems like a nice proportion
-    ax = plt.figure(figsize=(10.5,7.5),frameon=False,tight_layout=True).add_subplot(211)
+    ax = plt.figure(figsize=(10.5, 7.5), frameon=False, tight_layout=True).add_subplot(211)
     ax.xaxis.set_major_locator(dates.SecondLocator(bysecond=[0]))
     ax.xaxis.set_major_formatter(dates.DateFormatter("%H:%M"))
-    ax.xaxis.set_minor_locator(dates.SecondLocator(bysecond=[0,15,30,45]))
-    #ax.xaxis.grid(True, which="minor")
+    ax.xaxis.set_minor_locator(dates.SecondLocator(bysecond=[0, 15, 30, 45]))
+    # ax.xaxis.grid(True, which="minor")
     ax.yaxis.grid()
     plt.ylabel("gesture")
     plt.xlabel("time")
-    plt.ylim(-0.5,8.5)
-    plt.yticks(np.arange(9),['n','ft','st','fs','fsa','vss','bs','ss','c'])
+    plt.ylim(-0.5, 8.5)
+    plt.yticks(np.arange(9), ['n', 'ft', 'st', 'fs', 'fsa', 'vss', 'bs', 'ss', 'c'])
     for n in gestures_frame.columns:
-        plt.plot_date(idx.to_pydatetime(),gestures_frame[n],'-',label=n)    
+        plt.plot_date(idx.to_pydatetime(), gestures_frame[n], '-', label=n)
     flux_series = flux_series.resample('1s', fill_method='ffill')
     ax2 = plt.subplot(212, sharex=ax)
-    #ax2.xaxis.grid(True, which="minor")
+    # ax2.xaxis.grid(True, which="minor")
     idx = flux_series.index
-    plt.plot_date(idx.to_pydatetime(),flux_series,'-',label=flux_series.name)
+    plt.plot_date(idx.to_pydatetime(), flux_series, '-', label=flux_series.name)
     plt.ylabel("flux")
     # # Plot New Ideas
     # for n in range(len(new_ideas)):
@@ -258,76 +268,105 @@ def plot_score_posthoc_flux(title,gestures_frame):
     #     ax2.axvline(x=x_val, color='r', alpha=0.7, linestyle='--')
     #     print(x_val)
     # Output Stage
-    plt.savefig(title.replace(":","_") +'.pdf', dpi=300, format="pdf")
+    plt.savefig(title.replace(":", "_") + '.pdf', dpi=300, format="pdf")
     plt.close()
+
 
 def plot_score_and_new_ideas(gestures_frame):
     winlen = "15s"
     window = 15
     new_idea_difference_threshold = 0.15
-    #transitions.NEW_IDEA_THRESHOLD
-    # Setup Data.    
+    # transitions.NEW_IDEA_THRESHOLD
+    # Setup Data.
     transition_matrices = transitions.calculate_group_transitions_for_window(gestures_frame, winlen)
     flux_series = transitions.calculate_flux_series(transition_matrices)
-    new_ideas = transitions.calculate_new_ideas(flux_series, new_idea_difference_threshold)    
-    #Plot and save the Gesture Score as a pdf:
+    new_ideas = transitions.calculate_new_ideas(flux_series, new_idea_difference_threshold)
+    # Plot and save the Gesture Score as a pdf:
     idx = gestures_frame.index
-    ax = plt.figure(figsize=(10,5),frameon=False,tight_layout=True).add_subplot(211)
-    ax.xaxis.set_major_locator(dates.SecondLocator(bysecond=[0])) # right!
+    ax = plt.figure(figsize=(10, 5), frameon=False, tight_layout=True).add_subplot(211)
+    ax.xaxis.set_major_locator(dates.SecondLocator(bysecond=[0]))  # right!
     ax.xaxis.set_major_formatter(dates.DateFormatter("%H:%M"))
-    ax.xaxis.set_minor_locator(dates.SecondLocator(bysecond=[0,15,30,45]))
-    #ax.xaxis.grid(True, which="minor")
+    ax.xaxis.set_minor_locator(dates.SecondLocator(bysecond=[0, 15, 30, 45]))
+    # ax.xaxis.grid(True, which="minor")
     ax.yaxis.grid()
     title = "Post-Hoc: Gestures and Group Flux " + flux_series.index[0].isoformat()
     plt.ylabel("gesture")
-    #plt.xlabel("Time")
-    plt.ylim(-0.5,8.5)
-    plt.yticks(np.arange(9),['n','ft','st','fs','fsa','vss','bs','ss','c'])
+    # plt.xlabel("Time")
+    plt.ylim(-0.5, 8.5)
+    plt.yticks(np.arange(9), ['n', 'ft', 'st', 'fs', 'fsa', 'vss', 'bs', 'ss', 'c'])
     for n in gestures_frame.columns:
-        plt.plot_date(idx.to_pydatetime(),gestures_frame[n],'-',label=n)
-    #plt.legend(loc='upper right')
+        plt.plot_date(idx.to_pydatetime(), gestures_frame[n], '-', label=n)
+    # plt.legend(loc='upper right')
     flux_series = flux_series.resample('1s', fill_method='ffill')
     ax2 = plt.subplot(212, sharex=ax)
     idx = flux_series.index
-    plt.plot_date(idx.to_pydatetime(),flux_series,'-',label=flux_series.name)
+    plt.plot_date(idx.to_pydatetime(), flux_series, '-', label=flux_series.name)
     plt.ylabel("flux")
     for n in range(len(new_ideas)):
-        x_val = new_ideas.index[n].to_pydatetime() + timedelta(seconds = window / 2)
-        #x_val = new_ideas.index[0].to_pydatetime() + timedelta(seconds = window / 2) # just look at the first new-idea
+        x_val = new_ideas.index[n].to_pydatetime() + timedelta(seconds=window / 2)
+        # x_val = new_ideas.index[0].to_pydatetime() + timedelta(seconds = window / 2) # just look at the first new-idea
         ax.axvline(x=x_val, color='r', alpha=1, linestyle='--')
         ax2.axvline(x=x_val, color='r', alpha=1, linestyle='--')
         print(x_val)
-    plt.savefig(title.replace(":","_") +'.pdf', dpi=300, format="pdf")
+    plt.savefig(title.replace(":", "_") + '.pdf', dpi=300, format="pdf")
     plt.close()
 
+
+def print_transition_plots(transitions):
+    """
+    Saves a PDF of a heatmap plot of each transition matrix in the given list: transitions.
+    """
+    for transition_matrix in range(len(transitions)):
+        state, spread, ratio = transitions.transition_state_measure(transitions.ix[transition_matrix])
+        mat = transitions.transition_matrix_to_normal_transition_matrix(transitions.ix[transition_matrix])
+        flux = transitions.flux_measure(mat)
+        filename = transitions.index[transition_matrix].isoformat()
+        title = transitions.index[transition_matrix].strftime('%Y-%m-%d %H:%M:%S')
+        print(title)
+        colours = plt.cm.Reds  # plt.cm.hot # plt.cm.autumn # plt.cm.binary for black and white
+        # plt.title(title + " " + state + " " + str(spread) + " " + str(ratio))
+        # plt.figure(figsize=(4.5,4),dpi=300)
+        plt.figure(figsize=(5.5, 4), dpi=300)
+        plt.title(title + " flux: " + str(round(flux, 3)))
+        plt.imshow(mat, cmap=colours, interpolation='nearest', vmin=0.0, vmax=1.0)
+        plt.colorbar()  # shows the legend
+        labels = ["none", "taps", "swipes", "swirls", "combo"]
+        plt.xticks([0, 1, 2, 3, 4], labels)
+        plt.yticks([0, 1, 2, 3, 4], labels)
+        plt.savefig(filename.replace(":", "_") + '.pdf', dpi=300, format="pdf")
+        plt.close()
+        # TODO make sure stochastic calculation doesn't fail on nonzero matrices.
+
+
 def post_hoc_transition_analysis_for_thesis(gesture_filename):
-    gestures = pd.read_csv(GESTURES_FILE, index_col='time', parse_dates=True)
+    gestures = pd.read_csv(gesture_filename, index_col='time', parse_dates=True)
     gestures_first_time = str(gestures.index[0])
-    plot_score_posthoc_flux(gestures_first_time + "-gesture-and-flux",gestures)
-    transition_series = transitions.calculate_group_transitions_for_window(gestures,"15s")
+    plot_score_posthoc_flux(gestures_first_time + "-gesture-and-flux", gestures)
+    transition_series = transitions.calculate_group_transitions_for_window(gestures, "15s")
     flux_series = transitions.calculate_flux_series(transition_series)
-    new_ideas = transitions.calculate_new_ideas(flux_series,0.15)
+    new_ideas = transitions.calculate_new_ideas(flux_series, 0.15)
     print(new_ideas)
     plot_score_and_new_ideas(gestures)
-    transitions.print_transition_plots(transition_series)
+    print_transition_plots(transition_series)
 
-    #GESTURES_FILE = "/Users/charles/src/metatone-analysis/data/2015-04-29T18-34-58-MetatoneOSCLog-touches-posthoc-gestures.csv"
+    # GESTURES_FILE = "/Users/charles/src/metatone-analysis/data/2015-04-29T18-34-58-MetatoneOSCLog-touches-posthoc-gestures.csv"
 
 # gestures = pd.read_csv(GESTURES_FILE, index_col='time', parse_dates=True)
 # plot_score_posthoc_flux("2014-08-14T18-40-57-gestures-and-flux",gestures)
-#flux_values = generate_flux_frame(gestures)
-#flux_values.name = "Flux"
-#flux_diffs = generate_flux_diff_frame(gestures)
-#flux_diffs.name = "Flux_Difference"
-#plot_gestures_and_flux_score("2014-08-14T18-40-57-gestures-and-flux",gestures,flux_values,flux_diffs)
-#flux_series = transitions.calculate_rolling_flux_for_window(gestures)
-#flux_series = transitions.calculate_rolling_flux_for_window(gestures)
+# flux_values = generate_flux_frame(gestures)
+# flux_values.name = "Flux"
+# flux_diffs = generate_flux_diff_frame(gestures)
+# flux_diffs.name = "Flux_Difference"
+# plot_gestures_and_flux_score("2014-08-14T18-40-57-gestures-and-flux",gestures,flux_values,flux_diffs)
+# flux_series = transitions.calculate_rolling_flux_for_window(gestures)
+# flux_series = transitions.calculate_rolling_flux_for_window(gestures)
+
 
 def generate_phd_plots():
     # An Interesting Study Quartet Improv
     GESTURES_FILE = "/Users/charles/src/metatone-analysis/data/2015-04-29T18-34-58-MetatoneOSCLog-touches-posthoc-gestures.csv"
     post_hoc_transition_analysis_for_thesis(GESTURES_FILE)
-    
+
     GESTURES_FILE = "/Users/charles/src/metatone-analysis/data/2014-07-19T13-58-10-MetatoneOSCLog-touches-posthoc-gestures.csv"
     post_hoc_transition_analysis_for_thesis(GESTURES_FILE)
 
@@ -339,7 +378,7 @@ def generate_phd_plots():
     GESTURES_FILE = "/Users/charles/src/metatone-analysis/data/2014-08-14T18-40-57-MetatoneOSCLog-touches-posthoc-gestures.csv"
     post_hoc_transition_analysis_for_thesis(GESTURES_FILE)
 
-    #Gesture Study You Are Here Premiere
+    # Gesture Study You Are Here Premiere
     GESTURES_FILE = "/Users/charles/src/metatone-analysis/data/2014-03-17T18-09-46-MetatoneOSCLog-touches-posthoc-gestures.csv"
     post_hoc_transition_analysis_for_thesis(GESTURES_FILE)
 

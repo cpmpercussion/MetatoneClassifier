@@ -26,10 +26,9 @@ PERFORMANCE_TYPE_NAMES = [
     "Performance-Local", "Performance-Remote", "Experiment-Both",
     "Experiment-None", "Experiment-Button", "Experiment-Server"]
 
+
 class MetatoneOSCServer():
-    """ 
-    An OSC server for Metatone App Performances 
-    """
+    """ An OSC server for Metatone App Performances """
 
     def __init__(self):
         self.server_thread = None
@@ -90,7 +89,6 @@ class MetatoneOSCServer():
         # self.server_thread.start()
         self.server.serve_forever()
 
-
     def close_server(self):
         """
         Closes the OSCServer, server thread and Bonjour service reference.
@@ -103,6 +101,7 @@ class MetatoneOSCServer():
         self.classification_thread.join()
         print("Closed.")
 
+
 def bonjour_callback(service_reference, flags, error_code, name, reg_type, domain):
     """
     Callback function for bonjour service registration.
@@ -112,6 +111,7 @@ def bonjour_callback(service_reference, flags, error_code, name, reg_type, domai
         print('  name    =', name)
         print('  regtype =', reg_type)
         print('  domain  =', domain)
+
 
 def main():
     """

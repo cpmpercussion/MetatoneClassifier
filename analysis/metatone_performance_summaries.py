@@ -80,7 +80,7 @@ class MetatonePerformanceLog:
             if (index.to_datetime() - last_time).total_seconds() > NEW_IDEA_DELAY:
                 screen_changed_column[index] = True
                 last_time = index
-            else: 
+            else:
                 screen_changed_column[index] = False
         screen_changed = pd.Series(screen_changed_column)
         self.events["screen_changed"] = screen_changed
@@ -100,7 +100,7 @@ class MetatonePerformanceLog:
         for perf in self.performers():
             performer_changes[perf] = self.metatone[self.metatone["device_id"] == perf]["label"].count()
         return {self.first_touch_timestamp():performer_changes}
- 
+
     def ensemble_flux(self):
         """
         Returns the flux of the whole ensemble transition matrix.

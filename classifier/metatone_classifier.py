@@ -11,6 +11,9 @@ http://charlesmartin.com.au
 This file can be executed by itself (python metatone_classifier.py) or used as a module
 by another python process.
 
+This file contains the MetatoneClassifier class which defines what MetatoneClassifier does at each run-step
+during a performance. The classification features and training is done in the generate_classifier module.
+
 If using as a module, call the main() function to initiate the normal run loop.
 
 TODO:
@@ -24,7 +27,6 @@ import socket
 from datetime import timedelta
 from datetime import datetime
 import pandas as pd
-import pickle
 import logging
 import transitions
 import generate_classifier
@@ -40,8 +42,6 @@ SERVER_PORT = 9000
 CLOUD_SERVER_IP = "107.170.207.234"
 ##
 METATONE_RECEIVING_PORT = 51200
-PICKLED_CLASSIFIER_FILE = 'classifier.p'
-CLASSIFIER_TRAINING_FILE = "data/2014-12-12T12-05-53-GestureTargetLog-CPM-FeatureVectors.csv"
 ##
 PERFORMANCE_TYPE_LOCAL = 0
 PERFORMANCE_TYPE_REMOTE = 1
@@ -116,76 +116,6 @@ def get_device_name(device_id):
     else:
         return device_id
 
-###########################
-##
-## Classification Module Functions
-##
-###########################
-
-
-def load_classifier():
-    """
-    Loads the pickled RandomForestClassifier object.
-    """
-    print("### Loading Gesture Classifier.           ###")
-    try:
-        pickle_file = open(PICKLED_CLASSIFIER_FILE, "rb")
-        cla = pickle.load(pickle_file)
-        pickle_file.close()
-        print("### Classifier file successfully loaded.  ###")
-    except IOError:
-        print("### IOError Loading Classifier.           ###")
-        print("### Saving new pickled classifier object. ###")
-        cla = generate_classifier.pickleClassifier(generate_classifier.INPUT_FILE,
-                                                   generate_classifier.CLASSIFIER_NAME)
-    except:
-        print("### Exception Loading Classifier.         ###")
-        print("### Generating new classifier object.     ###")
-        cla = generate_classifier.pickleClassifier(generate_classifier.INPUT_FILE,
-                                                   generate_classifier.CLASSIFIER_NAME)
-    return cla
-
-
-def feature_frame(frame):
-    """
-    Calculates feature vectors for a dataframe of touch messages
-    containing one device_id.
-    """
-    if frame.empty:
-        fframe = pd.DataFrame({
-            'freq':pd.Series(0, index=range(1)),
-            'device_id':'nobody',
-            'touchdown_freq':0,
-            'movement_freq':0,
-            'centroid_x':-1,
-            'centroid_y':-1,
-            'std_x':0,
-            'std_y':0,
-            'velocity':0})
-        return fframe
-
-    window_size = '5s'
-    count_zeros = lambda s: len([x for x in s if x == 0])
-
-    frame_deviceid = frame['device_id'].resample(window_size).first().fillna(method='ffill')
-    frame_freq = frame['device_id'].resample(window_size).count().fillna(0)
-    frame_touchdowns = frame['velocity'].resample(window_size, how=count_zeros).fillna(0)
-    frame_vel = frame['velocity'].resample(window_size).mean().fillna(0)
-    frame_centroid = frame[['x_pos', 'y_pos']].resample(window_size).mean().fillna(-1)
-    frame_std = frame[['x_pos', 'y_pos']].resample(window_size).std().fillna(0)
-
-    fframe = pd.DataFrame({
-        'freq':frame_freq,
-        'device_id':frame_deviceid,
-        'touchdown_freq':frame_touchdowns,
-        'movement_freq':frame_freq,
-        'centroid_x':frame_centroid['x_pos'],
-        'centroid_y':frame_centroid['y_pos'],
-        'std_x':frame_std['x_pos'],
-        'std_y':frame_std['y_pos'],
-        'velocity':frame_vel})
-    return fframe.fillna(0)
-
 
 def pretty_print_classes(classes):
     """
@@ -242,15 +172,14 @@ def print_performance_state(state_tuple):
     print("# # # # # # # # # # # #")
 
 ###########################
-##
-## Classifier Class
-##
+#
+# Classifier Class
+#
 ###########################
 
 
 class MetatoneClassifier:
-    """
-    A classifier that mediates Metatone touch-screen performances.
+    """ A classifier that mediates Metatone touch-screen performances.
     """
 
     def __init__(self, lead_player_device_id=""):
@@ -261,7 +190,7 @@ class MetatoneClassifier:
         self.classifying_forever = False
         self.web_server_mode = False
         self.sources_to_remove = []
-        self.classifier = load_classifier()
+        self.classifier = generate_classifier.load_classifier()
         self.osc_sources = {}
         self.active_names = []
         self.active_apps = {}
@@ -277,8 +206,6 @@ class MetatoneClassifier:
         self.visualiser_mode = VISUALISER_MODE_ON
         self.logging_filename = ""
 
-
-    # @profile
     def classify_touch_messages(self, messages):
         """
         Given a list of touch messages, generates a gesture class for each
@@ -287,7 +214,7 @@ class MetatoneClassifier:
         """
         if not messages:
             return self.classify_empty_touch_messages()
-        ## This line can fail with a ValueError exception
+        # This line can fail with a ValueError exception
         touch_frame = pd.DataFrame(messages, columns=['time',
                                                       'device_id', 'x_pos', 'y_pos', 'velocity'])
         touch_frame = touch_frame.set_index('time')
@@ -296,7 +223,7 @@ class MetatoneClassifier:
         touch_frame = touch_frame.between_time((time_now + delta).time(), time_now.time())
         classes = {}
         for name in self.active_names:
-            features = feature_frame(touch_frame.ix[touch_frame['device_id'] == name])
+            features = generate_classifier.feature_frame(touch_frame.ix[touch_frame['device_id'] == name])
             gesture = self.classifier.predict(features[FEATURE_VECTOR_COLUMNS][-1:])
             classes[name] = list(gesture)[0]
         return classes
@@ -313,7 +240,7 @@ class MetatoneClassifier:
 
     def make_gesture_frame(self, gesture_log):
         """
-        Takes a log of gestures and returns a time series 
+        Takes a log of gestures and returns a time series
         with columns for each active device.
         """
         if not gesture_log:
@@ -482,7 +409,7 @@ class MetatoneClassifier:
         """
         msg = OSC.OSCMessage("/metatone/touch")
         msg.extend(touch_data)
-        try: 
+        try:
             self.osc_client.sendto(msg, (VISUALISER_HOST, VISUALISER_PORT))
         except:
             msg = ""
@@ -517,30 +444,28 @@ class MetatoneClassifier:
         The sources are removed by process_source_removal() which only
         runs inside the classification thread.
         """
-        self.sources_to_remove.append(name) 
+        self.sources_to_remove.append(name)
 
     def process_source_removal(self):
-        """ 
-        Removes the touch data sources in the global list.
-        Should only be run inside the classification thread. 
+        """ Removes the touch data sources in the global list.
+        Should only be run inside the classification thread.
         """
         for name in self.sources_to_remove:
             print("CLASSIFIER: Removing a source: " + name)
-            print("Sources: "+ repr(self.osc_sources))
-            print("Active Names: "+ repr(self.active_names))
-            if name in self.osc_sources: 
+            print("Sources: " + repr(self.osc_sources))
+            print("Active Names: " + repr(self.active_names))
+            if name in self.osc_sources:
                 del self.osc_sources[name]
-            if name in self.active_names: 
-                self.active_names.remove(name) # can't do this until I fix gesture logging... needs to be dictionary not list. 
+            if name in self.active_names:
+                self.active_names.remove(name)  # can't do this until I fix gesture logging... needs to be dictionary not list.
         self.sources_to_remove = []
-
 
     def clear_all_sources(self):
         """
-        Sends a performance end message to all connected apps and then removes them all. 
+        Sends a performance end message to all connected apps and then removes them all.
         """
         for name in self.osc_sources.keys():
-            self.send_performance_end_message(name) # send performance end messages.
+            self.send_performance_end_message(name)  # send performance end messages.
         self.osc_sources = {}
         self.active_names = []
         self.active_apps = []
@@ -590,7 +515,7 @@ class MetatoneClassifier:
         except:
             print("METATONE_CLASSIFIER: Error Classifying Messages.")
             classes = False
-        try: 
+        try:
             if classes:
                 classes = self.generate_neural_gestures(classes)  # includes RNN gesture generation.
                 self.send_gestures(classes)
