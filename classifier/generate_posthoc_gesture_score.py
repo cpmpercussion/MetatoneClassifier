@@ -312,6 +312,32 @@ def plot_score_and_new_ideas(gestures_frame):
     plt.close()
 
 
+def print_transition_plots(transitions):
+    """
+    Saves a PDF of a heatmap plot of each transition matrix in the given list: transitions.
+    """
+    for transition_matrix in range(len(transitions)):
+        state, spread, ratio = transitions.transition_state_measure(transitions.ix[transition_matrix])
+        mat = transitions.transition_matrix_to_normal_transition_matrix(transitions.ix[transition_matrix])
+        flux = transitions.flux_measure(mat)
+        filename = transitions.index[transition_matrix].isoformat()
+        title = transitions.index[transition_matrix].strftime('%Y-%m-%d %H:%M:%S')
+        print(title)
+        colours = plt.cm.Reds  # plt.cm.hot # plt.cm.autumn # plt.cm.binary for black and white
+        # plt.title(title + " " + state + " " + str(spread) + " " + str(ratio))
+        # plt.figure(figsize=(4.5,4),dpi=300)
+        plt.figure(figsize=(5.5, 4), dpi=300)
+        plt.title(title + " flux: " + str(round(flux, 3)))
+        plt.imshow(mat, cmap=colours, interpolation='nearest', vmin=0.0, vmax=1.0)
+        plt.colorbar()  # shows the legend
+        labels = ["none", "taps", "swipes", "swirls", "combo"]
+        plt.xticks([0, 1, 2, 3, 4], labels)
+        plt.yticks([0, 1, 2, 3, 4], labels)
+        plt.savefig(filename.replace(":", "_") + '.pdf', dpi=300, format="pdf")
+        plt.close()
+        # TODO make sure stochastic calculation doesn't fail on nonzero matrices.
+
+
 def post_hoc_transition_analysis_for_thesis(gesture_filename):
     gestures = pd.read_csv(gesture_filename, index_col='time', parse_dates=True)
     gestures_first_time = str(gestures.index[0])
@@ -321,7 +347,7 @@ def post_hoc_transition_analysis_for_thesis(gesture_filename):
     new_ideas = transitions.calculate_new_ideas(flux_series, 0.15)
     print(new_ideas)
     plot_score_and_new_ideas(gestures)
-    transitions.print_transition_plots(transition_series)
+    print_transition_plots(transition_series)
 
     # GESTURES_FILE = "/Users/charles/src/metatone-analysis/data/2015-04-29T18-34-58-MetatoneOSCLog-touches-posthoc-gestures.csv"
 
