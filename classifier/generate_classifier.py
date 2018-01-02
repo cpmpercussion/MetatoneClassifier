@@ -13,6 +13,10 @@ import pandas as pd
 import pickle
 from sklearn.ensemble import RandomForestClassifier
 
+# Old constants:
+# PICKLED_CLASSIFIER_FILE = '2013-07-01-TrainingData-classifier.p'
+# PICKLED_CLASSIFIER_FILE = '2014-12-12T12-05-53-GestureTargetLog-CPM-FeatureVectors-classifier.p'
+# CLASSIFIER_TRAINING_FILE = "data/2014-12-12T12-05-53-GestureTargetLog-CPM-FeatureVectors.csv"
 
 CLASSIFIER_NAME = "classifier.p"
 INPUT_FILE = "data/2014-12-12T12-05-53-GestureTargetLog-CPM-FeatureVectors.csv"
@@ -121,6 +125,30 @@ def pickleClassifier(input_csv, output_file):
     pickle.dump(classifier, pickle_file)
     pickle_file.close()
     return classifier
+
+
+# Load a trained classifier or train automatically.classifier
+
+
+def load_classifier():
+    """
+    Loads the pickled RandomForestClassifier object.
+    """
+    print("### Loading Gesture Classifier.           ###")
+    try:
+        pickle_file = open(CLASSIFIER_NAME, "rb")
+        cla = pickle.load(pickle_file)
+        pickle_file.close()
+        print("### Classifier file successfully loaded.  ###")
+    except IOError:
+        print("### IOError Loading Classifier.           ###")
+        print("### Saving new pickled classifier object. ###")
+        cla = pickleClassifier(INPUT_FILE, CLASSIFIER_NAME)
+    except:
+        print("### Exception Loading Classifier.         ###")
+        print("### Generating new classifier object.     ###")
+        cla = pickleClassifier(INPUT_FILE, CLASSIFIER_NAME)
+    return cla
 
 
 # Some default script behaviour: Creates a default classifier.

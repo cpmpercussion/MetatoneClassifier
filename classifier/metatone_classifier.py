@@ -27,7 +27,6 @@ import socket
 from datetime import timedelta
 from datetime import datetime
 import pandas as pd
-import pickle
 import logging
 import transitions
 import generate_classifier
@@ -41,10 +40,6 @@ CLOUD_SERVER_IP = "107.170.207.234"
 
 ##
 METATONE_RECEIVING_PORT = 51200
-# PICKLED_CLASSIFIER_FILE = '2013-07-01-TrainingData-classifier.p'
-# PICKLED_CLASSIFIER_FILE = '2014-12-12T12-05-53-GestureTargetLog-CPM-FeatureVectors-classifier.p'
-PICKLED_CLASSIFIER_FILE = 'classifier.p'
-CLASSIFIER_TRAINING_FILE = "data/2014-12-12T12-05-53-GestureTargetLog-CPM-FeatureVectors.csv"
 ##
 PERFORMANCE_TYPE_LOCAL = 0
 PERFORMANCE_TYPE_REMOTE = 1
@@ -119,35 +114,6 @@ def get_device_name(device_id):
     else:
         return device_id
 
-###########################
-##
-# Classification Module Functions
-##
-###########################
-
-
-def load_classifier():
-    """
-    Loads the pickled RandomForestClassifier object.
-    """
-    print("### Loading Gesture Classifier.           ###")
-    try:
-        pickle_file = open(PICKLED_CLASSIFIER_FILE, "rb")
-        cla = pickle.load(pickle_file)
-        pickle_file.close()
-        print("### Classifier file successfully loaded.  ###")
-    except IOError:
-        print("### IOError Loading Classifier.           ###")
-        print("### Saving new pickled classifier object. ###")
-        cla = generate_classifier.pickleClassifier(generate_classifier.INPUT_FILE,
-                                                   generate_classifier.CLASSIFIER_NAME)
-    except:
-        print("### Exception Loading Classifier.         ###")
-        print("### Generating new classifier object.     ###")
-        cla = generate_classifier.pickleClassifier(generate_classifier.INPUT_FILE,
-                                                   generate_classifier.CLASSIFIER_NAME)
-    return cla
-
 
 def pretty_print_classes(classes):
     """
@@ -219,7 +185,7 @@ class MetatoneClassifier:
         self.classifying_forever = False
         self.web_server_mode = False
         self.sources_to_remove = []
-        self.classifier = load_classifier()
+        self.classifier = generate_classifier.load_classifier()
         self.osc_sources = {}
         self.active_names = []
         self.active_apps = {}
