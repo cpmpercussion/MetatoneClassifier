@@ -2,17 +2,13 @@
 # pylint: disable=line-too-long
 """
 Calculates performance length in seconds for each member of a Metatone ensemble.
-Performance length for each performer is defined as the time delta between the first touch in the performance and 
-that performer''s final touch. 
+Performance length for each performer is defined as the time delta between the first touch in the performance and
+that performer''s final touch.
 The final touch may have to be adjusted due to accidental touches at the end of the log.
 """
 from __future__ import print_function
-# import numpy as np
 import pandas as pd
-# from datetime import timedelta
-# from datetime import datetime
 import time
-# import argparse
 
 DIRECTORY_PATH = "/Users/charles/Dropbox/Metatone/20150424-Study/20150429-Session1/logs/p1/"
 PERFORMANCE_NAME = "2015-04-29T17-54-12-MetatoneOSCLog"
@@ -31,7 +27,7 @@ def calculate_performance_lengths(touches):
     performance_lengths = {}
     print("Total performance length was: " + str((last_touch - first_touch).total_seconds()))
     for performer_id in performers:
-        performer_touches = touches.ix[touches['device_id']==performer_id]
+        performer_touches = touches.ix[touches['device_id'] == performer_id]
         performer_first_touches[performer_id] = performer_touches[:1].index[0].to_datetime()
         performer_last_touches[performer_id] = performer_touches[-1:].index[0].to_datetime()
         performer_length = (performer_touches[-1:].index[0].to_datetime() - first_touch).total_seconds()
@@ -39,7 +35,8 @@ def calculate_performance_lengths(touches):
         print("Performer: " + performer_id)
         print("Length was: " + str(performer_length))
     print(str(performance_lengths))
-    return {touches[:1].index[0]:performance_lengths}
+    return {touches[:1].index[0]: performance_lengths}
+
 
 def main():
     """
