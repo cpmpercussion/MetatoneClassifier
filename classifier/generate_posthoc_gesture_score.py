@@ -200,6 +200,23 @@ def generate_gesture_plot(names, gesture_frame):
     plt.close()
 
 
+def plot_gesture_only_score(plot_title, gestures):
+    """
+    Plots a gesture score of gestures only - no new ideas!
+    """
+    idx = gestures.index
+    ax = plt.figure(figsize=(14, 4), frameon=False, tight_layout=True).add_subplot(111)
+    ax.xaxis.set_major_locator(dates.SecondLocator(bysecond=[0]))
+    ax.xaxis.set_major_formatter(dates.DateFormatter("%H:%M"))
+    ax.yaxis.grid()
+    plt.ylim(-0.5, 8.5)
+    plt.yticks(np.arange(9), ['n', 'ft', 'st', 'fs', 'fsa', 'vss', 'bs', 'ss', 'c'])
+    for n in gestures.columns:
+        plt.plot_date(idx.to_pydatetime(), gestures[n], '-', label=n)
+    plt.savefig(plot_title.replace(":", "_") + '.pdf', dpi=150, format="pdf")
+    plt.close()
+
+
 def plot_gestures_and_flux_score(plot_title, gestures, flux, flux_diffs):
     """
     Plots a gesture score with flux values as well - this one suffers the window bug
